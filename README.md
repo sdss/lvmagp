@@ -6,3 +6,4 @@
 [![codecov](https://codecov.io/gh/sdss/lvmagp/branch/main/graph/badge.svg)](https://codecov.io/gh/sdss/lvmagp)
 
 Simple Template package for creating SDSS Python projects
+KHU IRLAB TCS/AGP team 
