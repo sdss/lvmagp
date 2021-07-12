@@ -5,4 +5,4 @@
 [![Travis (.org)](https://img.shields.io/travis/sdss/lvmagp)](https://travis-ci.org/sdss/lvmagp)
 [![codecov](https://codecov.io/gh/sdss/lvmagp/branch/main/graph/badge.svg)](https://codecov.io/gh/sdss/lvmagp)
 
-Simple Template package for creating SDSS Python projects
+sSimple Template package for creating SDSS Python projects
