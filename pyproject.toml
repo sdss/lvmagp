@@ -29,7 +29,7 @@ script = "build.py"
 generate-setup-file = false
 
 [tool.poetry.scripts]
-lvmagp = "lvmagp.__main__:main"
+lvmagp = "lvmagp.__main__:lvmagp"
 
 [tool.poetry.dependencies]
 python = "^3.7"
