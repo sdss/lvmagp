@@ -1,0 +1,84 @@
+[tool.poetry]
+name = "sdss-lvmagp"
+version = "0.1.0-alpha.0"
+description = "Simple Template package for creating SDSS Python projects"
+authors = ["sumin lee <lxmark888@khu.ac.kr>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+homepage = "https://github.com/sdss/lvmagp"
+repository = "https://github.com/sdss/lvmagp"
+documentation = "https://sdss-lvmagp.readthedocs.org"
+keywords = ["astronomy", "software"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+	"Programming Language :: Python :: 3.6",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+    "Topic :: Documentation :: Sphinx",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+packages = [
+    { include = "lvmagp", from = "python" }
+]
+include = ["python/lvmagp/etc/*"]
+
+[tool.poetry.build]
+script = "build.py"
+generate-setup-file = false
+
+[tool.poetry.scripts]
+lvmagp = "lvmagp.__main__:main"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+sdss-tree = ">=2.15.2"
+sdss-access = ">=0.2.3"
+sdsstools = ">=0.4.0"
+
+[tool.poetry.dev-dependencies]
+ipython = ">=7.11.0"
+matplotlib = ">=3.1.1"
+flake8 = ">=3.7.9"
+doc8 = ">=0.8.0"
+pytest = ">=5.2.2"
+pytest-asyncio = ">=0.10.0"
+pytest-cov = ">=2.8.1"
+pytest-mock = ">=1.13.0"
+pytest-sugar = ">=0.9.2"
+isort = ">=4.3.21"
+codecov = ">=2.0.15"
+coverage = {version = ">=5.0", extras = ["toml"]}
+ipdb = ">=0.12.3"
+rstcheck = "^3.3.1"
+Sphinx = "^3.0.0"
+
+[tool.isort]
+line_length = 79
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "SDSS", "FIRSTPARTY", "LOCALFOLDER"]
+default_section = "THIRDPARTY"
+known_first_party = "lvmagp"
+known_sdss = ["sdsstools"]
+balanced_wrapping = true
+include_trailing_comma = false
+lines_after_imports = 2
+use_parentheses = true
+
+[tool.pytest.ini_options]
+addopts = "--cov lvmagp --cov-report xml --cov-report html --cov-report term"
+
+[tool.coverage.run]
+branch = true
+include = ["python/lvmagp/*"]
+omit = [
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools>=49.6.0"]
+build-backend = "poetry.core.masonry.api"
