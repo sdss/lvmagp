@@ -7,7 +7,7 @@ import warnings
 from contextlib import suppress
 
 from clu.actor import AMQPActor
-
+from .commands import parser as lvm_command_python
 #from scpactor import __version__
 
 
@@ -22,6 +22,7 @@ class lvmagp(AMQPActor):
     controllers
         The list of `.SCP_Controller` instances to manage.
     """
+    parser = lvm_command_python
 
     def __init__(
         self,

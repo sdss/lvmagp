@@ -10,7 +10,7 @@
 import sys
 import os
 import asyncio
-.pyenv/versions/lvmagp-test/binimport click
+import click
 from click_default_group import DefaultGroup
 from clu.tools import cli_coro as cli_coro_lvm
 
