@@ -15,6 +15,7 @@ import os
 
 from pkg_resources import parse_version
 
+
 try:
     from lvmagp import __version__
 except ModuleNotFoundError:

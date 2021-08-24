@@ -1,13 +1,15 @@
 from clu.command import Command
+
+from lvmagp.actor.internalfunc import *  # noqa: F403
+
 from . import parser
-from lvmagp.actor.internalfunc import *
+
 
 lvmtan = "test.first.focus_stage"
 
 
 async def send_message(command, actor, command_to_send, returnval=False, body=""):
     cmd = await command.actor.send_command(actor, command_to_send)
-    cmdwait = await cmd
 
     if cmd.status.did_fail:
         return False
@@ -36,11 +38,11 @@ async def fine(command: Command):
 
     # For test
     guideimglist = [
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
     ]
     guideimgidx = [0, 1, 2, 4]
 
@@ -51,9 +53,9 @@ async def fine(command: Command):
 
     # Move focus
     """
-    reachablelow = await send_message(command, lvmtan, "isreachable %d" % (currentposition - (incremental * (repeat - 1)) / 2.0), returnval=True,
+    reachablelow = await send_message(command, lvmtan, "isreachable %d" % (currentposition - (incremental * (repeat - 1)) / 2.0), returnval=True,  # noqa: E501
                                    body="Reachable")
-    reachablehigh = await send_message(command, lvmtan, "isreachable %d" % (currentposition + (incremental * (repeat - 1)) / 2.0),
+    reachablehigh = await send_message(command, lvmtan, "isreachable %d" % (currentposition + (incremental * (repeat - 1)) / 2.0),  # noqa: E501
                                       returnval=True, body="Reachable")
     if not (reachablelow and reachablehigh):
         return command.fail(text="Target position is not reachable.")
@@ -67,7 +69,7 @@ async def fine(command: Command):
         return command.fail(text="Focus move failed")
 
     # Take picture
-    guideimg = GuideImage(guideimglist[3])
+    guideimg = GuideImage(guideimglist[3])  # noqa: F405
     """
     send_messange(Command, lvmcam, )
     """
@@ -86,10 +88,10 @@ async def fine(command: Command):
         else:
             return command.fail(text="Focus move failed")
 
-        guideimg = GuideImage(guideimglist[guideimgidx[iteration]])
+        guideimg = GuideImage(guideimglist[guideimgidx[iteration]])  # noqa: F405
         fwhm.append(guideimg.calfwhm())
 
     # Fitting
-    bestposition, bestfocus = findfocus(position, fwhm)
+    bestposition, bestfocus = findfocus(position, fwhm)  # noqa: F405
     movecmd = await send_message(command, lvmtan, "moveabsolute %d" % bestposition)
     return command.finish(text="Auto-focus done")

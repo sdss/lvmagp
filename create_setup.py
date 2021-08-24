@@ -18,6 +18,7 @@ import os
 import sys
 from distutils.version import StrictVersion
 
+
 # If there is a global installation of poetry, prefer that.
 lib = os.path.expanduser("~/.poetry/lib")
 vendors = os.path.join(lib, "poetry", "_vendor")

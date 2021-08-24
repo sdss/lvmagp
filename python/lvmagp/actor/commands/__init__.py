@@ -9,7 +9,6 @@
 import glob
 import importlib
 import os
-import warnings
 
 import click
 from clu.parsers.click import CluGroup, help_, ping, version

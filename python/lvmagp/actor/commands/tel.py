@@ -1,8 +1,8 @@
-import asyncio
 import click
 from clu.command import Command
+
 from . import parser
-from clu.client import AMQPClient
+
 
 lvmpwi = "lvmpwi"
 
@@ -19,11 +19,11 @@ async def send_message(command, actor, command_to_send, returnval=False, body=""
     cmd = await command.actor.send_command(actor, command_to_send)
     cmdwait = await cmd
 
-    if cmd.status.did_fail:
+    if cmdwait.status.did_fail:
         return False
 
     if returnval:
-        return cmd.replies[-1].body[body]
+        return cmdwait.replies[-1].body[body]
 
     return True
 
@@ -62,7 +62,7 @@ async def disconnect(command: Command):
 @focus.command()
 @click.argument("STEPS", type=int)
 async def goto_ra_dec_j2000(command: Command, steps: int):
-    connection = await lvmtan_connection_check(command)
+    connection = await lvmpwi_connection_check(command)
     if not connection:
         return command.fail(text="Cannot find lvmtan actor.")
 

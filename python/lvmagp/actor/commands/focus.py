@@ -1,8 +1,8 @@
-import asyncio
 import click
 from clu.command import Command
+
 from . import parser
-from clu.client import AMQPClient
+
 
 lvmtan = "test.first.focus_stage"
 
@@ -11,11 +11,11 @@ async def send_message(command, actor, command_to_send, returnval=False, body=""
     cmd = await command.actor.send_command(actor, command_to_send)
     cmdwait = await cmd
 
-    if cmd.status.did_fail:
+    if cmdwait.status.did_fail:
         return False
 
     if returnval:
-        return cmd.replies[-1].body[body]
+        return cmdwait.replies[-1].body[body]
 
     return True
 
@@ -28,14 +28,17 @@ def focus(*args):
 @focus.command()
 @click.argument("STEPS", type=int)
 async def moverel(command: Command, steps: int):
+    '''
     pos = await send_message(
         command, lvmtan, "getposition", returnval=True, body="Position"
     )
-    """
-    reachable = await send_message(command, lvmtan, "isreachable %d" % (pos+steps), returnval=True, body="Reachable")
+
+    reachable = await send_message(
+    command, lvmtan, "isreachable %d" % (pos+steps), returnval=True, body="Reachable"
+    )
     if not reachable:
         return command.fail(text="Target position is not reachable.")
-    """
+    '''
     movecmd = await send_message(command, lvmtan, "moverelative %d" % steps)
     if movecmd:
         return command.finish(text="Move completed.")
@@ -44,11 +47,13 @@ async def moverel(command: Command, steps: int):
 @focus.command()
 @click.argument("POSITION", type=int)
 async def moveabs(command: Command, position: int):
-    """
-    reachable = await send_message(command, lvmtan, "isreachable %d" % position, returnval=True, body="Reachable")
+    '''
+    reachable = await send_message(
+    command, lvmtan, "isreachable %d" % position, returnval=True, body="Reachable"
+    )
     if not reachable:
         return command.fail(text="Target position is not reachable.")
-    """
+    '''
     movecmd = await send_message(command, lvmtan, "moveabsolute %d" % position)
     if movecmd:
         return command.finish(text="Move completed.")

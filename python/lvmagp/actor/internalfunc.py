@@ -1,12 +1,12 @@
-import numpy as np
+import warnings
 
+import numpy as np
 # import matplotlib.pyplot as plt
 from astropy.io import fits
+from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
 from photutils.detection import DAOStarFinder
 from scipy.spatial import KDTree
-from astropy.modeling import models, fitting
-import warnings
 
 
 class GuideImage:
@@ -75,8 +75,8 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                    ycenter - windowradius : ycenter + windowradius,
-                    xcenter - windowradius : xcenter + windowradius,
+                    ycenter - windowradius: ycenter + windowradius,
+                    xcenter - windowradius: xcenter + windowradius,
                 ]
             )
 
@@ -101,11 +101,15 @@ def findfocus(positions, FWHMs):  # both are lists or np.array
     return (bestposition, bestfocus)
 
 
+'''
 if __name__ == "__main__":
     guideimglist = [
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/
+        synthetic_image_median_field_5s_seeing_02.5.fits", #
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/
+        synthetic_image_median_field_5s_seeing_03.0.fits",
+        "/home/hojae/Desktop/lvmagp/testimg/focus_series/
+        synthetic_image_median_field_5s_seeing_06.0.fits",
     ]
     guideimgidx = [1, 0, 1, 2]
 
@@ -113,9 +117,9 @@ if __name__ == "__main__":
     FWHM = guideimg.calfwhm(findstar=True)
     print(FWHM)
 
-    """
+
     position = range(29000,31100,100)
-    focus = [40.5,36.2,31.4,28.6,23.1,21.2,16.6,13.7,6.21,4.21,3.98,4.01,4.85,11.1,15.3,22.1,21.9,27.4,32.1,36.5,39.7]
+    focus = [40.5,36.2,31.4,28.6,23.1,21.2,16.6,13.7,6.21,4.21,3.98,4.01,4.85,11.1,15.3,22.1,21.9,27.4,32.1,36.5,39.7]  # noqa: E501
     pos, foc = findfocus(position, focus)
     print (pos,foc)
-    """
+'''
