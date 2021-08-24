@@ -10,12 +10,13 @@ lvmtan = "test.first.focus_stage"
 
 async def send_message(command, actor, command_to_send, returnval=False, body=""):
     cmd = await command.actor.send_command(actor, command_to_send)
+    cmdwait = await cmd
 
-    if cmd.status.did_fail:
+    if cmdwait.status.did_fail:
         return False
 
     if returnval:
-        return cmd.replies[-1].body[body]
+        return cmdwait.replies[-1].body[body]
 
     return True
 

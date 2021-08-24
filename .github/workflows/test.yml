@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8, 3.9]
 
     steps:
 
@@ -48,11 +48,11 @@ jobs:
         pip install isort
         isort -c .
 
-    - name: Test with pytest
-      run: |
-        pip install pytest pytest-cov pytest-asyncio pytest-mock asynctest pytest-sugar
-        pip install coverage[toml]
-        pytest
+    #- name: Test with pytest
+    #  run: |
+    #    pip install pytest pytest-cov pytest-asyncio pytest-mock asynctest pytest-sugar
+    #    pip install coverage[toml]
+    #    pytest
 
     # - name: Upload coverage to Codecov
     #   if: matrix.python-version == '3.8'
