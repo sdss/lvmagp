@@ -14,13 +14,10 @@
 # setup.py. This is a bug in poetry that hopefully will be fixed soon.
 
 
-ext_modules = [
-]
+ext_modules = []
 
 
 def build(setup_kwargs):
     """To build the extensions with poetry."""
 
-    setup_kwargs.update({
-        'ext_modules': ext_modules
-    })
+    setup_kwargs.update({"ext_modules": ext_modules})

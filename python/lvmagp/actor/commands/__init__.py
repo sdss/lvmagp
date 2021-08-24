@@ -1,4 +1,4 @@
-#/usr/bin/env python
+# /usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # @Author: Changgon Kim, Taeeun Kim, Mingyeong YANG (mingyeong@khu.ac.kr)
@@ -13,6 +13,7 @@ import warnings
 
 import click
 from clu.parsers.click import CluGroup, help_, ping, version
+
 
 @click.group(cls=CluGroup)
 def parser(*args):
@@ -36,6 +37,8 @@ files = [
 
 for file_ in files:
     modname = file_[0:-3].replace("/", ".")
-    mod = importlib.import_module("lvmagp.actor.commands." + modname) #changged by CK 2021/03/30
+    mod = importlib.import_module(
+        "lvmagp.actor.commands." + modname
+    )  # changged by CK 2021/03/30
 
 os.chdir(cwd)

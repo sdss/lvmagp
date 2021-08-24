@@ -18,6 +18,7 @@ from sdsstools.daemonizer import DaemonGroup
 
 from lvmagp.actor.actor import lvmagp as lvmagpInstance
 
+
 @click.group(cls=DefaultGroup, default="actor", default_if_no_args=True)
 @click.option(
     "-c",

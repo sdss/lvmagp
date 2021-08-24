@@ -1,4 +1,3 @@
-
 from __future__ import annotations, print_function, division, absolute_import
 
 import asyncio
@@ -8,10 +7,12 @@ from contextlib import suppress
 
 from clu.actor import AMQPActor
 from .commands import parser as lvm_command_python
-#from scpactor import __version__
+
+# from scpactor import __version__
 
 
 __all__ = ["lvmagp"]
+
 
 class lvmagp(AMQPActor):
     """SCP controller actor.
@@ -22,6 +23,7 @@ class lvmagp(AMQPActor):
     controllers
         The list of `.SCP_Controller` instances to manage.
     """
+
     parser = lvm_command_python
 
     def __init__(
