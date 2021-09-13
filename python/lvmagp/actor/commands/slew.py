@@ -4,6 +4,7 @@ import os
 import click
 from clu.command import Command
 
+from lvmagp.actor.commfunc import *  # noqa: F403
 from lvmagp.actor.internalfunc import *  # noqa: F403
 
 from . import parser
@@ -30,37 +31,20 @@ def slew(*args):
 @click.argument("TARGET_DEC_D", type=float)
 async def radec(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
     # safety check
+    tel1 = LVMTelescope(tel)
 
     # send slew command to lvmpwi
-    if tel == "test":
-        lvmpwi = "lvm.pwi"
-        lvmtan = "test.first.focus_stage"
-    else:
-        lvmpwi = "lvm." + tel + ".pwi"
-        lvmtan = "lvm." + tel + ".foc"
-
-    raoffsetcmd = await send_message(command, lvmpwi, "offset --ra_reset 0")
-    decoffsetcmd = await send_message(command, lvmpwi, "offset --dec_reset 0")
-
-    slewcmd = await send_message(
-        command, lvmpwi, "goto-ra-dec-j2000 %f %f" % (target_ra_h, target_dec_d)
-    )
+    zerooffsetcmd = await tel1.offset_radec(command, 0, 0)
+    slewcmd = await tel1.slew_radec2000(command, target_ra_h, target_dec_d)
     command.info("Telescope slewing ...")
 
-    while 1:
-        isslew = await send_message(
-            command, lvmpwi, "status", returnval=True, body="is_slewing"
-        )
-        if isslew:  ##one-way comm. of PWI4: warning.
-            await asyncio.sleep(0.5)
-        else:
-            break
-
+    await tel1.wait_for_slew(command)
     command.info("Initial slew completed.  Taking image...")
 
     # take an image for astrometry
     """
-    imgcmd = await send_message(command, lvmcam, "goto_ra_dec_j2000 %f %f"%(target_ra_h, target_dec_d))
+    exptime = 5  # in seconds
+    imgcmd = await take_single_image(command, tel, exptime)
     """
 
     command.info("Astrometry ...")
@@ -81,8 +65,8 @@ async def radec(command: Command, tel: str, target_ra_h: float, target_dec_d: fl
 
     ra2000_hms = await deg_to_dms(guideimg.ra2000 / 15)
     dec2000_dms = await deg_to_dms(guideimg.dec2000)
-    comp_ra_sec = (target_ra_h * 15 - guideimg.ra2000) * 3600
-    comp_dec_sec = (target_dec_d - guideimg.dec2000) * 3600
+    comp_ra_arcsec = (target_ra_h * 15 - guideimg.ra2000) * 3600
+    comp_dec_arcsec = (target_dec_d - guideimg.dec2000) * 3600
 
     command.info(
         Img_ra2000="%02dh %02dm %06.3fs"
@@ -90,20 +74,13 @@ async def radec(command: Command, tel: str, target_ra_h: float, target_dec_d: fl
         Img_dec2000="%02dd %02dm %06.3fs"
         % (dec2000_dms[0], dec2000_dms[1], dec2000_dms[2]),
         Img_pa="%.3f deg" % guideimg.pa,
-        offset_ra="%.3f arcsec" % comp_ra_sec,
-        offset_dec="%.3f arcsec" % comp_dec_sec,
+        offset_ra="%.3f arcsec" % comp_ra_arcsec,
+        offset_dec="%.3f arcsec" % comp_dec_arcsec,
         text="Compensating ...",
     )
 
     # Compensation
-    raoffsetcmd = await send_message(
-        command, lvmpwi, "offset --ra_add_arcsec %f" % comp_ra_sec
-    )
-    decoffsetcmd = await send_message(
-        command, lvmpwi, "offset --dec_add_arcsec %f" % comp_dec_sec
-    )
-
-    await asyncio.sleep(0.5)  # settle time
+    offsetcmd = await tel1.offset_radec(command, comp_ra_arcsec, comp_dec_arcsec)
 
     return command.finish(text="Acquisition done")
 

@@ -78,8 +78,8 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                    ycenter - windowradius: ycenter + windowradius,
-                    xcenter - windowradius: xcenter + windowradius,
+                    ycenter - windowradius : ycenter + windowradius,
+                    xcenter - windowradius : xcenter + windowradius,
                 ]
             )
 
@@ -138,17 +138,17 @@ class GuideImage:
                 mididx = line.find(",", 25)
                 endidx = line.find(")", 25)
 
-                self.ra2000 = float(line[startidx + 1: mididx])
-                self.dec2000 = float(line[mididx + 1: endidx])
+                self.ra2000 = float(line[startidx + 1 : mididx])
+                self.dec2000 = float(line[mididx + 1 : endidx])
 
             elif "Field rotation angle" in line:
                 startidx = line.find("is")
                 endidx = line.find("degrees")
 
                 if line[endidx + 8] == "E":
-                    self.pa = float(line[startidx + 3: endidx - 1])
+                    self.pa = float(line[startidx + 3 : endidx - 1])
                 elif line[endidx + 8] == "W":
-                    self.pa = 360 - float(line[startidx + 3: endidx - 1])
+                    self.pa = 360 - float(line[startidx + 3 : endidx - 1])
 
             elif "Total CPU time limit reached!" in line:
                 raise Exception("Astrometry timeout")
@@ -163,6 +163,11 @@ def findfocus(positions, FWHMs):  # both are lists or np.array
     bestposition = -t.c1 / (2 * t.c2)
     bestfocus = t(bestposition)
     return (bestposition, bestfocus)
+
+
+def tolerance_check(dist, tolerance):
+
+    return True
 
 
 async def send_message(command, actor, command_to_send, returnval=False, body=""):

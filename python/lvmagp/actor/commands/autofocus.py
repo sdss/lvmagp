@@ -3,6 +3,7 @@ import os  # this should be removed after connecting lvmcam
 import click
 from clu.command import Command
 
+from lvmagp.actor.commfunc import *
 from lvmagp.actor.internalfunc import *  # noqa: F403
 
 from . import parser
@@ -25,28 +26,33 @@ async def fine(command: Command, focuser: str):
     position, fwhm = [], []
     incremental = 100
     repeat = 5
-    if focuser == "test":
-        lvmtan = "test.first.focus_stage"
-    else:
-        lvmtan = "lvm." + focuser + ".foc"
 
     # For test
     pwd = os.path.dirname(os.path.abspath(__file__))
     agpwd = pwd + "/../../../../"
 
     guideimglist = [
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
+        agpwd
+        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
+        agpwd
+        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
+        agpwd
+        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
+        agpwd
+        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
+        agpwd
+        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
     ]
     guideimgidx = [0, 1, 2, 4]
 
     # get current pos of focus stage
+    foc1 = LVMFocuser(focuser)
+    currentposition = await foc1.getposition(command)
+    """
     currentposition = await send_message(
         command, lvmtan, "getposition", returnval=True, body="Position"
     )
+    """
 
     # Move focus
     """
@@ -58,7 +64,8 @@ async def fine(command: Command, focuser: str):
         return command.fail(text="Target position is not reachable.")
     """
     targetposition = currentposition - (incremental * (repeat - 1)) / 2.0
-    movecmd = await send_message(command, lvmtan, "moveabsolute %d" % targetposition)
+    movecmd = await foc1.moveabs(command, targetposition)
+
     if movecmd:
         currentposition = targetposition
         position.append(currentposition)
@@ -77,9 +84,8 @@ async def fine(command: Command, focuser: str):
 
     for iteration in range(repeat - 1):
         targetposition = currentposition + incremental
-        movecmd = await send_message(
-            command, lvmtan, "moveabsolute %d" % targetposition
-        )
+        movecmd = await foc1.moveabs(command, targetposition)
+
         if movecmd:
             currentposition = targetposition
             position.append(currentposition)
@@ -92,5 +98,5 @@ async def fine(command: Command, focuser: str):
 
     # Fitting
     bestposition, bestfocus = findfocus(position, fwhm)  # noqa: F405
-    movecmd = await send_message(command, lvmtan, "moveabsolute %d" % bestposition)
+    movecmd = await foc1.moveabs(command, bestposition)
     return command.finish(text="Auto-focus done")

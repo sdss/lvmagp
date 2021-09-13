@@ -1,23 +1,12 @@
 import click
 from clu.command import Command
 
+from lvmagp.actor.internalfunc import *  # noqa: F403
+
 from . import parser
 
 
 lvmtan = "test.first.focus_stage"
-
-
-async def send_message(command, actor, command_to_send, returnval=False, body=""):
-    cmd = await command.actor.send_command(actor, command_to_send)
-    cmdwait = await cmd
-
-    if cmdwait.status.did_fail:
-        return False
-
-    if returnval:
-        return cmdwait.replies[-1].body[body]
-
-    return True
 
 
 @parser.group()
