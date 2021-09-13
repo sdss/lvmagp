@@ -1,24 +1,11 @@
+import os  # this should be removed after connecting lvmcam
+
+import click
 from clu.command import Command
 
 from lvmagp.actor.internalfunc import *  # noqa: F403
 
 from . import parser
-
-
-lvmtan = "test.first.focus_stage"
-
-
-async def send_message(command, actor, command_to_send, returnval=False, body=""):
-    cmd = await command.actor.send_command(actor, command_to_send)
-    cmdwait = await cmd
-
-    if cmdwait.status.did_fail:
-        return False
-
-    if returnval:
-        return cmdwait.replies[-1].body[body]
-
-    return True
 
 
 @parser.group()
@@ -27,23 +14,32 @@ def autofocus(*args):
 
 
 @autofocus.command()
-async def coarse(command: Command):
+@click.argument("FOCUSER", type=str)
+async def coarse(command: Command, focuser: str):
     pass
 
 
 @autofocus.command()
-async def fine(command: Command):
+@click.argument("FOCUSER", type=str)
+async def fine(command: Command, focuser: str):
     position, fwhm = [], []
     incremental = 100
     repeat = 5
+    if focuser == "test":
+        lvmtan = "test.first.focus_stage"
+    else:
+        lvmtan = "lvm." + focuser + ".foc"
 
     # For test
+    pwd = os.path.dirname(os.path.abspath(__file__))
+    agpwd = pwd + "/../../../../"
+
     guideimglist = [
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
-        "/home/hojae/Desktop/lvmagp/testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
     ]
     guideimgidx = [0, 1, 2, 4]
 
@@ -76,7 +72,8 @@ async def fine(command: Command):
     """
 
     # Picture anaysis
-    fwhm.append(guideimg.calfwhm(findstar=True))
+    starposition = guideimg.findstars()
+    fwhm.append(guideimg.calfwhm())
 
     for iteration in range(repeat - 1):
         targetposition = currentposition + incremental
@@ -90,6 +87,7 @@ async def fine(command: Command):
             return command.fail(text="Focus move failed")
 
         guideimg = GuideImage(guideimglist[guideimgidx[iteration]])  # noqa: F405
+        guideimg.guidestarposition = starposition
         fwhm.append(guideimg.calfwhm())
 
     # Fitting

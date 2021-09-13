@@ -39,6 +39,9 @@ eval "$(pyenv init --path)"
 eval "$(pyenv virtualenv-init -)"
 ```
 
+Also you need other actors for hardware communication, which are [lvmtan](https://github.com/sdss/lvmtan), [lvmpwi](https://github.com/sdss/lvmpwi) and [lvmcam](https://github.com/sdss/lvmcam).
+(Currently you only need lvmtan.)
+
 ## Quick start
 
 ### Installation

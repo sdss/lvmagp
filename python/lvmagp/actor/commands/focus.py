@@ -28,7 +28,7 @@ def focus(*args):
 @focus.command()
 @click.argument("STEPS", type=int)
 async def moverel(command: Command, steps: int):
-    '''
+    """
     pos = await send_message(
         command, lvmtan, "getposition", returnval=True, body="Position"
     )
@@ -38,7 +38,7 @@ async def moverel(command: Command, steps: int):
     )
     if not reachable:
         return command.fail(text="Target position is not reachable.")
-    '''
+    """
     movecmd = await send_message(command, lvmtan, "moverelative %d" % steps)
     if movecmd:
         return command.finish(text="Move completed.")
@@ -47,13 +47,13 @@ async def moverel(command: Command, steps: int):
 @focus.command()
 @click.argument("POSITION", type=int)
 async def moveabs(command: Command, position: int):
-    '''
+    """
     reachable = await send_message(
     command, lvmtan, "isreachable %d" % position, returnval=True, body="Reachable"
     )
     if not reachable:
         return command.fail(text="Target position is not reachable.")
-    '''
+    """
     movecmd = await send_message(command, lvmtan, "moveabsolute %d" % position)
     if movecmd:
         return command.finish(text="Move completed.")

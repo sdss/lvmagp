@@ -4,7 +4,7 @@ from clu.command import Command
 from . import parser
 
 
-lvmpwi = "lvmpwi"
+lvmpwi = "lvm.pwi"
 
 
 async def lvmpwi_connection_check(command):
