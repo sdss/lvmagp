@@ -6,8 +6,10 @@ import numpy as np
 from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
+import astropy.time
 from photutils.detection import DAOStarFinder
 from scipy.spatial import KDTree
+import time
 
 
 class GuideImage:
@@ -164,10 +166,53 @@ def findfocus(positions, FWHMs):  # both are lists or np.array
     bestfocus = t(bestposition)
     return (bestposition, bestfocus)
 
+def GMST(JD):
+    # Greenwich mean sideral time from
+    # http://aa.usno.navy.mil/faq/docs/GAST.html
+    # GMST = 6.697374558 + 0.06570982441908 D_0 + 1.00273790935 H + 0.000026 T2
+    # It will be necessary to reduce GMST to the range 0h to 24h.
+    # Setting H = 0 in the above formula yields the Greenwich mean sidereal time at 0h UT
 
-def tolerance_check(dist, tolerance):
+    # days from 2000 <<< at UT=12 >>>
+    D2000 = JD - 2451545.0 - 0.5
 
-    return True
+    iD2000 = np.array(D2000)
+    rD2000 = D2000 - iD2000
+
+    GMST1 = np.mod(6.697374558 + 0.06570982441908 * iD2000 + \
+                   1.00273790935 * (rD2000 * 24), 24)
+
+    return GMST1 * 15.0  # GMST in degree
+
+def GAST(JD):
+    dtor = np.pi/180
+    # days from 2000 <<< at UT=12 >>>
+    D2000 = JD - 2451545.0 - 0.5
+    # calc GAST Greenwich Apparent Sidereal time
+    omega = 125.04 - 0.052954 * D2000  # ;the Longitude of the ascending node of the Moon
+    L = 280.47 + 0.98565 * D2000  # ;the Mean Longitude of the Sun
+    delphi = -0.000319 * np.sin(omega * dtor) - 0.000024 * np.sin(
+        2.0 * L * dtor)  # ; the nutation in longitude, is given in hours
+    epsilon = 23.4393 - 0.0000004 * D2000  # ; the obliquity
+    GAST = GMST(JD) + 15.0 * delphi * np.cos(epsilon * dtor)
+    # GAST in degree
+    return GAST
+
+def cal_pa(ra_h, dec_d, lat_d, long_d):
+    ra =  np.deg2rad(ra_h*15)
+    dec = np.deg2rad(dec_d)
+    lat = np.deg2rad(lat_d)
+    long = np.deg2rad(long_d)
+
+    tm = time.gmtime()
+    tstring = time.strftime('%Y-%m-%dT%H:%M:%S', tm)
+    t = astropy.time.Time(tstring, format='isot', scale='utc')
+
+    LST = GAST(t.jd) + long
+    HA = np.mod(LST - ra, 360)
+    pa = np.arctan(-np.sin(HA)/(np.cos(dec)*np.tan(lat)-np.sin(dec)*np.cos(HA)))
+
+    return np.rad2deg(pa)
 
 
 async def send_message(command, actor, command_to_send, returnval=False, body=""):

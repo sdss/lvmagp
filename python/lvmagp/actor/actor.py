@@ -11,7 +11,7 @@ __all__ = ["lvmagp"]
 
 
 class lvmagp(AMQPActor):
-    """SCP controller actor.
+    """AGP  actor.
     In addition to the normal arguments and keyword parameters for
     `~clu.actor.AMQPActor`, the class accepts the following parameters.
     Parameters

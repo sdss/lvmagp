@@ -15,17 +15,19 @@ def autofocus(*args):
 
 
 @autofocus.command()
-@click.argument("FOCUSER", type=str)
-async def coarse(command: Command, focuser: str):
+@click.argument("TEL", type=str)
+async def coarse(command: Command, tel: str):
     pass
 
 
 @autofocus.command()
-@click.argument("FOCUSER", type=str)
-async def fine(command: Command, focuser: str):
+@click.argument("TEL", type=str)
+async def fine(command: Command, tel: str):
     position, fwhm = [], []
     incremental = 100
     repeat = 5
+    exptime = 3  # in seconds
+
 
     # For test
     pwd = os.path.dirname(os.path.abspath(__file__))
@@ -46,13 +48,12 @@ async def fine(command: Command, focuser: str):
     guideimgidx = [0, 1, 2, 4]
 
     # get current pos of focus stage
-    foc1 = LVMFocuser(focuser)
+    foc1 = LVMFocuser(tel)
+    cam1 = LVMCamera(tel+'e')
+    cam2 = LVMCamera(tel+'w')
+    cam1 = LVMCamera('test')  # this is for lab test..
+
     currentposition = await foc1.getposition(command)
-    """
-    currentposition = await send_message(
-        command, lvmtan, "getposition", returnval=True, body="Position"
-    )
-    """
 
     # Move focus
     """
@@ -75,7 +76,10 @@ async def fine(command: Command, focuser: str):
     # Take picture
     guideimg = GuideImage(guideimglist[3])  # noqa: F405
     """
-    send_messange(Command, lvmcam, )
+    try:
+        imgcmd = await cam1.single_exposure(command, tel, exptime)
+    except Exception as e:
+        return command.fail(fail='Camera error')
     """
 
     # Picture anaysis
