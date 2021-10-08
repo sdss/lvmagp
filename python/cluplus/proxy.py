@@ -5,17 +5,11 @@
 # @Filename: proxy.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-import logging
 import asyncio
-
-import json
-from types import SimpleNamespace
-from typing import Any, Callable, Optional, Awaitable
 from itertools import chain
+from typing import Any, Awaitable, Callable
 
-from clu import AMQPClient, AMQPReply, command_parser
-from clu.tools import CommandStatus
-from clu.model import Model
+from clu import AMQPClient
 
 
 class ProxyException(Exception):
@@ -48,30 +42,27 @@ class _ProxyMethod:
         return _ProxyMethod(".".join((self._consumer, item)), func=self.func)
 
     async def __call__(
-            self,
-            *args,
-            blocking: bool = True,
-            callback: Callable[[Any], Awaitable[None]] = None,
-            timeout=1.4142,
-            **kwargs,
+        self,
+        *args,
+        blocking: bool = True,
+        callback: Callable[[Any], Awaitable[None]] = None,
+        timeout=1.4142,
+        **kwargs,
     ):
-        opts = list(chain.from_iterable(('--' + k, v) for k, v in kwargs.items()))
+        opts = list(chain.from_iterable(("--" + k, v) for k, v in kwargs.items()))
         command = await asyncio.wait_for(
-            self._amqpc.send_command(self._consumer, self._command.lower(), *args, *opts, callback=callback), timeout)
+            self._amqpc.send_command(
+                self._consumer, self._command.lower(), *args, *opts, callback=callback
+            ),
+            timeout,
+        )
         return await command if blocking else command
 
 
 class Proxy:
-    __slots__ = (
-        "_consumer",
-        "_amqpc"
-    )
+    __slots__ = ("_consumer", "_amqpc")
 
-    def __init__(
-            self,
-            consumer: str,
-            amqpc: AMQPClient
-    ):
+    def __init__(self, consumer: str, amqpc: AMQPClient):
         self._consumer = consumer
         self._amqpc = amqpc
 
@@ -84,7 +75,7 @@ def _stringToException(errstr):
     try:
         return eval(errstr)  # Maybe a bad idea - code injection
 
-    except SyntaxError as e:
+    except SyntaxError:
         return ProxyPlainMessagException(errstr)
 
     except Exception as e:
@@ -99,7 +90,9 @@ class DictObject(object):
         self._dict = d
         for a, b in d.items():
             if isinstance(b, (list, tuple)):
-                setattr(self, a, [DictObject(x) if isinstance(x, dict) else x for x in b])
+                setattr(
+                    self, a, [DictObject(x) if isinstance(x, dict) else x for x in b]
+                )
             else:
                 setattr(self, a, DictObject(b) if isinstance(b, dict) else b)
 
@@ -113,10 +106,11 @@ async def invoke(*argv, raw=False, **kwargs):
             hasErrors = False
             if r.status.did_fail:
                 hasErrors = True
-                errors.append(_stringToException(r.replies[-1].body['error']))
+                errors.append(_stringToException(r.replies[-1].body["error"]))
             else:
                 errors.append(None)
-        if hasErrors: raise ProxyException(errors)
+        if hasErrors:
+            raise ProxyException(errors)
         if raw:
             return [r.replies[-1].body for r in ret]
         else:
@@ -124,7 +118,7 @@ async def invoke(*argv, raw=False, **kwargs):
     else:
         ret = await argv[0]
         if ret.status.did_fail:
-            raise _stringToException(ret.replies[-1].body['error'])
+            raise _stringToException(ret.replies[-1].body["error"])
         else:
             if raw:
                 return ret.replies[-1].body
@@ -138,7 +132,9 @@ async def unpack(cmd, *argv, **kwargs):
     if len(ret) == 0:
         return
     elif len(ret) == 1:
-        return list(ret.values())[0]  # Maybe we should check if argv is not empty and throw an exception
+        return list(ret.values())[
+            0
+        ]  # Maybe we should check if argv is not empty and throw an exception
     elif len(argv) > 1:
         return [ret[i] for i in argv]
     else:

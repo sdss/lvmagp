@@ -3,7 +3,7 @@ import os  # this should be removed after connecting lvmcam
 import click
 from clu.command import Command
 
-from lvmagp.actor.commfunc import *
+from lvmagp.actor.commfunc import *  # noqa: F403
 from lvmagp.actor.internalfunc import *  # noqa: F403
 
 from . import parser
@@ -26,32 +26,26 @@ async def fine(command: Command, tel: str):
     position, fwhm = [], []
     incremental = 100
     repeat = 5
-    exptime = 3  # in seconds
-
+    exptime = 3  # noqa: F841  # in seconds
 
     # For test
     pwd = os.path.dirname(os.path.abspath(__file__))
     agpwd = pwd + "/../../../../"
 
     guideimglist = [
-        agpwd
-        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
-        agpwd
-        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
-        agpwd
-        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
-        agpwd
-        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
-        agpwd
-        + "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
+        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
     ]
     guideimgidx = [0, 1, 2, 4]
 
     # get current pos of focus stage
-    foc1 = LVMFocuser(tel)
-    cam1 = LVMCamera(tel+'e')
-    cam2 = LVMCamera(tel+'w')
-    cam1 = LVMCamera('test')  # this is for lab test..
+    foc1 = LVMFocuser(tel)  # noqa: F405
+    cam1 = LVMCamera(tel + "e")  # noqa: F405
+    cam2 = LVMCamera(tel + "w")  # noqa: F405, F841
+    cam1 = LVMCamera("test")  # noqa: F405, F841  # this is for lab test..
 
     currentposition = await foc1.getposition(command)
 
@@ -82,7 +76,7 @@ async def fine(command: Command, tel: str):
         return command.fail(fail='Camera error')
     """
 
-    # Picture anaysis
+    # Picture analysis
     starposition = guideimg.findstars()
     fwhm.append(guideimg.calfwhm())
 

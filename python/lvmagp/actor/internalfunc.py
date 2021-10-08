@@ -1,15 +1,15 @@
 import asyncio
 import warnings
+from datetime import datetime
 
 import numpy as np
 # import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
-import astropy.time
+from astropy.time import Time
 from photutils.detection import DAOStarFinder
 from scipy.spatial import KDTree
-import time
 
 
 class GuideImage:
@@ -80,8 +80,8 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                    ycenter - windowradius : ycenter + windowradius,
-                    xcenter - windowradius : xcenter + windowradius,
+                    ycenter - windowradius: ycenter + windowradius,
+                    xcenter - windowradius: xcenter + windowradius,
                 ]
             )
 
@@ -140,17 +140,17 @@ class GuideImage:
                 mididx = line.find(",", 25)
                 endidx = line.find(")", 25)
 
-                self.ra2000 = float(line[startidx + 1 : mididx])
-                self.dec2000 = float(line[mididx + 1 : endidx])
+                self.ra2000 = float(line[startidx + 1: mididx])
+                self.dec2000 = float(line[mididx + 1: endidx])
 
             elif "Field rotation angle" in line:
                 startidx = line.find("is")
                 endidx = line.find("degrees")
 
                 if line[endidx + 8] == "E":
-                    self.pa = float(line[startidx + 3 : endidx - 1])
+                    self.pa = float(line[startidx + 3: endidx - 1])
                 elif line[endidx + 8] == "W":
-                    self.pa = 360 - float(line[startidx + 3 : endidx - 1])
+                    self.pa = 360 - float(line[startidx + 3: endidx - 1])
 
             elif "Total CPU time limit reached!" in line:
                 raise Exception("Astrometry timeout")
@@ -166,53 +166,59 @@ def findfocus(positions, FWHMs):  # both are lists or np.array
     bestfocus = t(bestposition)
     return (bestposition, bestfocus)
 
-def GMST(JD):
-    # Greenwich mean sideral time from
-    # http://aa.usno.navy.mil/faq/docs/GAST.html
-    # GMST = 6.697374558 + 0.06570982441908 D_0 + 1.00273790935 H + 0.000026 T2
-    # It will be necessary to reduce GMST to the range 0h to 24h.
-    # Setting H = 0 in the above formula yields the Greenwich mean sidereal time at 0h UT
 
-    # days from 2000 <<< at UT=12 >>>
-    D2000 = JD - 2451545.0 - 0.5
-
-    iD2000 = np.array(D2000)
-    rD2000 = D2000 - iD2000
-
-    GMST1 = np.mod(6.697374558 + 0.06570982441908 * iD2000 + \
-                   1.00273790935 * (rD2000 * 24), 24)
-
-    return GMST1 * 15.0  # GMST in degree
-
-def GAST(JD):
-    dtor = np.pi/180
-    # days from 2000 <<< at UT=12 >>>
-    D2000 = JD - 2451545.0 - 0.5
-    # calc GAST Greenwich Apparent Sidereal time
-    omega = 125.04 - 0.052954 * D2000  # ;the Longitude of the ascending node of the Moon
-    L = 280.47 + 0.98565 * D2000  # ;the Mean Longitude of the Sun
-    delphi = -0.000319 * np.sin(omega * dtor) - 0.000024 * np.sin(
-        2.0 * L * dtor)  # ; the nutation in longitude, is given in hours
-    epsilon = 23.4393 - 0.0000004 * D2000  # ; the obliquity
-    GAST = GMST(JD) + 15.0 * delphi * np.cos(epsilon * dtor)
-    # GAST in degree
-    return GAST
-
-def cal_pa(ra_h, dec_d, lat_d, long_d):
-    ra =  np.deg2rad(ra_h*15)
+def cal_pa(ra_h, dec_d, long_d, lat_d):
     dec = np.deg2rad(dec_d)
     lat = np.deg2rad(lat_d)
-    long = np.deg2rad(long_d)
 
-    tm = time.gmtime()
-    tstring = time.strftime('%Y-%m-%dT%H:%M:%S', tm)
-    t = astropy.time.Time(tstring, format='isot', scale='utc')
-
-    LST = GAST(t.jd) + long
-    HA = np.mod(LST - ra, 360)
-    pa = np.arctan(-np.sin(HA)/(np.cos(dec)*np.tan(lat)-np.sin(dec)*np.cos(HA)))
+    t = Time(datetime.utcnow(), scale="utc", location=(long_d, lat_d))
+    LST = t.sidereal_time("apparent").value * 15
+    HA = np.mod(LST - ra_h * 15, 360)
+    pa = np.arctan(
+        -np.sin(np.deg2rad(HA)) / (np.cos(dec) * np.tan(lat) - np.sin(dec) * np.cos(np.deg2rad((HA))))
+    )
 
     return np.rad2deg(pa)
+
+
+def StarAltAzi(ra_h, dec_d, long_d, lat_d):
+    dec = np.deg2rad(dec_d)
+    lat = np.deg2rad(lat_d)
+
+    # CALC. the hour angle
+    t = Time(datetime.utcnow(), scale="utc", location=(long_d, lat_d))
+    LST = t.sidereal_time("apparent").value * 15
+    HA = np.mod(LST - ra_h * 15, 360)
+    # CALC. the altitude and azimuth
+    sin_ALT = np.sin(dec) * np.sin(lat) + np.cos(dec) * np.cos(lat) * np.cos(
+        np.deg2rad(HA)
+    )
+    ALT = np.rad2deg(np.arcsin(sin_ALT))
+    cos_AZI = (np.sin(dec) - np.sin(np.deg2rad(ALT)) * np.sin(lat)) / (
+        np.cos(np.deg2rad(ALT)) * np.cos(lat)
+    )
+    AZI = np.mod(np.rad2deg(np.arccos(cos_AZI)), 360)
+    # CORR. the azimuth value for HA
+    if HA < 180:
+        AZI = 360 - AZI
+
+    return ALT, AZI
+
+
+def define_visb_limit(Az):  # or Hour angle..?
+    # input any condition ..
+    alt_low = 30
+    alt_high = 90
+    return alt_low, alt_high
+
+
+def check_target(ra_h, dec_d, long_d, lat_d):
+    alt, az = StarAltAzi(ra_h, dec_d, long_d, lat_d)
+    alt_low, alt_high = define_visb_limit(az)
+    if (alt_low < alt) and (alt < alt_high):
+        return True
+    else:
+        return False
 
 
 async def send_message(command, actor, command_to_send, returnval=False, body=""):

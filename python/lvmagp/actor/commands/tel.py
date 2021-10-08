@@ -1,7 +1,7 @@
 import click
 from clu.command import Command
 
-from lvmagp.actor.internalfunc import *  # noqa: F403
+from lvmagp.actor.internalfunc import send_message  # noqa: F403
 
 from . import parser
 
