@@ -23,15 +23,15 @@ class LVMTANInstrument:
         )
         return cmd
 
-    """
+
     async def moveabs(self, command, position, unit='STEPS'):
         cmd = await send_message(command, self.lvmtan, "moveabsolute %d %s" % (position, unit))
-        return True
+        return cmd
 
     async def moverel(self, command, position, unit='STEPS'):
         cmd = await send_message(command, self.lvmtan, "moverelative %d %s" % (position, unit))
-        return True
-    """
+        return cmd
+'''
 
     async def moveabs(self, command, position, unit="STEPS"):
         task = asyncio.create_task(
@@ -48,7 +48,7 @@ class LVMTANInstrument:
             )
         )
         return task
-
+'''
 
 class LVMFocuser(LVMTANInstrument):
     def __init__(self, tel):
@@ -74,14 +74,8 @@ class LVMTelescope:
             self.lvmpwi = "lvm." + tel + ".pwi"
 
     async def slew_radec2000(self, command, target_ra_h, target_dec_d):
-        task = asyncio.create_task(
-            send_message(
-                command,
-                self.lvmpwi,
-                "gotoradecj2000 %f %f" % (target_ra_h, target_dec_d),
-            )
-        )
-        return task
+        cmd = await send_message(command,self.lvmpwi,"gotoradecj2000 %f %f" % (target_ra_h, target_dec_d))
+        return cmd
 
     async def offset_radec(self, command, ra_arcsec, dec_arcsec):
         if (ra_arcsec == 0) & (dec_arcsec == 0):

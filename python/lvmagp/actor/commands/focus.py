@@ -6,7 +6,7 @@ from lvmagp.actor.internalfunc import send_message  # noqa: F403
 from . import parser
 
 
-lvmtan = "test.first.focus_stage"
+lvmtan = "lvm.sci.foc"
 
 
 @parser.group()

@@ -181,7 +181,7 @@ def cal_pa(ra_h, dec_d, long_d, lat_d):
     return np.rad2deg(pa)
 
 
-def StarAltAzi(ra_h, dec_d, long_d, lat_d):
+def star_altaz(ra_h, dec_d, long_d, lat_d):
     dec = np.deg2rad(dec_d)
     lat = np.deg2rad(lat_d)
 
@@ -213,7 +213,7 @@ def define_visb_limit(Az):  # or Hour angle..?
 
 
 def check_target(ra_h, dec_d, long_d, lat_d):
-    alt, az = StarAltAzi(ra_h, dec_d, long_d, lat_d)
+    alt, az = star_altaz(ra_h, dec_d, long_d, lat_d)
     alt_low, alt_high = define_visb_limit(az)
     if (alt_low < alt) and (alt < alt_high):
         return True

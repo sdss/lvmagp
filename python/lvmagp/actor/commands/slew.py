@@ -22,7 +22,7 @@ async def deg_to_dms(deg):
 @click.argument("TEL", type=str)
 @click.argument("TARGET_RA_H", type=float)
 @click.argument("TARGET_DEC_D", type=float)
-def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
+async def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
     long_d = 118.0
     lat_d = -34.0
 
@@ -38,6 +38,8 @@ def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
     km1 = LVMKMirror(tel)
     cam1 = LVMCamera("test")  # for lab testing
 
+    cmd = []
+
     # Check the target is in reachable area
     if not check_target(target_ra_h, target_dec_d, long_d, lat_d):
         return command.fail(fail="Target is over the limit")
@@ -45,9 +47,10 @@ def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
     # Calculate position angle and rotate K-mirror
     pa = cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
     command.info("Rotate K-mirror to pa = %.3f deg" % pa)
+
     try:
         # kmtask = asyncio.create_task(send_message(command, "lvm.sci.km", "moveabsolute %.4f %s" % (float(pa), "DEG")))  # noqa: E501
-        kmtask = km1.moveabs(command, pa, "DEG")
+        cmd.append(km1.moveabs(command, pa, "DEG"))
     except Exception as e:
         return command.fail(fail="Kmirror error")
 
@@ -61,13 +64,12 @@ def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
         #    "lvm.sci.pwi",
         #    "gotoradecj2000 %f %f" % (target_ra_h, target_dec_d)
         # ))
-        slewtask = await tel1.slew_radec2000(command, target_ra_h, target_dec_d)
+        cmd.append(tel1.slew_radec2000(command, target_ra_h, target_dec_d))
 
     except Exception as e:
         return command.fail(fail="Telescope error")
-
-    await kmtask
-    await slewtask
+    print(cmd)
+    await asyncio.gather(*cmd)
 
     command.info("Initial slew completed.")
 
