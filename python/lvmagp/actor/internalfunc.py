@@ -28,7 +28,7 @@ class GuideImage:
         self.fov = -999
         self.pixelscale = -999
 
-    def findstars(self):
+    def findstars(self, nstar=3):
         daofind = DAOStarFinder(
             fwhm=self.initFWHM, threshold=3.0 * self.std, peakmax=60000 - self.median
         )  # 1sigma = FWHM/(2*sqrt(2ln2)); FWHM = sigma * (2*sqrt(2ln2))
@@ -50,24 +50,22 @@ class GuideImage:
             dist, idx = kdtree.query(positions[i])
             if dist > 5.0 * self.initFWHM:
                 self.liststarpass.append(i)
-            if len(self.liststarpass) >= self.nstar:
+            if len(self.liststarpass) >= nstar:
                 break
 
         self.guidestarposition = positions[self.liststarpass]
+
         if (
-            len(self.liststarpass) != self.nstar
+            len(self.liststarpass) != nstar
         ):  # if there does not exist sufficient stars, just use 1 star.
             self.guidestarposition = self.guidestarposition[0, :]
-
+        self.nstar = len(self.guidestarposition)
         return self.guidestarposition  # list ; [[x1, y1], [x2, y2], [x3, y3]]
 
-    def calfwhm(self):
-
-        if len(self.guidestarposition) == 0:
-            pass
-
+    def twoDgaussianfit(self):
         windowradius = 5  # only integer
-        starsizelist = []
+        plist = []
+
         for i in range(len(self.guidestarposition[:, 0])):
             xcenter = int(self.guidestarposition[i, 0])
             ycenter = int(self.guidestarposition[i, 1])
@@ -80,8 +78,8 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                    ycenter - windowradius: ycenter + windowradius,
-                    xcenter - windowradius: xcenter + windowradius,
+                ycenter - windowradius: ycenter + windowradius,
+                xcenter - windowradius: xcenter + windowradius,
                 ]
             )
 
@@ -89,9 +87,30 @@ class GuideImage:
                 # Ignore model linearity warning from the fitter
                 warnings.simplefilter("ignore")
                 p = fit_p(p_init, X, Y, Z)
-            # print(p.amplitude, p.x_mean, p.y_mean, p.x_fwhm, p.y_fwhm, p.theta)
+                plist.append(p)
+        return plist
+
+    def calflux(self):
+        if len(self.guidestarposition) == 0:
+            pass
+
+        starfluxlist = []
+        plist = self.twoDgaussianfit()
+
+        for p in plist:
+            starfluxlist.append(p.amplitude)
+        return starfluxlist
+
+
+    def calfwhm(self):
+        if len(self.guidestarposition) == 0:
+            pass
+
+        starsizelist = []
+        plist = self.twoDgaussianfit()
+
+        for p in plist:
             starsizelist.append((p.x_fwhm, p.y_fwhm))
-            # print('FWHM : %.3f' % starsizelist[i])
 
         self.FWHM = np.median(np.array(starsizelist))  # float
         return self.FWHM

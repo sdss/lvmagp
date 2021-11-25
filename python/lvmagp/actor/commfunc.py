@@ -2,6 +2,7 @@
 # from cluplus.proxy import Proxy, ProxyException, ProxyPlainMessagException, invoke, unpack
 
 from lvmagp.actor.internalfunc import send_message
+import datetime
 import asyncio
 
 
@@ -60,6 +61,19 @@ class LVMKMirror(LVMTANInstrument):
     def __init__(self, tel):
         super().__init__(tel, "km")
 
+    async def cal_traj(self, command):
+        currenttime = datetime.datetime.now()
+        #cmd = await send_message(command, self.lvmtan, "startProfile %d %s" % (position, unit))
+        return currenttime
+    '''
+    async def startProfile(
+            self,
+            start_date: datetime.datetime,
+            positions: list,
+            frequency: int,
+            samples_per_segment: int,
+            max_error: int,
+    '''
 
 class LVMFibsel(LVMTANInstrument):
     def __init__(self):
