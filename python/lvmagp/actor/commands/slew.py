@@ -95,9 +95,9 @@ async def slew(command: Command,
             # await guideimg.astrometry(ra_h=13, dec_d=-55)
 
             astcmd = []
-            astcmd.append(eastguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
+            astcmd.append(westguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
             if test_KHU is not True:
-                astcmd.append(westguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
+                astcmd.append(eastguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
             await asyncio.gather(*astcmd)
 
         except Exception as e:
