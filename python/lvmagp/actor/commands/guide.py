@@ -4,6 +4,7 @@ from clu.command import Command
 
 from lvmagp.actor.commfunc import *  # noqa: F403
 from lvmagp.actor.internalfunc import *  # noqa: F403
+from lvmagp.actor.user_parameters import usrpars
 
 from . import parser
 
@@ -14,24 +15,12 @@ def guide(*args):
 
 @guide.command()
 @click.argument("TEL", type=str)
-async def start(command: Command, tel: str):
-    exptime = 3  # in seconds
-    pixelscale = 0.5  # in arcsec/pixel
-    halfboxsize = 15  # 1/2 of box in pixel
-    min_snr = 5  # minimum star SNR
+async def start(command: Command,
+                telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
+                westcameras: dict[str, LVMWestCamera],
+                focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
+                tel: str):
 
-    ra_agr = 0.8
-    ra_hys = 0.2
-    dec_agr = 0.8
-    min_dist = 0.3  # in pixel
-
-    lvmcampath = ''
-
-    # safety check?
-    tel1 = LVMTelescope(tel)
-    cam1 = LVMCamera(tel + ".agw")
-    cam2 = LVMCamera(tel + ".age")
-    cam1 = LVMCamera("test")  # for lab testing
 
     global tasklist
     global breaklist
@@ -40,16 +29,20 @@ async def start(command: Command, tel: str):
 
     try:
         if tel == 'sci':
-            tasklist[0] = asyncio.wait_for(autoguide_supervisor(command, tel), timeout=3600)
+            tasklist[0] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
+                westcameras, focusers, kmirrors, tel), timeout=3600)
             await tasklist[0]
         elif tel == 'skye':
-            tasklist[1] = asyncio.wait_for(autoguide_supervisor(command, tel), timeout=3600)
+            tasklist[1] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
+                westcameras, focusers, kmirrors, tel), timeout=3600)
             await tasklist[1]
         elif tel == 'skyw':
-            tasklist[2] = asyncio.wait_for(autoguide_supervisor(command, tel), timeout=3600)
+            tasklist[2] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
+                westcameras, focusers, kmirrors, tel), timeout=3600)
             await tasklist[2]
-        elif tel == 'phot':
-            tasklist[3] = asyncio.wait_for(autoguide_supervisor(command, tel), timeout=3600)
+        elif tel == 'spec':
+            tasklist[3] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
+                westcameras, focusers, kmirrors, tel), timeout=3600)
             await tasklist[3]
         else:
             return command.fail("Wrong telescope name")
@@ -72,12 +65,14 @@ async def stop(command: Command, tel: str):
         return command.fail("Wrong telescope name")
 
 
-async def autoguide_supervisor(command, tel):
-    lvmcampath = ''
+async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
+                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel):
 
-    # initposition, initflux = await register_guide_stars(command, tel)
+    # initposition, initflux = await register_guide_stars(command, telescopes, eastcameras,
+    #                 westcameras, focusers, kmirrors, tel)
     # while 1:
-    #    await autoguiding(command,tel, initposition, initflux)
+    #    await autoguiding(command, telescopes, eastcameras,
+    #                 westcameras, focusers, kmirrors, tel, initposition, initflux)
 
     i = 0
     while 1:
@@ -188,20 +183,13 @@ async def autoguide_supervisor(command, tel):
         command.info('Guide stopped')
         raise
 '''
-async def register_guide_stars(command, tel):
-    exptime = 5  # in seconds
-
-    # safety check?
-    tel1 = LVMTelescope(tel)
-    cam1 = LVMCamera(tel + "e")
-    cam2 = LVMCamera(tel + "w")
-    km1 = LVMKMirror(tel)
-    cam1 = LVMCamera("test")  # for lab testing
+async def register_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
+                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel):
 
     command.info("Taking image...")
     # take an image for astrometry
     try:
-        imgcmd = await cam1.single_exposure(command, exptime)
+        imgcmd = await eastcameras[tel].single_exposure(command, usrpars.ag_exptime)
         '''
             imgcmd = []
             imgcmd.append(cam1.single_exposure(command, exptime))
@@ -223,12 +211,11 @@ async def register_guide_stars(command, tel):
     starflux = guideimg.calflux()
     return starposition, starflux
 
-async def autoguiding(command, tel, initposition, initflux):
-    tel1 = LVMTelescope(tel)
 
-    pixelscale = 0.5  # in arcsec/pixel
-    #halfboxsize = 15  # 1/2 of box in pixel
-    #min_snr = 5  # minimum star SNR
+async def autoguiding(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
+                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
+                      tel, initposition, initflux):
+
     fluxtolerance = 0.2 # tolerance for flux variation of guide star
 
     agressiveness = 0.8
@@ -237,16 +224,17 @@ async def autoguiding(command, tel, initposition, initflux):
 
     initposition = np.array(initposition)
 
-    starposition, starflux = await register_guide_stars(command, tel)
+    starposition, starflux = await register_guide_stars(command, telescopes, eastcameras,
+                westcameras, focusers, kmirrors, tel)
 
-    if np.abs(np.mean(1-np.array(starflux)/np.array(initflux))) > fluxtolerance:
+    if np.abs(np.mean(1-np.array(starflux)/np.array(initflux))) > usrpars.ag_flux_tolerancefluxtolerance:
         return command.error("Star flux variation is too large.")
 
     offset = np.mean(np.array(starposition) - np.array(initposition), axis=0) # in x,y [pixel]
-    offset_arcsec = offset*pixelscale # in x,y(=ra,dec) [arcsec]
+    offset_arcsec = offset*eastcameras[tel].pixelscale # in x,y(=ra,dec) [arcsec]
 
     if (np.sqrt(offset[0]**2+offset[1]**2)) > min_dist:
-        await tel1.offset_radec(command, *offset_arcsec)
+        await telescopes[tel].offset_radec(command, *offset_arcsec)
         return offset_arcsec
 
     else:

@@ -54,7 +54,7 @@ class LVMTANInstrument:
 class LVMFocuser(LVMTANInstrument):
     def __init__(self, tel):
         super().__init__(tel, "foc")
-        print(self.lvmtan)
+        #print(self.lvmtan)
 
 
 class LVMKMirror(LVMTANInstrument):
@@ -87,6 +87,10 @@ class LVMTelescope:
         else:
             self.lvmpwi = "lvm." + tel + ".pwi"
 
+        self.latitude = -999
+        self.longitude = -999
+        self.ag_break = False
+
     async def slew_radec2000(self, command, target_ra_h, target_dec_d):
         cmd = await send_message(command,self.lvmpwi,"gotoradecj2000 %f %f" % (target_ra_h, target_dec_d))
         return cmd
@@ -113,12 +117,26 @@ class LVMTelescope:
 
 # Functions for camera
 class LVMCamera:
-    def __init__(self, cam):
+    def __init__(self):
         self.lvmcam = "lvmcam"
-        self.cam = cam
+        self.cam = "lvmcam"
+        self.offset_x = -999
+        self.offset_y = -999
+        self.pixelscale = -999
+        self.lvmcampath = ''
 
     async def single_exposure(self, command, exptime):
         await send_message(
             command, self.lvmcam, "expose %f 1 %s" % (exptime, self.cam)
         )
         return True
+
+class LVMEastCamera(LVMCamera):
+    def __init__(self, tel):
+        super().__init__()
+        self.cam = tel + 'age'
+
+class LVMWestCamera(LVMCamera):
+    def __init__(self, tel):
+        super().__init__()
+        self.cam = tel + 'agw'

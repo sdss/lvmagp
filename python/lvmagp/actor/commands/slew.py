@@ -4,6 +4,7 @@ from clu.command import Command
 
 from lvmagp.actor.commfunc import *  # noqa: F403
 from lvmagp.actor.internalfunc import *  # noqa: F403
+from lvmagp.actor.user_parameters import usrpars
 
 from . import parser
 
@@ -22,22 +23,16 @@ async def deg_to_dms(deg):
 @click.argument("TEL", type=str)
 @click.argument("TARGET_RA_H", type=float)
 @click.argument("TARGET_DEC_D", type=float)
-async def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: float):
-    long_d = 118.0
-    lat_d = -34.0
+async def slew(command: Command,
+               telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera], westcameras: dict[str, LVMWestCamera],
+               focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
+               tel: str, target_ra_h: float, target_dec_d: float):
 
-    exptime = 3  # in seconds
-    tol_ra_arcsec = 30
-    tol_dec_arcdec = 30
+    test_KHU = True
+    long_d = telescopes[tel].longitude
+    lat_d = telescopes[tel].latitude
+
     max_iter = 1
-    lvmcampath = ''
-
-    # safety check?
-    tel1 = LVMTelescope(tel)
-    cam1 = LVMCamera(tel + ".age")
-    cam2 = LVMCamera(tel + ".agw")
-    km1 = LVMKMirror(tel)
-    cam1 = LVMCamera("test")  # for lab testing
 
     cmd = []
 
@@ -46,19 +41,19 @@ async def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: flo
         return command.fail(fail="Target is over the limit")
 
     # Calculate position angle and rotate K-mirror  :: should be changed to traj method.
-    pa = cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
-    command.info("Rotate K-mirror to pa = %.3f deg" % pa)
+    target_pa_d = cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
+    command.info("Rotate K-mirror to pa = %.3f deg" % target_pa_d)
 
     try:
-        cmd.append(km1.moveabs(command, pa, "DEG"))
+        cmd.append(kmirrors[tel].moveabs(command, target_pa_d, "DEG"))
     except Exception as e:
         return command.fail(fail="Kmirror error")
 
     # send slew command to lvmpwi
     try:
-        await tel1.offset_radec(command, 0, 0)
+        await telescopes[tel].offset_radec(command, 0, 0)
         command.info("Telescope slewing ...")
-        cmd.append(tel1.slew_radec2000(command, target_ra_h, target_dec_d))
+        cmd.append(telescopes[tel].slew_radec2000(command, target_ra_h, target_dec_d))
 
     except Exception as e:
         return command.fail(fail="Telescope error")
@@ -66,66 +61,65 @@ async def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: flo
 
     command.info("Initial slew completed.")
 
-    for iter in range(max_iter + 1):
+    for iter in range(usrpars.aqu_max_iter + 1):
         command.info("Taking image...")
         # take an image for astrometry
         try:
-            imgcmd = await cam1.single_exposure(command, exptime)
-            '''
             imgcmd = []
-            imgcmd.append(cam1.single_exposure(command, exptime))
-            imgcmd.append(cam2.single_exposure(command, exptime))
+            imgcmd.append(eastcameras[tel].single_exposure(command, usrpars.aqu_exptime))
+            if test_KHU is not True:
+                imgcmd.append(westcameras[tel].single_exposure(command, usrpars.aqu_exptime))
             guideimgpath = await asyncio.gather(*imgcmd)
-            '''
+
         except Exception as e:
             return command.fail(fail="Camera error")
 
         command.info("Astrometry ...")
 
-        pwd = os.path.dirname(os.path.abspath(__file__))
-        agpwd = pwd + "/../../../../"
-        # Here lvmcam path and naming rule for finding latest guide image..
+        if 1:  #Here should be changed to the camera version
+            pwd = os.path.dirname(os.path.abspath(__file__))
+            agpwd = pwd + "/../../../../"
+            # Here lvmcam path and naming rule for finding latest guide image..
 
-        guideimgpath = (
-            agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits"
-        )  # noqa: E501
-        guideimg = GuideImage(guideimgpath)  # noqa: F405
-        '''
-        guideimg1 = GuideImage(guideimgpath[0])
-        guideimg2 = GuideImage(guideimgpath[1])
-        '''
+            guideimgpath = (
+                agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits"
+            )  # noqa: E501
+            eastguideimg = GuideImage(guideimgpath)  # noqa: F405
+            westguideimg = GuideImage(guideimgpath)
+
+            if test_KHU is not True:
+                eastguideimg = GuideImage(guideimgpath[0])
+                westguideimg = GuideImage(guideimgpath[1])
+
         try:
-            await guideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d)
             # await guideimg.astrometry(ra_h=13, dec_d=-55)
-            '''
+
             astcmd = []
-            astcmd.append(guideimg1.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
-            astcmd.append(guideimg2.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
+            astcmd.append(eastguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
+            if test_KHU is not True:
+                astcmd.append(westguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
             await asyncio.gather(*astcmd)
-            '''
+
         except Exception as e:
             return command.fail(text="Astrometry timeout")
 
-        ra2000_hms = await deg_to_dms(guideimg.ra2000 / 15)
-        dec2000_dms = await deg_to_dms(guideimg.dec2000)
-        '''
-        ra2000_hms1 = await deg_to_dms(guideimg1.ra2000 / 15)
-        dec2000_dms1 = await deg_to_dms(guideimg1.dec2000)
-        ra2000_hms2 = await deg_to_dms(guideimg2.ra2000 / 15)
-        dec2000_dms2 = await deg_to_dms(guideimg2.dec2000)
-        ra2000_hms = 0.5*(ra2000_hms1 + ra2000_hms2)
-        dec2000_dms = 0.5*(dec2000_dms1 + dec2000_dms2)
-        '''
 
-        comp_ra_arcsec = (target_ra_h * 15 - guideimg.ra2000) * 3600
-        comp_dec_arcsec = (target_dec_d - guideimg.dec2000) * 3600
+        ra2000_d = 0.5*(eastguideimg.ra2000 + westguideimg.dec2000)
+        dec2000_d = 0.5*(eastguideimg.dec2000 + westguideimg.dec2000)
+        pa_d = 0.5*(eastguideimg.pa + westguideimg.pa)
+
+        ra2000_hms = await deg_to_dms(ra2000_d / 15)
+        dec2000_dms = await deg_to_dms(dec2000_d)
+
+        comp_ra_arcsec = (target_ra_h * 15 - ra2000_d) * 3600
+        comp_dec_arcsec = (target_dec_d - dec2000_d) * 3600
 
         command.info(
             Img_ra2000="%02dh %02dm %06.3fs"
             % (ra2000_hms[0], ra2000_hms[1], ra2000_hms[2]),
             Img_dec2000="%02dd %02dm %06.3fs"
             % (dec2000_dms[0], dec2000_dms[1], dec2000_dms[2]),
-            Img_pa="%.3f deg" % guideimg.pa,
+            Img_pa="%.3f deg" % pa_d,
             offset_ra="%.3f arcsec" % comp_ra_arcsec,
             offset_dec="%.3f arcsec" % comp_dec_arcsec,
         )
@@ -134,14 +128,12 @@ async def slew(command: Command, tel: str, target_ra_h: float, target_dec_d: flo
         if iter >= max_iter:
             return command.fail(fail="Compensation failed.")
 
-        if (np.abs(comp_ra_arcsec) > tol_ra_arcsec) & (
-            np.abs(comp_dec_arcsec) > tol_dec_arcdec
-        ):
+        if (np.sqrt(comp_ra_arcsec**2+comp_dec_arcsec**2) > usrpars.slew_tolerance_arcsec):
             command.info(text="Compensating ...")
-            # kmtask = km1.moveabs(command, pa, 'deg')
-            kmtask_comp = km1.moverel(command, -guideimg.pa, "DEG")
-            await tel1.offset_radec(command, comp_ra_arcsec, comp_dec_arcsec)
-            await kmtask_comp
+            cmd = []
+            cmd.append(kmirrors[tel].moverel(command, -pa_d, "DEG"))
+            cmd.append(telescopes[tel].offset_radec(command, comp_ra_arcsec, comp_dec_arcsec))
+            await asyncio.gather(*cmd)
 
         else:
             break
