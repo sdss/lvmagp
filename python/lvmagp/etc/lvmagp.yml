@@ -1,16 +1,16 @@
 # A dictionary of controller name to ??
 sci:
   tel:
-    latitude: -34.0
-    longitude: 118.0
+    latitude: 37.23908
+    longitude: 127.08217
   age:
     pixelscale: null
     offset_x: null
     offset_y: null
   agw:
-    pixelscale: null
-    offset_x: null
-    offset_y: null
+    pixelscale: 2.6
+    offset_x: 0.0
+    offset_y: 0.0
   foc:
     varA: null
   km:
@@ -67,22 +67,6 @@ spec:
   km:
     varB: null
 
-test:
-  tel:
-    latitude: 37.23908
-    longitude: 127.08217
-  age:
-    pixelscale: null
-    offset_x: 0.0
-    offset_y: 0.0
-  agw:
-    pixelscale: null
-    offset_x: null
-    offset_y: null
-  foc:
-    varA: null
-  km:
-    varB: null
 
 # Actor configuration for the AMQPActor class
 actor:

@@ -66,9 +66,9 @@ async def slew(command: Command,
         # take an image for astrometry
         try:
             imgcmd = []
-            imgcmd.append(eastcameras[tel].single_exposure(command, usrpars.aqu_exptime))
+            imgcmd.append(westcameras[tel].single_exposure(command, usrpars.aqu_exptime))
             if test_KHU is not True:
-                imgcmd.append(westcameras[tel].single_exposure(command, usrpars.aqu_exptime))
+                imgcmd.append(eastcameras[tel].single_exposure(command, usrpars.aqu_exptime))
             guideimgpath = await asyncio.gather(*imgcmd)
 
         except Exception as e:
@@ -76,7 +76,7 @@ async def slew(command: Command,
 
         command.info("Astrometry ...")
 
-        if 1:  #Here should be changed to the camera version
+        if 0:  #Here should be changed to the camera version
             pwd = os.path.dirname(os.path.abspath(__file__))
             agpwd = pwd + "/../../../../"
             # Here lvmcam path and naming rule for finding latest guide image..
@@ -84,12 +84,12 @@ async def slew(command: Command,
             guideimgpath = (
                 agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits"
             )  # noqa: E501
-            eastguideimg = GuideImage(guideimgpath)  # noqa: F405
-            westguideimg = GuideImage(guideimgpath)
 
-            if test_KHU is not True:
-                eastguideimg = GuideImage(guideimgpath[0])
-                westguideimg = GuideImage(guideimgpath[1])
+        westguideimg = GuideImage(guideimgpath[0])
+        eastguideimg = westguideimg
+
+        if test_KHU is not True:
+            eastguideimg = GuideImage(guideimgpath[1])
 
         try:
             # await guideimg.astrometry(ra_h=13, dec_d=-55)
@@ -128,7 +128,7 @@ async def slew(command: Command,
         if iter >= max_iter:
             return command.fail(fail="Compensation failed.")
 
-        if (np.sqrt(comp_ra_arcsec**2+comp_dec_arcsec**2) > usrpars.slew_tolerance_arcsec):
+        if (np.sqrt(comp_ra_arcsec**2+comp_dec_arcsec**2) > usrpars.aqu_tolerance_arcsec):
             command.info(text="Compensating ...")
             cmd = []
             cmd.append(kmirrors[tel].moverel(command, -pa_d, "DEG"))

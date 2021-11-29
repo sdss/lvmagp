@@ -10,7 +10,7 @@ from lvmagp.actor.commfunc import LVMTANInstrument,LVMTelescope,LVMEastCamera,LV
 # from scpactor import __version__
 
 __all__ = ["lvmagp"]
-tel_list = ['sci', 'skye', 'skyw', 'spec', 'test']
+tel_list = ['sci', 'skye', 'skyw', 'spec']
 
 
 class lvmagp(AMQPActor):
