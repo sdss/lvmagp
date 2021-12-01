@@ -1,6 +1,7 @@
 import asyncio
 import warnings
 from datetime import datetime
+import os
 
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -115,10 +116,10 @@ class GuideImage:
 
     async def astrometry(self, ra_h=-999, dec_d=-999):
         ospassword = "0000"
-        resultpath = "/home/hojae/Desktop/lvmagp/testimg/astrometry_result/result.txt"
-        timeout = 5
-        scalelow = 0.9
-        scalehigh = 1.1
+        resultpath = os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
+        timeout = 10
+        scalelow = 2
+        scalehigh = 3
         radius = 1
 
         if ra_h == -999:

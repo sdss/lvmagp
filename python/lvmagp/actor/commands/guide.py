@@ -39,6 +39,8 @@ async def start(command: Command,
     else:
         return command.fail(text="Telescope '%s' does not exist" % tel)
 
+    return command.finish()
+
 
 @guide.command()
 @click.argument("TEL", type=str)
@@ -52,7 +54,7 @@ async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcamera
     else:
         return command.fail(text="Telescope '%s' does not exist" % tel)
 
-    return True
+    return command.finish('Guide stopped')
 
 
 async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
@@ -78,7 +80,7 @@ async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eas
             telescopes[tel].ag_break = False
             break
 
-    command.info('Guide stopped')
+    return True
 
 
 ''' Here is old version using task.cancle
@@ -166,7 +168,7 @@ async def autoguide_supervisor(command, tel):
 '''
 async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                                westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
-                               tel, positionguess=None)
+                               tel, positionguess=None):
     global KHU_inner_test
     command.info("Taking image...")
     # take an image for astrometry

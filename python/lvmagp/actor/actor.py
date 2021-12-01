@@ -36,6 +36,21 @@ class lvmagp(AMQPActor):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+
+        self.schema = {
+            "type": "object",
+            "properties": {
+                "fail" : {"type": "string"},
+                "Img_ra2000": {"type": "string"},
+                "Img_dec2000": {"type": "string"},
+                "Img_pa": {"type": "string"},
+                "offset_ra": {"type": "string"},
+                "offset_dec": {"type": "string"},
+            },
+            "additionalProperties": False,
+        }
+        self.load_schema(self.schema, is_file=False)
+
         self.telescopes = {s.name: s for s in telescopes}
         self.eastcameras = {s.name: s for s in eastcameras}
         self.westcameras = {s.name: s for s in westcameras}

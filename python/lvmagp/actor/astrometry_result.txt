@@ -1,0 +1,25 @@
+Reading input file 1 of 1: "/home/sumin/lvmcam/python/lvmcam/assets/test.fits"...
+Extracting sources...
+Downsampling by 2...
+simplexy: found 197 sources.
+Solving...
+Reading file "/home/sumin/lvmcam/python/lvmcam/assets/test.axy"...
+Only searching for solutions within 1 degrees of RA,Dec (83.85,-5.45)
+Field 1 did not solve (index index-4211.fits, field objects 1-10).
+Field 1 did not solve (index index-4210.fits, field objects 1-10).
+Field 1 did not solve (index index-4209.fits, field objects 1-10).
+Field 1 did not solve (index index-4208.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-05.fits, field objects 1-10).
+  log-odds ratio 439.518 (7.58935e+190), 87 match, 0 conflict, 105 distractors, 127 index.
+  RA,Dec = (83.8516,-5.44941), pixel scale 2.59094 arcsec/pix.
+  Hit/miss:   Hit/miss: ++++++-+++++++++++++++++-++++-++++++-++++---+++--++-++-+++--+++-+-+-+++-+++-+-+-+---+---+--+----+--+
+Field 1: solved with index index-4206-05.fits.
+Field 1 solved: writing to file /home/sumin/lvmcam/python/lvmcam/assets/test.solved to indicate this.
+Field: /home/sumin/lvmcam/python/lvmcam/assets/test.fits
+Field center: (RA,Dec) = (83.851870, -5.449307) deg.
+Field center: (RA H:M:S, Dec D:M:S) = (05:35:24.449, -05:26:57.505).
+Field size: 69.2306 x 47.6209 arcminutes
+Field rotation angle: up is 171.703 degrees E of N
+Field parity: pos
+Creating new FITS file "/home/sumin/lvmcam/python/lvmcam/assets/test.new"...
+

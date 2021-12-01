@@ -18,7 +18,7 @@ class LVMTANInstrument:
         cmd = await send_message(
             command,
             self.lvmtan,
-            "getposition %s" % unit,
+            "getPosition %s" % unit,
             returnval=True,
             body="Position",
         )
@@ -26,11 +26,11 @@ class LVMTANInstrument:
 
 
     async def moveabs(self, command, position, unit='STEPS'):
-        cmd = await send_message(command, self.lvmtan, "moveabsolute %d %s" % (position, unit))
+        cmd = await send_message(command, self.lvmtan, "moveAbsolute %d %s" % (position, unit))
         return cmd
 
     async def moverel(self, command, position, unit='STEPS'):
-        cmd = await send_message(command, self.lvmtan, "moverelative %d %s" % (position, unit))
+        cmd = await send_message(command, self.lvmtan, "moveRelative %d %s" % (position, unit))
         return cmd
 '''
 
@@ -94,15 +94,15 @@ class LVMTelescope:
         self.ag_break = False
 
     async def slew_radec2000(self, command, target_ra_h, target_dec_d):
-        cmd = await send_message(command,self.lvmpwi,"gotoradecj2000 %f %f" % (target_ra_h, target_dec_d))
+        cmd = await send_message(command,self.lvmpwi,"gotoRaDecJ2000 %f %f" % (target_ra_h, target_dec_d))
         return cmd
 
     async def reset_offset_radec(self, command):
         await send_message(
-            command, self.lvmpwi, "offset --ra_reset 0"
+            command, self.lvmpwi, "offset --ra_reset"
         )
         await send_message(
-            command, self.lvmpwi, "offset --dec_reset 0"
+            command, self.lvmpwi, "offset --dec_reset"
         )
 
         return True
@@ -132,9 +132,15 @@ class LVMCamera:
 
     async def single_exposure(self, command, exptime):
         path = await send_message(
-            command, self.lvmcam, "expose %f 1 %s" % (exptime, self.cam), returnval=True, body="0"
+            command, self.lvmcam, "expose %f 1 %s" % (exptime, self.cam), returnval=True, body="PATH"
         )
-        return path
+        return path["0"]
+
+    async def test_exposure(self, command, exptime):
+        path = await send_message(
+            command, self.lvmcam, "expose -t %f 1 %s" % (exptime, self.cam), returnval=True, body="PATH"
+        )
+        return path["0"]
 
 class LVMEastCamera(LVMCamera):
     def __init__(self, tel):

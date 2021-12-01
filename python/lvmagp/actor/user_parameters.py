@@ -9,7 +9,7 @@ class usrpars():
 
     # aquisition parameters
     aqu_exptime = 5  #in seconds
-    aqu_max_iter = 1
+    aqu_max_iter = 2
     aqu_tolerance_arcsec = 30.0
 
     # autoguide paramters
