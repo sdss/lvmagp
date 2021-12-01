@@ -22,6 +22,8 @@ class GuideImage:
         self.data, self.hdr = self.hdu[0].data, self.hdu[0].header
         self.mean, self.median, self.std = sigma_clipped_stats(self.data, sigma=3.0)
         self.guidestarposition = []
+        self.guidestarflux = []
+        self.guidestarsize = []
         self.ra2000 = -999
         self.dec2000 = -999
         self.pa = -999
@@ -60,7 +62,10 @@ class GuideImage:
         ):  # if there does not exist sufficient stars, just use 1 star.
             self.guidestarposition = self.guidestarposition[0, :]
         self.nstar = len(self.guidestarposition)
-        return self.guidestarposition  # list ; [[x1, y1], [x2, y2], [x3, y3]]
+
+        self.update_guidestar_properties()
+
+        return self.guidestarposition  # array ; [[x1, y1], [x2, y2], [x3, y3]]
 
     def twoDgaussianfit(self):
         windowradius = 5  # only integer
@@ -90,30 +95,23 @@ class GuideImage:
                 plist.append(p)
         return plist
 
-    def calflux(self):
+    def update_guidestar_properties(self):
         if len(self.guidestarposition) == 0:
             pass
 
-        starfluxlist = []
         plist = self.twoDgaussianfit()
 
         for p in plist:
-            starfluxlist.append(p.amplitude)
-        return starfluxlist
+            self.guidestarflux.append(p.amplitude)
+            self.guidestarposition.append([p.x_mean, p.y_mean])
+            self.guidestarsize.append([p.x_fwhm, p.y_fwhm])
 
+        self.guidestarflux = np.array(self.guidestarflux)
+        self.guidestarposition = np.array(self.guidestarposition)
+        self.guidestarsize = np.array(self.guidestarsize)
+        self.FWHM = np.median(self.guidestarsize)  # float
 
-    def calfwhm(self):
-        if len(self.guidestarposition) == 0:
-            pass
-
-        starsizelist = []
-        plist = self.twoDgaussianfit()
-
-        for p in plist:
-            starsizelist.append((p.x_fwhm, p.y_fwhm))
-
-        self.FWHM = np.median(np.array(starsizelist))  # float
-        return self.FWHM
+        return True
 
     async def astrometry(self, ra_h=-999, dec_d=-999):
         ospassword = "0000"

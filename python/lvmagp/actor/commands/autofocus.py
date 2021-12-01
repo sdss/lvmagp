@@ -78,7 +78,8 @@ async def fine(command: Command, tel: str):
 
     # Picture analysis
     starposition = guideimg.findstars()
-    fwhm.append(guideimg.calfwhm())
+    guideimg.update_guidestar_properties()
+    fwhm.append(guideimg.FWHM)
 
     for iteration in range(repeat - 1):
         targetposition = currentposition + incremental
@@ -92,7 +93,8 @@ async def fine(command: Command, tel: str):
 
         guideimg = GuideImage(guideimglist[guideimgidx[iteration]])  # noqa: F405
         guideimg.guidestarposition = starposition
-        fwhm.append(guideimg.calfwhm())
+        guideimg.update_guidestar_properties()
+        fwhm.append(guideimg.FWHM)
 
     # Fitting
     bestposition, bestfocus = findfocus(position, fwhm)  # noqa: F405

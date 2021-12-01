@@ -7,10 +7,12 @@ sci:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   agw:
     pixelscale: 2.6
     offset_x: 0.0
     offset_y: 0.0
+    rotationangle: null
   foc:
     varA: null
   km:

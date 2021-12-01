@@ -32,8 +32,6 @@ async def slew(command: Command,
     long_d = telescopes[tel].longitude
     lat_d = telescopes[tel].latitude
 
-    max_iter = 1
-
     cmd = []
 
     # Check the target is in reachable area
@@ -51,7 +49,7 @@ async def slew(command: Command,
 
     # send slew command to lvmpwi
     try:
-        await telescopes[tel].offset_radec(command, 0, 0)
+        await telescopes[tel].reset_offset_radec(command)
         command.info("Telescope slewing ...")
         cmd.append(telescopes[tel].slew_radec2000(command, target_ra_h, target_dec_d))
 
@@ -125,7 +123,7 @@ async def slew(command: Command,
         )
 
         # Compensation  // Compensation for K-mirror based on astrometry result?  may be by offset method..
-        if iter >= max_iter:
+        if iter >= usrpars.aqu_max_iter:
             return command.fail(fail="Compensation failed.")
 
         if (np.sqrt(comp_ra_arcsec**2+comp_dec_arcsec**2) > usrpars.aqu_tolerance_arcsec):

@@ -8,6 +8,8 @@ from lvmagp.actor.user_parameters import usrpars
 
 from . import parser
 
+KHU_inner_test = True
+
 @parser.group()
 def guide(*args):
     pass
@@ -21,80 +23,57 @@ async def start(command: Command,
                 focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                 tel: str):
 
+    if tel in telescopes:
+        try:
+            telescopes[tel].ag_task = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
+                    westcameras, focusers, kmirrors, tel), timeout=3600)
+            await telescopes[tel].ag_task
 
-    global tasklist
-    global breaklist
-    tasklist = [0, 0, 0, 0]
-    breaklist = [False, False, False, False]
+        except asyncio.TimeoutError:
+            command.error("Autoguide timeout")
 
-    try:
-        if tel == 'sci':
-            tasklist[0] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
-                westcameras, focusers, kmirrors, tel), timeout=3600)
-            await tasklist[0]
-        elif tel == 'skye':
-            tasklist[1] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
-                westcameras, focusers, kmirrors, tel), timeout=3600)
-            await tasklist[1]
-        elif tel == 'skyw':
-            tasklist[2] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
-                westcameras, focusers, kmirrors, tel), timeout=3600)
-            await tasklist[2]
-        elif tel == 'spec':
-            tasklist[3] = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
-                westcameras, focusers, kmirrors, tel), timeout=3600)
-            await tasklist[3]
-        else:
-            return command.fail("Wrong telescope name")
-    except asyncio.TimeoutError:
-        command.error("Autoguide timeout")
+        finally:
+            telescopes[tel].ag_task = None
+    else:
+        return command.fail(text="Telescope '%s' does not exist" % tel)
 
 
 @guide.command()
 @click.argument("TEL", type=str)
-async def stop(command: Command, tel: str):
-    if tel == 'sci':
-        breaklist[0] = True
-    elif tel == 'skye':
-        breaklist[1] = True
-    elif tel == 'skyw':
-        breaklist[2] = True
-    elif tel == 'phot':
-        breaklist[3] = True
+async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
+                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel: str):
+    if tel in telescopes:
+        if telescopes[tel].ag_task is not None:
+            telescopes[tel].ag_break = True
+        else:
+            return command.fail(text="There is no autoguiding loop for telescope '%s'" % tel)
     else:
-        return command.fail("Wrong telescope name")
+        return command.fail(text="Telescope '%s' does not exist" % tel)
+
+    return True
 
 
 async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                       westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel):
 
-    # initposition, initflux = await register_guide_stars(command, telescopes, eastcameras,
-    #                 westcameras, focusers, kmirrors, tel)
-    # while 1:
-    #    await autoguiding(command, telescopes, eastcameras,
-    #                 westcameras, focusers, kmirrors, tel, initposition, initflux)
+    global KHU_inner_test
+    if KHU_inner_test:
+        i = 0
+    else:
+        initposition, initflux = await find_guide_stars(command, telescopes, eastcameras,
+                                                        westcameras, focusers, kmirrors, tel, register=True)
 
-    i = 0
     while 1:
-        command.info("%s %d" % (tel, i))
-        i = i + 1
-        await asyncio.sleep(8)
+        if KHU_inner_test:
+            command.info("%s %d" % (tel, i))
+            i = i + 1
+            await asyncio.sleep(8)
+        else:
+            await autoguiding(command, telescopes, eastcameras,
+                              westcameras, focusers, kmirrors, tel, initposition, initflux)
 
-        if tel == 'sci' and tasklist[0]!=0 and breaklist[0] is True:
-            tasklist[0] = 0
-            breaklist[0] = False
-            break
-        elif tel == 'skye' and tasklist[1]!=0 and breaklist[1] is True:
-            tasklist[1] = 0
-            breaklist[1] = False
-            break
-        elif tel == 'skyw' and tasklist[2]!=0 and breaklist[2] is True:
-            tasklist[2] = 0
-            breaklist[2] = False
-            break
-        elif tel == 'phot' and tasklist[3]!=0 and breaklist[3] is True:
-            tasklist[3] = 0
-            breaklist[3] = False
+        if telescopes[tel].ag_break is True:
+            telescopes[tel].ag_break = False
             break
 
     command.info('Guide stopped')
@@ -183,32 +162,38 @@ async def autoguide_supervisor(command, tel):
         command.info('Guide stopped')
         raise
 '''
-async def register_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel):
-
+async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
+                               westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
+                               tel, positionguess=None)
+    global KHU_inner_test
     command.info("Taking image...")
     # take an image for astrometry
     try:
-        imgcmd = await eastcameras[tel].single_exposure(command, usrpars.ag_exptime)
-        '''
-            imgcmd = []
-            imgcmd.append(cam1.single_exposure(command, exptime))
-            imgcmd.append(cam2.single_exposure(command, exptime))
-            guideimgpath = await asyncio.gather(*imgcmd)
-        '''
+        imgcmd = []
+        imgcmd.append(westcameras[tel].single_exposure(command, usrpars.ag_exptime))
+
+        if not KHU_inner_test:
+            imgcmd.append(eastcameras[tel].single_exposure(command, usrpars.ag_exptime))
+
+        guideimgpath = await asyncio.gather(*imgcmd)
+
     except Exception as e:
         return command.fail(fail="Camera error")
 
-    pwd = os.path.dirname(os.path.abspath(__file__))
-    agpwd = pwd + "/../../../../"
-    # Here lvmcam path and naming rule for finding latest guide image..
+    westguideimg = GuideImage(guideimgpath[0])
+    eastguideimg = westguideimg
 
-    guideimgpath = (
-            agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits"
-    )  # noqa: E501
-    guideimg = GuideImage(guideimgpath)  # noqa: F405
-    starposition = guideimg.findstars()
-    starflux = guideimg.calflux()
+    if not KHU_inner_test:
+        eastguideimg = GuideImage(guideimgpath[1])
+
+    if positionguess is None:
+        starposition = westguideimg.findstars()
+    else:
+        westguideimg.guidestarposition = positionguess
+        westguideimg.update_guidestar_properties()
+        starposition = westguideimg.guidestarposition
+    starflux = westguideimg.guidestarflux
+
     return starposition, starflux
 
 
@@ -216,24 +201,16 @@ async def autoguiding(command, telescopes: dict[str, LVMTelescope], eastcameras:
                       westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                       tel, initposition, initflux):
 
-    fluxtolerance = 0.2 # tolerance for flux variation of guide star
+    starposition, starflux = await find_guide_stars(command, telescopes, eastcameras,
+                westcameras, focusers, kmirrors, tel, positionguess=initposition)
 
-    agressiveness = 0.8
-    #ra_hys = 0.2
-    min_dist = 0.3  # in pixel
-
-    initposition = np.array(initposition)
-
-    starposition, starflux = await register_guide_stars(command, telescopes, eastcameras,
-                westcameras, focusers, kmirrors, tel)
-
-    if np.abs(np.mean(1-np.array(starflux)/np.array(initflux))) > usrpars.ag_flux_tolerancefluxtolerance:
+    if np.abs(np.average(starflux/initflux - 1), weight=np.log10(initflux)) > usrpars.ag_flux_tolerance:
         return command.error("Star flux variation is too large.")
 
-    offset = np.mean(np.array(starposition) - np.array(initposition), axis=0) # in x,y [pixel]
+    offset = np.mean(starposition - initposition, axis=0) # in x,y [pixel]
     offset_arcsec = offset*eastcameras[tel].pixelscale # in x,y(=ra,dec) [arcsec]
 
-    if (np.sqrt(offset[0]**2+offset[1]**2)) > min_dist:
+    if (np.sqrt(offset[0]**2+offset[1]**2)) > usrpars.ag_min_offset:
         await telescopes[tel].offset_radec(command, *offset_arcsec)
         return offset_arcsec
 
