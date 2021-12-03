@@ -282,6 +282,8 @@ async def autoguiding(command, telescopes: dict[str, LVMTelescope], eastcameras:
     offset_arcsec[0] = offset_arcsec[0]/np.cos(decj2000_deg)
 
     if (np.sqrt(offset[0]**2+offset[1]**2)) > usrpars.ag_min_offset:
+        print("compensate: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel" %
+              (offset_arcsec[0], offset_arcsec[1], offset[0], offset[1]))
         await telescopes[tel].offset_radec(command, *offset_arcsec)
         return offset_arcsec
 
