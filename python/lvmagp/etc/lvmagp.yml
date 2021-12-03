@@ -81,5 +81,5 @@ actor:
   name: lvmagp
   host: localhost
   port: 5672
-  version: '0.2.0-alpha'
+  version: '0.2.1-alpha'
   log_dir: '../../logs'

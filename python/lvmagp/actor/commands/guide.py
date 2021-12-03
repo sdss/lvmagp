@@ -25,6 +25,17 @@ async def start(command: Command,
                 westcameras: dict[str, LVMWestCamera],
                 focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                 tel: str, useteldata: bool):
+    """
+    Start the autoguide sequence.
+
+    Parameters
+    ----------
+    tel
+        Telescope to autoguide
+    useteldata
+        If ``useteldata`` is flagged, the sequence will use the pixel scale and rotation angle from LVMTelescope.
+        Otherwise, the sequence will get pixel scale from LVMCamera and it assumes that the camera is north-oriented.
+    """
 
     if tel in telescopes:
         try:
@@ -47,6 +58,14 @@ async def start(command: Command,
 @click.argument("TEL", type=str)
 async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                       westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel: str):
+    """
+    Stop the autoguide sequence.
+
+    Parameters
+    ----------
+    tel
+        Telescope to stop autoguide
+    """
     if tel in telescopes:
         if telescopes[tel].ag_task is not None:
             telescopes[tel].ag_break = True
@@ -63,6 +82,14 @@ async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcamera
 async def calibration(command: Command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                       westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                       tel: str):
+    """
+    Run calibration sequence to calculate the transformation from the equatorial coordinates to the xy coordinates of the image.
+
+    Parameters
+    ----------
+    tel
+        Telescope to be calibrated
+    """
     global KHU_inner_test
     offset_per_step = usrpars.ag_cal_offset_per_step
     num_step = usrpars.ag_cal_num_step
@@ -118,7 +145,18 @@ async def calibration(command: Command, telescopes: dict[str, LVMTelescope], eas
 
 async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                       westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel, useteldata):
+    """
+    Manage the autoguide sequence.
+    It starts real autoguide loop and keeps it until the break signal comes.
 
+    Parameters
+    ----------
+    tel
+        Telescope to autoguide
+    useteldata
+        If ``useteldata`` is flagged, the sequence will use the pixel scale and rotation angle from LVMTelescope.
+        Otherwise, the sequence will get pixel scale from LVMCamera and it assumes that the camera is north-oriented.
+    """
     global KHU_inner_test
     if KHU_inner_test:
         i = 0
@@ -228,6 +266,18 @@ async def autoguide_supervisor(command, tel):
 async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                                westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                                tel, positionguess=None):
+    """
+    Expose an image, and find three guide stars from the image.
+    Also calculate the center coordinates and flux of found stars.
+
+    Parameters
+    ----------
+    tel
+        Telescope to autoguide
+    positionguess
+        Initial guess of guidestar position. It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
+        If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding based on ``positionguess`` without finding new stars.
+    """
     global KHU_inner_test
     command.info("Taking image...")
     # take an image for astrometry
@@ -263,7 +313,22 @@ async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcam
 async def autoguiding(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
                       westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                       tel, initposition, initflux, useteldata):
+    """
+    Expose an image, and calculate offset from the image and initial values.
+    Compensate the offset.
 
+    Parameters
+    ----------
+    tel
+        Telescope to autoguide
+    initposition
+        Position of guide stars when the autoguide is started
+    initflux
+        Flux of guide stars when the autoguide is started
+    positionguess
+        Initial guess of guidestar position. It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
+        If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding based on ``positionguess`` without finding new stars.
+    """
     starposition, starflux = await find_guide_stars(command, telescopes, eastcameras,
                 westcameras, focusers, kmirrors, tel, positionguess=initposition)
 

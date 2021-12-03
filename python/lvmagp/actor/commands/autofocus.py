@@ -17,12 +17,28 @@ def autofocus(*args):
 @autofocus.command()
 @click.argument("TEL", type=str)
 async def coarse(command: Command, tel: str):
+    """
+    Find the focus coarsely by scanning whole reachable position.
+
+    Parameters
+    ----------
+    tel
+        The telescope to be focused
+    """
     pass
 
 
 @autofocus.command()
 @click.argument("TEL", type=str)
 async def fine(command: Command, tel: str):
+    """
+    Find the optimal focus position which is near the current position.
+
+    Parameters
+    ----------
+    tel
+        The telescope to be focused
+    """
     position, fwhm = [], []
     incremental = 100
     repeat = 5

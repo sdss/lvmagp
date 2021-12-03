@@ -9,6 +9,15 @@ from lvmagp.actor.user_parameters import usrpars
 from . import parser
 
 async def deg_to_dms(deg):
+    """
+    Convert the number in degree unit into a tuple consists of degree, minutes, and seconds.
+    Degree and minutes is integer, and seconds is float.
+
+    Parameters
+    ----------
+    exptime
+        Exposure time
+    """
     absdeg = np.abs(deg)
     d = np.floor(absdeg)
     m = np.floor((absdeg - d) * 60)
@@ -26,6 +35,18 @@ async def slew(command: Command,
                telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera], westcameras: dict[str, LVMWestCamera],
                focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
                tel: str, target_ra_h: float, target_dec_d: float):
+    """
+    Slew the telescope to the given equatorial coordinate (J2000).
+
+    Parameters
+    ----------
+    tel
+        Telescope to slew
+    target_ra_h
+        The right ascension (J2000) of the target in hours
+    target_dec_d
+        The declination (J2000) of the target in degrees
+    """
 
     test_KHU = True
     long_d = telescopes[tel].longitude

@@ -14,6 +14,14 @@ from scipy.spatial import KDTree
 
 
 class GuideImage:
+    """
+    Class for the guide camera images.
+
+    Parameters
+    ----------
+    filepath
+        Path of the image file
+    """
     def __init__(self, filepath):
         self.filepath = filepath
         self.nstar = 3
@@ -32,6 +40,15 @@ class GuideImage:
         self.pixelscale = -999
 
     def findstars(self, nstar=3):
+        """
+        Find ``nstar`` stars using DAOFind and KD tree for sequences of lvmagp.
+        The result is given by np.ndarray lookes like [[x1, y1], [x2, y2], [x3, y3], ...], and it is also saved in ``self.guidestarposition``.
+
+        Parameters
+        ----------
+        nstar
+            The number of stars to be found
+        """
         daofind = DAOStarFinder(
             fwhm=self.initFWHM, threshold=3.0 * self.std, peakmax=60000 - self.median
         )  # 1sigma = FWHM/(2*sqrt(2ln2)); FWHM = sigma * (2*sqrt(2ln2))
@@ -69,6 +86,9 @@ class GuideImage:
         return self.guidestarposition  # array ; [[x1, y1], [x2, y2], [x3, y3]]
 
     def twoDgaussianfit(self):
+        """
+        Condunt 2D Gaussian fitting to find center, flux of the stars in ``self.guidestarposition``.
+        """
         windowradius = 5  # only integer
         plist = []
 
@@ -97,6 +117,9 @@ class GuideImage:
         return plist
 
     def update_guidestar_properties(self):
+        """
+        Using ``twoDGaussianfit`` method, update the guidestar properties in ``self.guidestarflux``, ``self.guidestarposition``, ``self.guidestarsize``, and ``slef.FWHM``.
+        """
         if len(self.guidestarposition) == 0:
             pass
 
@@ -115,6 +138,17 @@ class GuideImage:
         return True
 
     async def astrometry(self, ra_h=-999, dec_d=-999):
+        """
+        Conduct astrometry to find where the image is taken.
+        Astromery result is saved in astrometry_result.txt in same directory with this python file, also key result (ra,dec,pa) is saved to ``self.ra2000``, ``self.dec2000``, and ``self.pa``.
+
+        Parameters
+        ----------
+        ra_h
+            The initial guess for right ascension (J2000) in hours
+        dec_d
+            The initial guess for declination (J2000) in degrees
+        """
         ospassword = "0000"
         resultpath = os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
         timeout = 10
@@ -177,6 +211,16 @@ class GuideImage:
 
 
 def findfocus(positions, FWHMs):  # both are lists or np.array
+    """
+    Find the optimal focus using LSQ fitting.
+
+    Parameters
+    ----------
+    positions
+        The positions (encoder values) at each measurement
+    FWHMs
+        The measured FWHMs at each measurement
+    """
     t_init = models.Polynomial1D(degree=2)
     fit_t = fitting.LinearLSQFitter()
     t = fit_t(t_init, positions, FWHMs)
@@ -186,6 +230,20 @@ def findfocus(positions, FWHMs):  # both are lists or np.array
 
 
 def cal_pa(ra_h, dec_d, long_d, lat_d):
+    """
+    Calculate position angle at given position and location
+
+    Parameters
+    ----------
+    ra_h
+        The right ascension (J2000) in hours
+    dec_d
+        The declination (J2000) in degrees
+    long_d
+        Longitude in degrees
+    lat_d
+        Latitude in degrees
+    """
     dec = np.deg2rad(dec_d)
     lat = np.deg2rad(lat_d)
 
@@ -200,6 +258,20 @@ def cal_pa(ra_h, dec_d, long_d, lat_d):
 
 
 def star_altaz(ra_h, dec_d, long_d, lat_d):
+    """
+    Calculate the alt-az coordinates at now from the equatorial coordinates and location
+
+    Parameters
+    ----------
+    ra_h
+        The right ascension (J2000) in hours
+    dec_d
+        The declination (J2000) in degrees
+    long_d
+        Longitude in degrees
+    lat_d
+        Latitude in degrees
+    """
     dec = np.deg2rad(dec_d)
     lat = np.deg2rad(lat_d)
 
@@ -224,6 +296,15 @@ def star_altaz(ra_h, dec_d, long_d, lat_d):
 
 
 def define_visb_limit(Az):  # or Hour angle..?
+    """
+    Define the altitude limit at given azimuth angle.
+    Now it returns 30<=Alt<=90 at any azimuth.
+
+    Parameters
+    ----------
+    Az
+        Azimuth to calculate the limit
+    """
     # input any condition ..
     alt_low = 30
     alt_high = 90
@@ -231,6 +312,20 @@ def define_visb_limit(Az):  # or Hour angle..?
 
 
 def check_target(ra_h, dec_d, long_d, lat_d):
+    """
+    Using the limit defined in ``define_visb_limit``, check whether the target is in observable area or not.
+
+    Parameters
+    ----------
+    ra_h
+        The right ascension (J2000) in hours
+    dec_d
+        The declination (J2000) in degrees
+    long_d
+        Longitude in degrees
+    lat_d
+        Latitude in degrees
+    """
     alt, az = star_altaz(ra_h, dec_d, long_d, lat_d)
     alt_low, alt_high = define_visb_limit(az)
     if (alt_low < alt) and (alt < alt_high):
@@ -240,6 +335,20 @@ def check_target(ra_h, dec_d, long_d, lat_d):
 
 
 async def send_message(command, actor, command_to_send, returnval=False, body=""):
+    """
+    Send command to the other actor and return reply from the command if needed.
+
+    Parameters
+    ----------
+    actor
+        The name of the actor which the command to be sent.
+    command_to_send
+        The string of message to be sent to ``actor``.
+    returnval
+        If ``returnval=True``, it receives the return (``command.finish``) from the ``actor``.
+    body
+        The needed body from the returns.
+    """
     cmd = await command.actor.send_command(actor, command_to_send)
     cmdwait = await cmd
 
