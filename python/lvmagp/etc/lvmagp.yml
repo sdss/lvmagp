@@ -9,10 +9,10 @@ sci:
     offset_y: null
     rotationangle: null
   agw:
-    pixelscale: 2.6
+    pixelscale: 2.60
     offset_x: 0.0
     offset_y: 0.0
-    rotationangle: null
+    rotationangle: 0.0
   foc:
     varA: null
   km:
@@ -26,10 +26,12 @@ skye:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   agw:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   foc:
     varA: null
   km:
@@ -43,10 +45,12 @@ skyw:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   agw:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   foc:
     varA: null
   km:
@@ -60,10 +64,12 @@ spec:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   agw:
     pixelscale: null
     offset_x: null
     offset_y: null
+    rotationangle: null
   foc:
     varA: null
   km:
@@ -75,3 +81,5 @@ actor:
   name: lvmagp
   host: localhost
   port: 5672
+  version: '0.2.0-alpha'
+  log_dir: '../../logs'

@@ -3,6 +3,7 @@
 
 from lvmagp.actor.internalfunc import send_message
 import datetime
+import numpy as np
 import asyncio
 
 
@@ -90,6 +91,10 @@ class LVMTelescope:
         self.latitude = -999
         self.longitude = -999
         self.rotationangle = -999
+
+        self.scale_matrix = np.matrix([[1,1],   #[x_ra , y_ra ]
+                                       [1,1]])  #[x_dec, y_dec]
+
         self.ag_task = None
         self.ag_break = False
 
@@ -107,7 +112,6 @@ class LVMTelescope:
 
         return True
 
-
     async def offset_radec(self, command, ra_arcsec, dec_arcsec):
 
         await send_message(
@@ -119,6 +123,12 @@ class LVMTelescope:
 
         return True
 
+    async def get_dec2000_deg(self, command):
+        dec2000 = await send_message(
+            command, self.lvmpwi, "status", returnval=True, body="dec_j2000_degs"
+        )
+        return dec2000
+
 
 # Functions for camera
 class LVMCamera:
@@ -128,6 +138,7 @@ class LVMCamera:
         self.offset_x = -999
         self.offset_y = -999
         self.pixelscale = -999
+        self.rotationangle = -999
         self.lvmcampath = ''
 
     async def single_exposure(self, command, exptime):

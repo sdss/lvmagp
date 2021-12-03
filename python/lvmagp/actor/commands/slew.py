@@ -8,7 +8,6 @@ from lvmagp.actor.user_parameters import usrpars
 
 from . import parser
 
-
 async def deg_to_dms(deg):
     absdeg = np.abs(deg)
     d = np.floor(absdeg)
@@ -56,6 +55,7 @@ async def slew(command: Command,
     command.info("Initial slew completed.")
 
     for iter in range(usrpars.aqu_max_iter + 1):
+        log.info("Taking image...")
         command.info("Taking image...")
         # take an image for astrometry
         try:
@@ -95,6 +95,7 @@ async def slew(command: Command,
             cmd = await asyncio.gather(*astcmd)
 
         except Exception as e:
+            log.error("Astrometry timeout")
             return command.fail(text="Astrometry timeout")
 
 

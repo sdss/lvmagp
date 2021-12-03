@@ -19,5 +19,8 @@ class usrpars():
     ag_min_offset = 0.3  # minimum offset to do correction in pixel
     ag_flux_tolerance = 0.2  # maximum variability of flux due to seeing to identify the guide star
 
+    ag_cal_offset_per_step = 4.0
+    ag_cal_num_step = 2
+
 
 

@@ -46,6 +46,10 @@ class lvmagp(AMQPActor):
                 "Img_pa": {"type": "string"},
                 "offset_ra": {"type": "string"},
                 "offset_dec": {"type": "string"},
+                "xscale_ra": {"type": "float"},
+                "yscale_ra": {"type": "float"},
+                "xscale_dec": {"type": "float"},
+                "yscale_dec": {"type": "float"}
             },
             "additionalProperties": False,
         }
@@ -74,11 +78,13 @@ class lvmagp(AMQPActor):
                 instance.eastcameras[ctrname].pixelscale = ctr['age']['pixelscale']
                 instance.eastcameras[ctrname].offset_x = ctr['age']['offset_x']
                 instance.eastcameras[ctrname].offset_y = ctr['age']['offset_y']
+                instance.eastcameras[ctrname].rotationangle = ctr['age']['rotationangle']
 
                 instance.westcameras.update({ctrname: LVMWestCamera(ctrname)})
                 instance.westcameras[ctrname].pixelscale = ctr['agw']['pixelscale']
                 instance.westcameras[ctrname].offset_x = ctr['agw']['offset_x']
                 instance.westcameras[ctrname].offset_y = ctr['agw']['offset_y']
+                instance.westcameras[ctrname].rotationangle = ctr['agw']['rotationangle']
 
                 instance.focusers.update({ctrname: LVMFocuser(ctrname)})
 
