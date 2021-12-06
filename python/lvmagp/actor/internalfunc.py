@@ -28,11 +28,11 @@ class GuideImage:
         self.initFWHM = 3
         self.FWHM = -999
         self.hdu = fits.open(self.filepath)
-        self.data, self.hdr = self.hdu[0].data, self.hdu[0].header
+        self.data, self.hdr = self.hdu[0].data[0], self.hdu[0].header
         self.mean, self.median, self.std = sigma_clipped_stats(self.data, sigma=3.0)
-        self.guidestarposition = []
-        self.guidestarflux = []
-        self.guidestarsize = []
+        self.guidestarposition = np.zeros(1)
+        self.guidestarflux = np.zeros(1)
+        self.guidestarsize = np.zeros(1)
         self.ra2000 = -999
         self.dec2000 = -999
         self.pa = -999
@@ -89,7 +89,7 @@ class GuideImage:
         """
         Condunt 2D Gaussian fitting to find center, flux of the stars in ``self.guidestarposition``.
         """
-        windowradius = 5  # only integer
+        windowradius = 10  # only integer
         plist = []
 
         for i in range(len(self.guidestarposition[:, 0])):
@@ -124,15 +124,15 @@ class GuideImage:
             pass
 
         plist = self.twoDgaussianfit()
-
+        flux, position, size = [], [], []
         for p in plist:
-            self.guidestarflux.append(p.amplitude)
-            self.guidestarposition.append([p.x_mean, p.y_mean])
-            self.guidestarsize.append([p.x_fwhm, p.y_fwhm])
+            flux.append(p.amplitude.value)
+            position.append([p.x_mean.value, p.y_mean.value])
+            size.append([p.x_fwhm, p.y_fwhm])
 
-        self.guidestarflux = np.array(self.guidestarflux)
-        self.guidestarposition = np.array(self.guidestarposition)
-        self.guidestarsize = np.array(self.guidestarsize)
+        self.guidestarflux = np.array(flux)
+        self.guidestarposition = np.array(position)
+        self.guidestarsize = np.array(size)
         self.FWHM = np.median(self.guidestarsize)  # float
 
         return True

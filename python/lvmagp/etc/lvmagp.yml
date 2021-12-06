@@ -12,7 +12,7 @@ sci:
     pixelscale: 2.60
     offset_x: 0.0
     offset_y: 0.0
-    rotationangle: 0.0
+    rotationangle: 100.0
   foc:
     varA: null
   km:
@@ -82,4 +82,4 @@ actor:
   host: localhost
   port: 5672
   version: '0.2.1-alpha'
-  log_dir: '../../logs'
+  log_dir: './logs'

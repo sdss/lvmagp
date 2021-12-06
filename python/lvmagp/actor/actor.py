@@ -46,10 +46,10 @@ class lvmagp(AMQPActor):
                 "Img_pa": {"type": "string"},
                 "offset_ra": {"type": "string"},
                 "offset_dec": {"type": "string"},
-                "xscale_ra": {"type": "float"},
-                "yscale_ra": {"type": "float"},
-                "xscale_dec": {"type": "float"},
-                "yscale_dec": {"type": "float"}
+                "xscale_ra": {"type": "string"},
+                "yscale_ra": {"type": "string"},
+                "xscale_dec": {"type": "string"},
+                "yscale_dec": {"type": "string"}
             },
             "additionalProperties": False,
         }

@@ -76,7 +76,6 @@ async def slew(command: Command,
     command.info("Initial slew completed.")
 
     for iter in range(usrpars.aqu_max_iter + 1):
-        log.info("Taking image...")
         command.info("Taking image...")
         # take an image for astrometry
         try:
@@ -123,6 +122,8 @@ async def slew(command: Command,
         ra2000_d = 0.5*(eastguideimg.ra2000 + westguideimg.ra2000)
         dec2000_d = 0.5*(eastguideimg.dec2000 + westguideimg.dec2000)
         pa_d = 0.5*(eastguideimg.pa + westguideimg.pa)
+        westcameras[tel].rotationangle = westguideimg.pa
+        eastcameras[tel].rotationangle = eastguideimg.pa
 
         ra2000_hms = await deg_to_dms(ra2000_d / 15)
         dec2000_dms = await deg_to_dms(dec2000_d)
