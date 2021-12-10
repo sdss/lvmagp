@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "sdss-lvmagp"
-version = "0.1.0-alpha.0"
-description = "Simple Template package for creating SDSS Python projects"
-authors = ["sumin lee <lxmark888@khu.ac.kr>"]
+version = "0.2.0-alpha"
+description = "Aquisition and guiding package for SDSS-V LVM"
+authors = ["Hojae Ahn <hojaeahn@khu.ac.kr>"]
 license = "BSD-3-Clause"
 readme = "README.md"
 homepage = "https://github.com/sdss/lvmagp"
@@ -16,6 +16,7 @@ classifiers = [
 	"Programming Language :: Python :: 3.6",
 	"Programming Language :: Python :: 3.7",
 	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
     "Topic :: Documentation :: Sphinx",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
