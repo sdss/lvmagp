@@ -1,20 +1,14 @@
-import os
 import asyncio
-import numpy as np
+import os
 
 import click
+import numpy as np
 from clu.command import Command
 
-from lvmagp.actor.commfunc import (  # noqa: F401
-    LVMEastCamera,
-    LVMFibsel,
-    LVMFocuser,
-    LVMKMirror,
-    LVMTANInstrument,
-    LVMTelescope,
-    LVMWestCamera,
-)
-from lvmagp.actor.internalfunc import check_target, cal_pa, GuideImage
+from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
+                                   LVMFocuser, LVMKMirror, LVMTANInstrument,
+                                   LVMTelescope, LVMWestCamera)
+from lvmagp.actor.internalfunc import GuideImage, cal_pa, check_target
 from lvmagp.actor.user_parameters import usrpars
 
 from . import parser

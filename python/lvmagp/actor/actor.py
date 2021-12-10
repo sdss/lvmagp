@@ -2,15 +2,9 @@ from __future__ import absolute_import, annotations, division, print_function
 
 from clu.actor import AMQPActor
 
-from lvmagp.actor.commfunc import (  # noqa: F401
-    LVMEastCamera,
-    LVMFibsel,
-    LVMFocuser,
-    LVMKMirror,
-    LVMTANInstrument,
-    LVMTelescope,
-    LVMWestCamera,
-)
+from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
+                                   LVMFocuser, LVMKMirror, LVMTANInstrument,
+                                   LVMTelescope, LVMWestCamera)
 
 from .commands import parser as lvm_command_python
 

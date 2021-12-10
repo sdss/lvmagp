@@ -1,18 +1,13 @@
 from clu.command import Command
 
-from lvmagp.actor.commfunc import (  # noqa: F401
-    LVMEastCamera,
-    LVMFibsel,
-    LVMFocuser,
-    LVMKMirror,
-    LVMTANInstrument,
-    LVMTelescope,
-    LVMWestCamera,
-)
+from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
+                                   LVMFocuser, LVMKMirror, LVMTANInstrument,
+                                   LVMTelescope, LVMWestCamera)
 from lvmagp.actor.internalfunc import GuideImage
-from lvmagp.actor.user_parameters import usrpars   # noqa: F401
+from lvmagp.actor.user_parameters import usrpars  # noqa: F401
 
 from . import parser
+
 
 # import logging
 # from sdsstools import get_logger
