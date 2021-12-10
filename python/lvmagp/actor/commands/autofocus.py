@@ -49,11 +49,16 @@ async def fine(command: Command, tel: str):
     agpwd = pwd + "/../../../../"
 
     guideimglist = [
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
-        agpwd + "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
+        agpwd +
+        "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits",  # noqa: E501
+        agpwd +
+        "testimg/focus_series/synthetic_image_median_field_5s_seeing_03.0.fits",  # noqa: E501
+        agpwd +
+        "testimg/focus_series/synthetic_image_median_field_5s_seeing_04.0.fits",  # noqa: E501
+        agpwd +
+        "testimg/focus_series/synthetic_image_median_field_5s_seeing_05.0.fits",  # noqa: E501
+        agpwd +
+        "testimg/focus_series/synthetic_image_median_field_5s_seeing_06.0.fits",  # noqa: E501
     ]
     guideimgidx = [0, 1, 2, 4]
 

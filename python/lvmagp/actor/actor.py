@@ -2,25 +2,29 @@ from __future__ import absolute_import, annotations, division, print_function
 
 from clu.actor import AMQPActor
 
-from .commands import parser as lvm_command_python
+from lvmagp.actor.commfunc import (  # noqa: F401
+    LVMEastCamera,
+    LVMFibsel,
+    LVMFocuser,
+    LVMKMirror,
+    LVMTANInstrument,
+    LVMTelescope,
+    LVMWestCamera,
+)
 
-from lvmagp.actor.commfunc import LVMTANInstrument,LVMTelescope,LVMEastCamera,LVMWestCamera,LVMFibsel,LVMFocuser,LVMKMirror
+from .commands import parser as lvm_command_python
 
 
 # from scpactor import __version__
 
 __all__ = ["lvmagp"]
-tel_list = ['sci', 'skye', 'skyw', 'spec']
+tel_list = ["sci", "skye", "skyw", "spec"]
 
 
 class lvmagp(AMQPActor):
-    """AGP  actor.
+    """AGP actor.
     In addition to the normal arguments and keyword parameters for
     `~clu.actor.AMQPActor`, the class accepts the following parameters.
-    Parameters
-    ----------
-    controllers
-        The list of `.SCP_Controller` instances to manage.
     """
 
     parser = lvm_command_python
@@ -40,7 +44,7 @@ class lvmagp(AMQPActor):
         self.schema = {
             "type": "object",
             "properties": {
-                "fail" : {"type": "string"},
+                "fail": {"type": "string"},
                 "Img_ra2000": {"type": "string"},
                 "Img_dec2000": {"type": "string"},
                 "Img_pa": {"type": "string"},
@@ -49,7 +53,7 @@ class lvmagp(AMQPActor):
                 "xscale_ra": {"type": "string"},
                 "yscale_ra": {"type": "string"},
                 "xscale_dec": {"type": "string"},
-                "yscale_dec": {"type": "string"}
+                "yscale_dec": {"type": "string"},
             },
             "additionalProperties": False,
         }
@@ -69,30 +73,38 @@ class lvmagp(AMQPActor):
 
         for (ctrname, ctr) in instance.config.items():
             if ctrname in tel_list:
-                #print(ctrname, ctr)
-                instance.telescopes.update({ctrname: LVMTelescope(ctrname)})
-                instance.telescopes[ctrname].latitude = ctr['tel']['latitude']
-                instance.telescopes[ctrname].longitude = ctr['tel']['longitude']
+                # print(ctrname, ctr)
+                instance.telescopes.update({ctrname: LVMTelescope(ctrname, "KHU")})
 
                 instance.eastcameras.update({ctrname: LVMEastCamera(ctrname)})
-                instance.eastcameras[ctrname].pixelscale = ctr['age']['pixelscale']
-                instance.eastcameras[ctrname].offset_x = ctr['age']['offset_x']
-                instance.eastcameras[ctrname].offset_y = ctr['age']['offset_y']
-                instance.eastcameras[ctrname].rotationangle = ctr['age']['rotationangle']
+                instance.eastcameras[ctrname].pixelscale = ctr["age"]["pixelscale"]
+                instance.eastcameras[ctrname].offset_x = ctr["age"]["offset_x"]
+                instance.eastcameras[ctrname].offset_y = ctr["age"]["offset_y"]
+                instance.eastcameras[ctrname].rotationangle = ctr["age"][
+                    "rotationangle"
+                ]
 
                 instance.westcameras.update({ctrname: LVMWestCamera(ctrname)})
-                instance.westcameras[ctrname].pixelscale = ctr['agw']['pixelscale']
-                instance.westcameras[ctrname].offset_x = ctr['agw']['offset_x']
-                instance.westcameras[ctrname].offset_y = ctr['agw']['offset_y']
-                instance.westcameras[ctrname].rotationangle = ctr['agw']['rotationangle']
+                instance.westcameras[ctrname].pixelscale = ctr["agw"]["pixelscale"]
+                instance.westcameras[ctrname].offset_x = ctr["agw"]["offset_x"]
+                instance.westcameras[ctrname].offset_y = ctr["agw"]["offset_y"]
+                instance.westcameras[ctrname].rotationangle = ctr["agw"][
+                    "rotationangle"
+                ]
 
                 instance.focusers.update({ctrname: LVMFocuser(ctrname)})
 
                 instance.kmirrors.update({ctrname: LVMKMirror(ctrname)})
 
-                #print(ctrname,ctr)
+                # print(ctrname,ctr)
 
-        #print(instance.telescopes)
+        # print(instance.telescopes)
 
-        instance.parser_args = [instance.telescopes, instance.eastcameras, instance.westcameras, instance.focusers, instance.kmirrors]
+        instance.parser_args = [
+            instance.telescopes,
+            instance.eastcameras,
+            instance.westcameras,
+            instance.focusers,
+            instance.kmirrors,
+        ]
         return instance

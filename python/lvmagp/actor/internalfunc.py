@@ -1,9 +1,10 @@
 import asyncio
+import os
 import warnings
 from datetime import datetime
-import os
 
 import numpy as np
+
 # import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.modeling import fitting, models
@@ -22,6 +23,7 @@ class GuideImage:
     filepath
         Path of the image file
     """
+
     def __init__(self, filepath):
         self.filepath = filepath
         self.nstar = 3
@@ -42,7 +44,8 @@ class GuideImage:
     def findstars(self, nstar=3):
         """
         Find ``nstar`` stars using DAOFind and KD tree for sequences of lvmagp.
-        The result is given by np.ndarray lookes like [[x1, y1], [x2, y2], [x3, y3], ...], and it is also saved in ``self.guidestarposition``.
+        The result is given by np.ndarray lookes like [[x1, y1], [x2, y2], [x3, y3], ...],
+        and it is also saved in ``self.guidestarposition``.
 
         Parameters
         ----------
@@ -87,7 +90,7 @@ class GuideImage:
 
     def twoDgaussianfit(self):
         """
-        Condunt 2D Gaussian fitting to find center, flux of the stars in ``self.guidestarposition``.
+        Conduct 2D Gaussian fitting to find center, flux of stars in ``self.guidestarposition``.
         """
         windowradius = 10  # only integer
         plist = []
@@ -104,8 +107,8 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                ycenter - windowradius: ycenter + windowradius,
-                xcenter - windowradius: xcenter + windowradius,
+                    ycenter - windowradius: ycenter + windowradius,
+                    xcenter - windowradius: xcenter + windowradius,
                 ]
             )
 
@@ -118,7 +121,8 @@ class GuideImage:
 
     def update_guidestar_properties(self):
         """
-        Using ``twoDGaussianfit`` method, update the guidestar properties in ``self.guidestarflux``, ``self.guidestarposition``, ``self.guidestarsize``, and ``slef.FWHM``.
+        Using ``twoDGaussianfit`` method, update guidestar properties in ``self.guidestarflux``,
+        ``self.guidestarposition``, ``self.guidestarsize``, and ``slef.FWHM``.
         """
         if len(self.guidestarposition) == 0:
             pass
@@ -140,7 +144,8 @@ class GuideImage:
     async def astrometry(self, ra_h=-999, dec_d=-999):
         """
         Conduct astrometry to find where the image is taken.
-        Astromery result is saved in astrometry_result.txt in same directory with this python file, also key result (ra,dec,pa) is saved to ``self.ra2000``, ``self.dec2000``, and ``self.pa``.
+        Astromery result is saved in astrometry_result.txt in same directory with this python file,
+        also key result (ra,dec,pa) is saved to ``self.ra2000``, ``self.dec2000``, and ``self.pa``.
 
         Parameters
         ----------
@@ -150,7 +155,9 @@ class GuideImage:
             The initial guess for declination (J2000) in degrees
         """
         ospassword = "0000"
-        resultpath = os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
+        resultpath = (
+            os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
+        )
         timeout = 10
         scalelow = 2
         scalehigh = 3
@@ -251,7 +258,8 @@ def cal_pa(ra_h, dec_d, long_d, lat_d):
     LST = t.sidereal_time("apparent").value * 15
     HA = np.mod(LST - ra_h * 15, 360)
     pa = np.arctan(
-        -np.sin(np.deg2rad(HA)) / (np.cos(dec) * np.tan(lat) - np.sin(dec) * np.cos(np.deg2rad((HA))))
+        -np.sin(np.deg2rad(HA)) /
+        (np.cos(dec) * np.tan(lat) - np.sin(dec) * np.cos(np.deg2rad((HA))))
     )
 
     return np.rad2deg(pa)
@@ -313,7 +321,8 @@ def define_visb_limit(Az):  # or Hour angle..?
 
 def check_target(ra_h, dec_d, long_d, lat_d):
     """
-    Using the limit defined in ``define_visb_limit``, check whether the target is in observable area or not.
+    Using the limit defined in ``define_visb_limit``,
+    check whether the target is in observable area or not.
 
     Parameters
     ----------

@@ -1,16 +1,28 @@
-import os
 import click
 from clu.command import Command
 
-from lvmagp.actor.commfunc import *  # noqa: F403
-from lvmagp.actor.internalfunc import *  # noqa: F403
+from lvmagp.actor.commfunc import (  # noqa: F401
+    LVMEastCamera,
+    LVMFibsel,
+    LVMFocuser,
+    LVMKMirror,
+    LVMTANInstrument,
+    LVMTelescope,
+    LVMWestCamera,
+)
+from lvmagp.actor.internalfunc import GuideImage  # noqa: F403
 from lvmagp.actor.user_parameters import usrpars
 
+import asyncio
+import numpy as np
+
 from . import parser
+
 
 question = "Is this develop branch?"
 
 KHU_inner_test = True
+
 
 @parser.group()
 def guide(*args):
@@ -20,11 +32,16 @@ def guide(*args):
 @guide.command()
 @click.argument("TEL", type=str)
 @click.option("--useteldata", type=float, is_flag=True)
-async def start(command: Command,
-                telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                westcameras: dict[str, LVMWestCamera],
-                focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
-                tel: str, useteldata: bool):
+async def start(
+    command: Command,
+    telescopes: dict[str, LVMTelescope],
+    eastcameras: dict[str, LVMEastCamera],
+    westcameras: dict[str, LVMWestCamera],
+    focusers: dict[str, LVMFocuser],
+    kmirrors: dict[str, LVMKMirror],
+    tel: str,
+    useteldata: bool,
+):
     """
     Start the autoguide sequence.
 
@@ -33,14 +50,27 @@ async def start(command: Command,
     tel
         Telescope to autoguide
     useteldata
-        If ``useteldata`` is flagged, the sequence will use the pixel scale and rotation angle from LVMTelescope.
-        Otherwise, the sequence will get pixel scale from LVMCamera and it assumes that the camera is north-oriented.
+        If ``useteldata`` is flagged, the sequence will use the pixel scale and
+        rotation angle from LVMTelescope.
+        Otherwise, the sequence will get pixel scale from LVMCamera, and
+        it assumes that the camera is north-oriented.
     """
 
     if tel in telescopes:
         try:
-            telescopes[tel].ag_task = asyncio.wait_for(autoguide_supervisor(command, telescopes, eastcameras,
-                    westcameras, focusers, kmirrors, tel, useteldata), timeout=3600)
+            telescopes[tel].ag_task = asyncio.wait_for(
+                autoguide_supervisor(
+                    command,
+                    telescopes,
+                    eastcameras,
+                    westcameras,
+                    focusers,
+                    kmirrors,
+                    tel,
+                    useteldata,
+                ),
+                timeout=3600,
+            )
             await telescopes[tel].ag_task
 
         except asyncio.TimeoutError:
@@ -51,13 +81,20 @@ async def start(command: Command,
     else:
         return command.fail(text="Telescope '%s' does not exist" % tel)
 
-    return command.finish('Guide stopped')
+    return command.finish("Guide stopped")
 
 
 @guide.command()
 @click.argument("TEL", type=str)
-async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel: str):
+async def stop(
+    command: Command,
+    telescopes: dict[str, LVMTelescope],
+    eastcameras: dict[str, LVMEastCamera],
+    westcameras: dict[str, LVMWestCamera],
+    focusers: dict[str, LVMFocuser],
+    kmirrors: dict[str, LVMKMirror],
+    tel: str,
+):
     """
     Stop the autoguide sequence.
 
@@ -70,7 +107,9 @@ async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcamera
         if telescopes[tel].ag_task is not None:
             telescopes[tel].ag_break = True
         else:
-            return command.fail(text="There is no autoguiding loop for telescope '%s'" % tel)
+            return command.fail(
+                text="There is no autoguiding loop for telescope '%s'" % tel
+            )
     else:
         return command.fail(text="Telescope '%s' does not exist" % tel)
 
@@ -79,11 +118,18 @@ async def stop(command: Command, telescopes: dict[str, LVMTelescope], eastcamera
 
 @guide.command()
 @click.argument("TEL", type=str)
-async def calibration(command: Command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
-                      tel: str):
+async def calibration(
+    command: Command,
+    telescopes: dict[str, LVMTelescope],
+    eastcameras: dict[str, LVMEastCamera],
+    westcameras: dict[str, LVMWestCamera],
+    focusers: dict[str, LVMFocuser],
+    kmirrors: dict[str, LVMKMirror],
+    tel: str,
+):
     """
-    Run calibration sequence to calculate the transformation from the equatorial coordinates to the xy coordinates of the image.
+    Run calibration sequence to calculate the transformation
+    from the equatorial coordinates to the xy coordinates of the image.
 
     Parameters
     ----------
@@ -99,52 +145,91 @@ async def calibration(command: Command, telescopes: dict[str, LVMTelescope], eas
 
     xpositions, ypositions = [], []
 
-    initposition, initflux = await find_guide_stars(command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel)
+    initposition, initflux = await find_guide_stars(
+        command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
+    )
     xpositions.append(initposition[:, 0])
     ypositions.append(initposition[:, 1])
 
     # dec axis calibration
-    for step in range(1,num_step+1):
+    for step in range(1, num_step + 1):
         await telescopes[tel].offset_radec(command, 0, offset_per_step)
-        position, flux = await find_guide_stars(command, telescopes, eastcameras, westcameras, focusers,
-                                                       kmirrors, tel, positionguess=initposition)
+        position, flux = await find_guide_stars(
+            command,
+            telescopes,
+            eastcameras,
+            westcameras,
+            focusers,
+            kmirrors,
+            tel,
+            positionguess=initposition,
+        )
         xpositions.append(position[:, 0])
         ypositions.append(position[:, 1])
 
-    await telescopes[tel].offset_radec(command, 0, -num_step*offset_per_step)
+    await telescopes[tel].offset_radec(command, 0, -num_step * offset_per_step)
 
     xpositions = np.array(xpositions) - xpositions[0]
     ypositions = np.array(ypositions) - ypositions[0]
-    xscale_dec = np.sum(xpositions[1:]/np.array([[i] * 3 for i in range(1,num_step+1)]))/offset_per_step  # displacement along x-axis by ra offset in pixel per arcsecond. exclude the first index (0,0)
-    yscale_dec = np.sum(ypositions[1:]/np.array([[i] * 3 for i in range(1,num_step+1)]))/offset_per_step  # exclude the first index (0,0)
+    xscale_dec = (
+        np.sum(xpositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        offset_per_step
+    )  # displacement along x-axis by ra offset in pixel per arcsec. exclude the first index (0,0)
+    yscale_dec = (
+        np.sum(ypositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        offset_per_step
+    )  # exclude the first index (0,0)
 
     # ra axis calibration
     xpositions = [initposition[:, 0]]
     ypositions = [initposition[:, 1]]
 
-    for step in range(1,num_step+1):
+    for step in range(1, num_step + 1):
         await telescopes[tel].offset_radec(command, offset_per_step, 0)
-        position, flux = await find_guide_stars(command, telescopes, eastcameras, westcameras, focusers,
-                                                       kmirrors, tel)
+        position, flux = await find_guide_stars(
+            command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
+        )
         xpositions.append(position[:, 0])
         ypositions.append(position[:, 1])
 
-    await telescopes[tel].offset_radec(command, -num_step*offset_per_step, 0)
+    await telescopes[tel].offset_radec(command, -num_step * offset_per_step, 0)
 
     decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
 
     xpositions = np.array(xpositions) - xpositions[0]
     ypositions = np.array(ypositions) - ypositions[0]
-    xscale_ra = np.sum(xpositions[1:]/np.array([[i] * 3 for i in range(1,num_step+1)]))/offset_per_step/np.cos(np.deg2rad(decj2000_deg))  # exclude the first index (0,0)
-    yscale_ra = np.sum(ypositions[1:]/np.array([[i] * 3 for i in range(1,num_step+1)]))/offset_per_step/np.cos(np.deg2rad(decj2000_deg))  # exclude the first index (0,0)
+    xscale_ra = (
+        np.sum(xpositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        offset_per_step /
+        np.cos(np.deg2rad(decj2000_deg))
+    )  # exclude the first index (0,0)
+    yscale_ra = (
+        np.sum(ypositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        offset_per_step /
+        np.cos(np.deg2rad(decj2000_deg))
+    )  # exclude the first index (0,0)
 
-    telescopes[tel].scale_matrix = np.matrix([[xscale_ra, yscale_ra],[xscale_dec, yscale_dec]])
-    return command.finish(xscale_ra="%.3f pixel/arcsec"%xscale_ra, yscale_ra="%.3f pixel/arcsec"%yscale_ra,
-                          xscale_dec="%.3f pixel/arcsec"%xscale_dec, yscale_dec="%.3f pixel/arcsec"%yscale_dec)
+    telescopes[tel].scale_matrix = np.matrix(
+        [[xscale_ra, yscale_ra], [xscale_dec, yscale_dec]]
+    )
+    return command.finish(
+        xscale_ra="%.3f pixel/arcsec" % xscale_ra,
+        yscale_ra="%.3f pixel/arcsec" % yscale_ra,
+        xscale_dec="%.3f pixel/arcsec" % xscale_dec,
+        yscale_dec="%.3f pixel/arcsec" % yscale_dec,
+    )
 
 
-async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror], tel, useteldata):
+async def autoguide_supervisor(
+    command,
+    telescopes: dict[str, LVMTelescope],
+    eastcameras: dict[str, LVMEastCamera],
+    westcameras: dict[str, LVMWestCamera],
+    focusers: dict[str, LVMFocuser],
+    kmirrors: dict[str, LVMKMirror],
+    tel,
+    useteldata,
+):
     """
     Manage the autoguide sequence.
     It starts real autoguide loop and keeps it until the break signal comes.
@@ -154,15 +239,18 @@ async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eas
     tel
         Telescope to autoguide
     useteldata
-        If ``useteldata`` is flagged, the sequence will use the pixel scale and rotation angle from LVMTelescope.
-        Otherwise, the sequence will get pixel scale from LVMCamera and it assumes that the camera is north-oriented.
+        If ``useteldata`` is flagged,
+        the sequence will use the pixel scale and rotation angle from LVMTelescope.
+        Otherwise, the sequence will get pixel scale from LVMCamera, and
+        it assumes that the camera is north-oriented.
     """
     global KHU_inner_test
     if 0:
         i = 0
     else:
-        initposition, initflux = await find_guide_stars(command, telescopes, eastcameras,
-                                                        westcameras, focusers, kmirrors, tel)
+        initposition, initflux = await find_guide_stars(
+            command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
+        )
 
     while 1:
         if 0:
@@ -170,8 +258,18 @@ async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eas
             i = i + 1
             await asyncio.sleep(8)
         else:
-            await autoguiding(command, telescopes, eastcameras,
-                              westcameras, focusers, kmirrors, tel, initposition, initflux, useteldata)
+            await autoguiding(
+                command,
+                telescopes,
+                eastcameras,
+                westcameras,
+                focusers,
+                kmirrors,
+                tel,
+                initposition,
+                initflux,
+                useteldata,
+            )
 
         if telescopes[tel].ag_break is True:
             telescopes[tel].ag_break = False
@@ -180,11 +278,10 @@ async def autoguide_supervisor(command, telescopes: dict[str, LVMTelescope], eas
     return True
 
 
-''' Here is old version using task.cancle
+""" Here is old version using task.cancle
 @guide.command()
 @click.argument("TEL", type=str)
 async def start(command: Command, tel: str):
-    
     exptime = 3  # in seconds
     pixelscale = 0.5 # in arcsec/pixel
     halfboxsize = 15 # 1/2 of box in pixel
@@ -202,10 +299,8 @@ async def start(command: Command, tel: str):
     cam1 = LVMCamera(tel + "e")
     cam2 = LVMCamera(tel + "w")
     cam1 = LVMCamera("test")  # for lab testing
-    
     global tasklist
     tasklist = [0,0,0,0]
-    
     try:
         if tel == 'sci':
             tasklist[0] = asyncio.create_task(autoguide_supervisor(command, tel))
@@ -221,7 +316,6 @@ async def start(command: Command, tel: str):
             await tasklist[3]
         else:
             return command.fail("Wrong telescope name")
-    
     except asyncio.CancelledError:
         command.info("cancelled_main")
 
@@ -252,20 +346,26 @@ async def autoguide_supervisor(command, tel):
 
             if i==5:
                 break
-
-        
         #initposition, initflux = await register_guide_stars(command, tel)
         #while 1:
         #    await autoguiding(command,tel, initposition, initflux)
-        
     except asyncio.CancelledError:
         # Something to abort exposure ..
         command.info('Guide stopped')
         raise
-'''
-async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                               westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
-                               tel, positionguess=None):
+"""
+
+
+async def find_guide_stars(
+    command,
+    telescopes: dict[str, LVMTelescope],
+    eastcameras: dict[str, LVMEastCamera],
+    westcameras: dict[str, LVMWestCamera],
+    focusers: dict[str, LVMFocuser],
+    kmirrors: dict[str, LVMKMirror],
+    tel,
+    positionguess=None,
+):
     """
     Expose an image, and find three guide stars from the image.
     Also calculate the center coordinates and flux of found stars.
@@ -275,8 +375,10 @@ async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcam
     tel
         Telescope to autoguide
     positionguess
-        Initial guess of guidestar position. It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
-        If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding based on ``positionguess`` without finding new stars.
+        Initial guess of guidestar position.
+        It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
+        If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding
+        based on ``positionguess`` without finding new stars.
     """
     global KHU_inner_test
     command.info("Taking image...")
@@ -290,14 +392,14 @@ async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcam
 
         guideimgpath = await asyncio.gather(*imgcmd)
 
-    except Exception as e:
+    except Exception:
         return command.fail(fail="Camera error")
 
     westguideimg = GuideImage(guideimgpath[0])
     eastguideimg = westguideimg
 
     if not KHU_inner_test:
-        eastguideimg = GuideImage(guideimgpath[1])
+        eastguideimg = GuideImage(guideimgpath[1])  # noqa: F841
 
     if positionguess is None:
         starposition = westguideimg.findstars()
@@ -310,9 +412,18 @@ async def find_guide_stars(command, telescopes: dict[str, LVMTelescope], eastcam
     return starposition, starflux
 
 
-async def autoguiding(command, telescopes: dict[str, LVMTelescope], eastcameras: dict[str, LVMEastCamera],
-                      westcameras: dict[str, LVMWestCamera], focusers: dict[str, LVMFocuser], kmirrors: dict[str, LVMKMirror],
-                      tel, initposition, initflux, useteldata):
+async def autoguiding(
+    command,
+    telescopes: dict[str, LVMTelescope],
+    eastcameras: dict[str, LVMEastCamera],
+    westcameras: dict[str, LVMWestCamera],
+    focusers: dict[str, LVMFocuser],
+    kmirrors: dict[str, LVMKMirror],
+    tel,
+    initposition,
+    initflux,
+    useteldata,
+):
     """
     Expose an image, and calculate offset from the image and initial values.
     Compensate the offset.
@@ -326,35 +437,63 @@ async def autoguiding(command, telescopes: dict[str, LVMTelescope], eastcameras:
     initflux
         Flux of guide stars when the autoguide is started
     positionguess
-        Initial guess of guidestar position. It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
-        If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding based on ``positionguess`` without finding new stars.
+        Initial guess of guidestar position.
+        It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
+        If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding
+        based on ``positionguess`` without finding new stars.
     """
-    starposition, starflux = await find_guide_stars(command, telescopes, eastcameras,
-                westcameras, focusers, kmirrors, tel, positionguess=initposition)
+    starposition, starflux = await find_guide_stars(
+        command,
+        telescopes,
+        eastcameras,
+        westcameras,
+        focusers,
+        kmirrors,
+        tel,
+        positionguess=initposition,
+    )
     print(starflux)
     print(initflux)
-    if np.abs(np.average(starflux/initflux - 1, weights=2.5*np.log10(initflux*10))) > usrpars.ag_flux_tolerance:
-        return command.error("Star flux variation %.3f is too large." % np.abs(np.average(starflux/initflux - 1, weights=2.5*np.log10(initflux*10))))
+    if (
+        np.abs(
+            np.average(starflux / initflux - 1, weights=2.5 * np.log10(initflux * 10))
+        ) >
+        usrpars.ag_flux_tolerance
+    ):
+        return command.error(
+            "Star flux variation %.3f is too large."
+            % np.abs(
+                np.average(
+                    starflux / initflux - 1, weights=2.5 * np.log10(initflux * 10)
+                )
+            )
+        )
 
-    offset = np.mean(starposition - initposition, axis=0) # in x,y [pixel]
+    offset = np.mean(starposition - initposition, axis=0)  # in x,y [pixel]
 
     if useteldata:
-        offset_arcsec = np.matmul(telescopes[tel].scale_matrix.I, offset)  # in x,y(=ra,dec) [arcsec]
+        offset_arcsec = np.matmul(
+            telescopes[tel].scale_matrix.I, offset
+        )  # in x,y(=ra,dec) [arcsec]
         offset_arcsec = np.array(offset_arcsec)
     else:
         theta = np.radians(westcameras[tel].rotationangle)
         c, s = np.cos(theta), np.sin(theta)
         R = np.array(((c, -s), (s, c)))
-        offset_arcsec = np.dot(R,offset) * westcameras[tel].pixelscale  # in x,y(=ra,dec) [arcsec]
+        offset_arcsec = (
+            np.dot(R, offset) * westcameras[tel].pixelscale
+        )  # in x,y(=ra,dec) [arcsec]
 
     decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
-    offset_arcsec[0] = offset_arcsec[0]/np.cos(np.deg2rad(decj2000_deg))
+    offset_arcsec[0] = offset_arcsec[0] / np.cos(np.deg2rad(decj2000_deg))
 
-    if (np.sqrt(offset[0]**2+offset[1]**2)) > usrpars.ag_min_offset:
-        print("compensate: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel" %
-              (offset_arcsec[0], offset_arcsec[1], offset[0], offset[1]))
+    if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
+        print(
+            "compensate: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
+            % (offset_arcsec[0], offset_arcsec[1], offset[0], offset[1])
+        )
         await telescopes[tel].offset_radec(command, *offset_arcsec)
         return offset_arcsec
 
     else:
-        return [0.,0.]
+        return [0.0, 0.0]

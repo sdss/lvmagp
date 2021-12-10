@@ -1,8 +1,7 @@
 # A dictionary of controller name to ??
 sci:
   tel:
-    latitude: 37.23908
-    longitude: 127.08217
+    varA: null
   age:
     pixelscale: null
     offset_x: null
@@ -20,8 +19,7 @@ sci:
 
 skye:
   tel:
-    latitude: -34.0
-    longitude: 118.0
+    varA: null
   age:
     pixelscale: null
     offset_x: null
@@ -39,8 +37,7 @@ skye:
 
 skyw:
   tel:
-    latitude: -34.0
-    longitude: 118.0
+    varA: null
   age:
     pixelscale: null
     offset_x: null
@@ -58,8 +55,7 @@ skyw:
 
 spec:
   tel:
-    latitude: -34.0
-    longitude: 118.0
+    varA: null
   age:
     pixelscale: null
     offset_x: null
@@ -81,5 +77,5 @@ actor:
   name: lvmagp
   host: localhost
   port: 5672
-  version: '0.2.1-alpha'
+  version: '0.2.3a'
   log_dir: './logs'

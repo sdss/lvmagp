@@ -1,10 +1,7 @@
-# from clu import AMQPClient, CommandStatus
-# from cluplus.proxy import Proxy, ProxyException, ProxyPlainMessagException, invoke, unpack
+import numpy as np
+from lvmtipo.site import Site
 
 from lvmagp.actor.internalfunc import send_message
-import datetime
-import numpy as np
-import asyncio
 
 
 class LVMTANInstrument:
@@ -18,6 +15,7 @@ class LVMTANInstrument:
     inst
         Type of the instrument
     """
+
     def __init__(self, tel, inst):
         if tel == "test" or inst == "test":
             self.lvmtan = "test.first.focus_stage"
@@ -42,7 +40,7 @@ class LVMTANInstrument:
         )
         return cmd
 
-    async def moveabs(self, command, position, unit='STEPS'):
+    async def moveabs(self, command, position, unit="STEPS"):
         """
         Move the device at given absolute position.
 
@@ -53,10 +51,12 @@ class LVMTANInstrument:
         unit
             Unit of position
         """
-        cmd = await send_message(command, self.lvmtan, "moveAbsolute %d %s" % (position, unit))
+        cmd = await send_message(
+            command, self.lvmtan, "moveAbsolute %d %s" % (position, unit)
+        )
         return cmd
 
-    async def moverel(self, command, position, unit='STEPS'):
+    async def moverel(self, command, position, unit="STEPS"):
         """
         Move the device at given relative position.
 
@@ -67,9 +67,13 @@ class LVMTANInstrument:
         unit
             Unit of position
         """
-        cmd = await send_message(command, self.lvmtan, "moveRelative %d %s" % (position, unit))
+        cmd = await send_message(
+            command, self.lvmtan, "moveRelative %d %s" % (position, unit)
+        )
         return cmd
-'''
+
+
+"""
 
     async def moveabs(self, command, position, unit="STEPS"):
         task = asyncio.create_task(
@@ -86,7 +90,8 @@ class LVMTANInstrument:
             )
         )
         return task
-'''
+"""
+
 
 class LVMFocuser(LVMTANInstrument):
     """
@@ -97,9 +102,10 @@ class LVMFocuser(LVMTANInstrument):
     tel
         Telescope to which the focuser belongs
     """
+
     def __init__(self, tel):
         super().__init__(tel, "foc")
-        #print(self.lvmtan)
+        # print(self.lvmtan)
 
 
 class LVMKMirror(LVMTANInstrument):
@@ -111,22 +117,13 @@ class LVMKMirror(LVMTANInstrument):
     tel
         Telescope to which the focuser belongs
     """
+
     def __init__(self, tel):
         super().__init__(tel, "km")
-    '''
+
     async def cal_traj(self, command):
-        currenttime = datetime.datetime.now()
-        #cmd = await send_message(command, self.lvmtan, "startProfile %d %s" % (position, unit))
-        return currenttime
-    
-    async def startProfile(
-            self,
-            start_date: datetime.datetime,
-            positions: list,
-            frequency: int,
-            samples_per_segment: int,
-            max_error: int,
-    '''
+        pass
+
 
 class LVMFibsel(LVMTANInstrument):
     """
@@ -137,6 +134,7 @@ class LVMFibsel(LVMTANInstrument):
     tel
         Telescope to which the focuser belongs
     """
+
     def __init__(self):
         super().__init__("spec", "fibsel")
 
@@ -150,17 +148,20 @@ class LVMTelescope:
     tel
         The name of the telescope
     """
-    def __init__(self, tel):
+
+    def __init__(self, tel, sitename="LCO"):
         if tel == "test":
             self.lvmpwi = "lvm.pwi"
         else:
             self.lvmpwi = "lvm." + tel + ".pwi"
 
-        self.latitude = -999
-        self.longitude = -999
+        site = Site(name=sitename)
+        self.latitude = site.lat
+        self.longitude = site.long
 
-        self.scale_matrix = np.matrix([[1,1],   #[x_ra , y_ra ]
-                                       [1,1]])  #[x_dec, y_dec]
+        self.scale_matrix = np.matrix(
+            [[1, 1], [1, 1]]  # [x_ra , y_ra ]
+        )  # [x_dec, y_dec]
 
         self.ag_task = None
         self.ag_break = False
@@ -176,19 +177,17 @@ class LVMTelescope:
         target_dec_d
             Target declination in degrees in J2000 epoch
         """
-        cmd = await send_message(command,self.lvmpwi,"gotoRaDecJ2000 %f %f" % (target_ra_h, target_dec_d))
+        cmd = await send_message(
+            command, self.lvmpwi, "gotoRaDecJ2000 %f %f" % (target_ra_h, target_dec_d)
+        )
         return cmd
 
     async def reset_offset_radec(self, command):
         """
         Reset the offset of both axes to zero.
         """
-        await send_message(
-            command, self.lvmpwi, "offset --ra_reset"
-        )
-        await send_message(
-            command, self.lvmpwi, "offset --dec_reset"
-        )
+        await send_message(command, self.lvmpwi, "offset --ra_reset")
+        await send_message(command, self.lvmpwi, "offset --dec_reset")
 
         return True
 
@@ -227,6 +226,7 @@ class LVMCamera:
     """
     Class for the FLIR guide cameras
     """
+
     def __init__(self):
         self.lvmcam = "lvmcam"
         self.cam = "lvmcam"
@@ -234,7 +234,7 @@ class LVMCamera:
         self.offset_y = -999
         self.pixelscale = -999
         self.rotationangle = -999
-        self.lvmcampath = ''
+        self.lvmcampath = ""
 
     async def single_exposure(self, command, exptime):
         """
@@ -246,13 +246,18 @@ class LVMCamera:
             Exposure time
         """
         path = await send_message(
-            command, self.lvmcam, "expose %f 1 %s" % (exptime, self.cam), returnval=True, body="PATH"
+            command,
+            self.lvmcam,
+            "expose %f 1 %s" % (exptime, self.cam),
+            returnval=True,
+            body="PATH",
         )
         return path["0"]
 
     async def test_exposure(self, command, exptime):
         """
-        Take a test exposure using ``-t`` option of lvmcam. The image file (Temp.fits) is overwritten whenever this command is executed.
+        Take a test exposure using ``-t`` option of lvmcam.
+        The image file (Temp.fits) is overwritten whenever this command is executed.
 
         Parameters
         ----------
@@ -260,9 +265,14 @@ class LVMCamera:
             Exposure time
         """
         path = await send_message(
-            command, self.lvmcam, "expose -t %f 1 %s" % (exptime, self.cam), returnval=True, body="PATH"
+            command,
+            self.lvmcam,
+            "expose -t %f 1 %s" % (exptime, self.cam),
+            returnval=True,
+            body="PATH",
         )
         return path["0"]
+
 
 class LVMEastCamera(LVMCamera):
     """
@@ -273,9 +283,11 @@ class LVMEastCamera(LVMCamera):
     tel
         Telescope to which the camera belongs
     """
+
     def __init__(self, tel):
         super().__init__()
-        self.cam = tel + '.age'
+        self.cam = tel + ".age"
+
 
 class LVMWestCamera(LVMCamera):
     """
@@ -286,6 +298,7 @@ class LVMWestCamera(LVMCamera):
     tel
         Telescope to which the camera belongs
     """
+
     def __init__(self, tel):
         super().__init__()
-        self.cam = tel + '.agw'
+        self.cam = tel + ".agw"
