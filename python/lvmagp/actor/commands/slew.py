@@ -130,8 +130,8 @@ async def slew(
         target_ra = Angle(target_ra_h, u.hour)
         target_dec = Angle(target_dec_d, u.degree)
 
-        comp_ra_arcsec = (target_ra - ra2000).s
-        comp_dec_arcsec = (target_dec - dec2000).s
+        comp_ra_arcsec = (target_ra - ra2000).arcsecond
+        comp_dec_arcsec = (target_dec - dec2000).arcsecond
 
         command.info(
             Img_ra2000=ra2000.to_string(unit=u.hour),

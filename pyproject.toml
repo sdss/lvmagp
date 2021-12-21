@@ -42,6 +42,7 @@ click = "^8.0.1"
 photutils = "^1.1.0"
 numpy = "^1.21.1"
 black = "^21.7-beta.0"
+sdss-cluplus = "^0.0.16"
 
 [tool.poetry.dev-dependencies]
 ipython = ">=7.11.0"

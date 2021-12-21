@@ -94,7 +94,7 @@ class GuideImage:
         """
         Conduct 2D Gaussian fitting to find center, flux of stars in ``self.guidestarposition``.
         """
-        windowradius = 5  # only integer
+        windowradius = 10  # only integer
         plist = []
 
         for i in range(len(self.guidestarposition[:, 0])):
@@ -163,7 +163,7 @@ class GuideImage:
         timeout = 10
         scalelow = 2
         scalehigh = 3
-        radius = 1
+        radius = 3
 
         if ra_h == -999:
             cmd = (

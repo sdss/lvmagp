@@ -203,10 +203,11 @@ class LVMTelescope:
             Distance to move along declination axis in arcseconds
         """
         await send_message(
-            command, self.lvmpwi, "offset --ra_add_arcsec %f" % ra_arcsec
-        )
-        await send_message(
             command, self.lvmpwi, "offset --dec_add_arcsec %f" % dec_arcsec
+        )
+
+        await send_message(
+            command, self.lvmpwi, "offset --ra_add_arcsec %f" % ra_arcsec
         )
 
         return True
@@ -228,8 +229,8 @@ class LVMCamera:
     """
 
     def __init__(self):
-        self.lvmcam = "lvmcam"
-        self.cam = "lvmcam"
+        self.lvmcam = "lvmcam"  # actor name
+        self.cam = "lvmcam"  # cam name
         self.offset_x = -999
         self.offset_y = -999
         self.pixelscale = -999

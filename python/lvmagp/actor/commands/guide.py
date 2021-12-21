@@ -169,6 +169,12 @@ async def calibration(
 
     xoffsets = np.array(xpositions) - xpositions[0]
     yoffsets = np.array(ypositions) - ypositions[0]
+
+    print(xpositions)
+    print(xoffsets)
+    print(ypositions)
+    print(yoffsets)
+
     xscale_dec = (
         np.average(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
         offset_per_step
@@ -185,22 +191,27 @@ async def calibration(
     for step in range(1, num_step + 1):
         await telescopes[tel].offset_radec(command, offset_per_step/np.cos(np.deg2rad(decj2000_deg)), 0)
         position, flux = await find_guide_stars(
-            command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
+            command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel, positionguess=initposition
         )
         xpositions.append(position[:, 0])
         ypositions.append(position[:, 1])
 
     await telescopes[tel].offset_radec(command, -num_step * offset_per_step/np.cos(np.deg2rad(decj2000_deg)), 0)
 
+    xoffsets = np.array(xpositions) - xpositions[0]
+    yoffsets = np.array(ypositions) - ypositions[0]
 
-    xpositions = np.array(xpositions) - xpositions[0]
-    ypositions = np.array(ypositions) - ypositions[0]
+    print(xpositions)
+    print(xoffsets)
+    print(ypositions)
+    print(yoffsets)
+
     xscale_ra = (
-        np.sum(xpositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        np.sum(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
         offset_per_step
     )  # exclude the first index (0,0)
     yscale_ra = (
-        np.sum(ypositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        np.sum(yoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
         offset_per_step
     )  # exclude the first index (0,0)
 
@@ -469,20 +480,22 @@ async def autoguiding(
         offset_arcsec = np.dot(
             telescopes[tel].scale_matrix, offset
         )  # in x,y(=ra,dec) [arcsec]
-        correction_arcsec = -np.array(offset_arcsec)[0]
+        correction_arcsec = -np.array(offset_arcsec)
+
     else:
         theta = np.radians(westcameras[tel].rotationangle)
         c, s = np.cos(theta), np.sin(theta)
-        R = np.array(((c, -s), (s, c)))
+        R = np.array(((c, -s), (s, c)))  # inverse rotation matrix
         correction_arcsec = -(
             np.dot(R, offset) * westcameras[tel].pixelscale
         )  # in x,y(=ra,dec) [arcsec]
 
     decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
-    correction_arcsec[0] = correction_arcsec[0] / np.cos(np.deg2rad(decj2000_deg))
+    correction_arcsec[0] /= np.cos(np.deg2rad(decj2000_deg))
+    correction_arcsec[1] *= -1
 
     if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
-        print(
+        command.info(
             "compensate signal: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
             % (correction_arcsec[0], correction_arcsec[1], -offset[0], -offset[1])
         )

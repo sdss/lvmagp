@@ -2,25 +2,23 @@ Reading input file 1 of 1: "/home/sumin/lvmcam/python/lvmcam/assets/testshot.fit
 Extracting sources...
 This looks like a multi-color image: processing the first image plane only.  (NAXIS=3)
 Downsampling by 2...
-simplexy: found 663 sources.
+simplexy: found 611 sources.
 Solving...
 Reading file "/home/sumin/lvmcam/python/lvmcam/assets/testshot.axy"...
-Only searching for solutions within 1 degrees of RA,Dec (92.25,24.33)
+Only searching for solutions within 3 degrees of RA,Dec (105,0)
 Field 1 did not solve (index index-4211.fits, field objects 1-10).
 Field 1 did not solve (index index-4210.fits, field objects 1-10).
 Field 1 did not solve (index index-4209.fits, field objects 1-10).
-Field 1 did not solve (index index-4208.fits, field objects 1-10).
-Field 1 did not solve (index index-4207-05.fits, field objects 1-10).
-  log-odds ratio 574.743 (4.05134e+249), 117 match, 0 conflict, 311 distractors, 137 index.
-  RA,Dec = (92.2496,24.3312), pixel scale 2.59625 arcsec/pix.
-  Hit/miss:   Hit/miss: +++++++++-+++++++++++++++-+++-+--+++-++++++-+-++-+-++-+-+-++-+-++-++---++--++-+++-++-++++-+++-++-+--
-Field 1: solved with index index-4206-05.fits.
+  log-odds ratio 150.194 (1.69249e+65), 27 match, 0 conflict, 194 distractors, 33 index.
+  RA,Dec = (105,0.00107933), pixel scale 2.5971 arcsec/pix.
+  Hit/miss:   Hit/miss: +++++--++++-++--++-------++------------+-+-+-------------------+-++-------------------+-------------
+Field 1: solved with index index-4208.fits.
 Field 1 solved: writing to file /home/sumin/lvmcam/python/lvmcam/assets/testshot.solved to indicate this.
 Field: /home/sumin/lvmcam/python/lvmcam/assets/testshot.fits
-Field center: (RA,Dec) = (92.250015, 24.331394) deg.
-Field center: (RA H:M:S, Dec D:M:S) = (06:09:00.004, +24:19:53.018).
-Field size: 69.2532 x 47.6139 arcminutes
-Field rotation angle: up is 99.4551 degrees E of N
+Field center: (RA,Dec) = (105.000696, 0.001028) deg.
+Field center: (RA H:M:S, Dec D:M:S) = (07:00:00.167, +00:00:03.702).
+Field size: 69.2444 x 47.6004 arcminutes
+Field rotation angle: up is 143.535 degrees E of N
 Field parity: pos
 Creating new FITS file "/home/sumin/lvmcam/python/lvmcam/assets/testshot.new"...
 
