@@ -51,10 +51,13 @@ class GuideImage:
         nstar
             The number of stars to be found
         """
+        edgewidth = 20
+        mask = np.ones(self.data.shape, dtype=bool)
+        mask[edgewidth:-edgewidth, edgewidth:-edgewidth] = False
         daofind = DAOStarFinder(
             fwhm=self.initFWHM, threshold=3.0 * self.std, peakmax=60000 - self.median
         )  # 1sigma = FWHM/(2*sqrt(2ln2)); FWHM = sigma * (2*sqrt(2ln2))
-        sources = daofind(self.data[10:-10, 10:-10] - self.median)
+        sources = daofind(self.data - self.median, mask=mask)
         posnflux = np.array(
             [sources["xcentroid"], sources["ycentroid"], sources["flux"]]
         )  # xcoord, ycoord, flux
@@ -91,13 +94,13 @@ class GuideImage:
         """
         Conduct 2D Gaussian fitting to find center, flux of stars in ``self.guidestarposition``.
         """
-        windowradius = 10  # only integer
+        windowradius = 5  # only integer
         plist = []
 
         for i in range(len(self.guidestarposition[:, 0])):
             xcenter = int(self.guidestarposition[i, 0])
             ycenter = int(self.guidestarposition[i, 1])
-            p_init = models.Gaussian2D(amplitude=10000, x_mean=xcenter, y_mean=ycenter)
+            p_init = models.Gaussian2D(amplitude=30000, x_mean=xcenter, y_mean=ycenter)
             fit_p = fitting.LevMarLSQFitter()
             xrange = np.arange(xcenter - windowradius, xcenter + windowradius)
             yrange = np.arange(ycenter - windowradius, ycenter + windowradius)

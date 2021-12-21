@@ -137,6 +137,8 @@ async def calibration(
     if tel not in telescopes:
         return command.fail(text="Telescope '%s' does not exist" % tel)
 
+    decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
+
     xpositions, ypositions = [], []
 
     initposition, initflux = await find_guide_stars(
@@ -144,6 +146,8 @@ async def calibration(
     )
     xpositions.append(initposition[:, 0])
     ypositions.append(initposition[:, 1])
+
+    await asyncio.sleep(3)
 
     # dec axis calibration
     for step in range(1, num_step + 1):
@@ -163,14 +167,14 @@ async def calibration(
 
     await telescopes[tel].offset_radec(command, 0, -num_step * offset_per_step)
 
-    xpositions = np.array(xpositions) - xpositions[0]
-    ypositions = np.array(ypositions) - ypositions[0]
+    xoffsets = np.array(xpositions) - xpositions[0]
+    yoffsets = np.array(ypositions) - ypositions[0]
     xscale_dec = (
-        np.sum(xpositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        np.average(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
         offset_per_step
     )  # displacement along x-axis by ra offset in pixel per arcsec. exclude the first index (0,0)
     yscale_dec = (
-        np.sum(ypositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+        np.average(yoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
         offset_per_step
     )  # exclude the first index (0,0)
 
@@ -179,33 +183,30 @@ async def calibration(
     ypositions = [initposition[:, 1]]
 
     for step in range(1, num_step + 1):
-        await telescopes[tel].offset_radec(command, offset_per_step, 0)
+        await telescopes[tel].offset_radec(command, offset_per_step/np.cos(np.deg2rad(decj2000_deg)), 0)
         position, flux = await find_guide_stars(
             command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
         )
         xpositions.append(position[:, 0])
         ypositions.append(position[:, 1])
 
-    await telescopes[tel].offset_radec(command, -num_step * offset_per_step, 0)
+    await telescopes[tel].offset_radec(command, -num_step * offset_per_step/np.cos(np.deg2rad(decj2000_deg)), 0)
 
-    decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
 
     xpositions = np.array(xpositions) - xpositions[0]
     ypositions = np.array(ypositions) - ypositions[0]
     xscale_ra = (
         np.sum(xpositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
-        offset_per_step /
-        np.cos(np.deg2rad(decj2000_deg))
+        offset_per_step
     )  # exclude the first index (0,0)
     yscale_ra = (
         np.sum(ypositions[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
-        offset_per_step /
-        np.cos(np.deg2rad(decj2000_deg))
+        offset_per_step
     )  # exclude the first index (0,0)
 
-    telescopes[tel].scale_matrix = np.matrix(
-        [[xscale_ra, yscale_ra], [xscale_dec, yscale_dec]]
-    )
+    telescopes[tel].scale_matrix = np.linalg.inv(np.array(
+        [[xscale_ra, xscale_dec], [yscale_ra, yscale_dec]]
+    ))  # inverse matrix.. linear system of equations..
     return command.finish(
         xscale_ra="%.3f pixel/arcsec" % xscale_ra,
         yscale_ra="%.3f pixel/arcsec" % yscale_ra,
@@ -236,7 +237,7 @@ async def autoguide_supervisor(
         If ``useteldata`` is flagged,
         the sequence will use the pixel scale and rotation angle from LVMTelescope.
         Otherwise, the sequence will get pixel scale from LVMCamera, and
-        it assumes that the camera is north-oriented.
+        it assumes that the camera is north-oriented and both axes of mount are orthogonal.
     """
     global KHU_inner_test
     if 0:
@@ -362,7 +363,7 @@ async def find_guide_stars(
 ):
     """
     Expose an image, and find three guide stars from the image.
-    Also calculate the center coordinates and flux of found stars.
+    Also calculate the center coordinates and fluxes of found stars.
 
     Parameters
     ----------
@@ -446,8 +447,7 @@ async def autoguiding(
         tel,
         positionguess=initposition,
     )
-    print(starflux)
-    print(initflux)
+
     if (
         np.abs(
             np.average(starflux / initflux - 1, weights=2.5 * np.log10(initflux * 10))
@@ -466,28 +466,28 @@ async def autoguiding(
     offset = np.mean(starposition - initposition, axis=0)  # in x,y [pixel]
 
     if useteldata:
-        offset_arcsec = np.matmul(
-            telescopes[tel].scale_matrix.I, offset
+        offset_arcsec = np.dot(
+            telescopes[tel].scale_matrix, offset
         )  # in x,y(=ra,dec) [arcsec]
-        offset_arcsec = np.array(offset_arcsec)
+        correction_arcsec = -np.array(offset_arcsec)[0]
     else:
         theta = np.radians(westcameras[tel].rotationangle)
         c, s = np.cos(theta), np.sin(theta)
         R = np.array(((c, -s), (s, c)))
-        offset_arcsec = (
+        correction_arcsec = -(
             np.dot(R, offset) * westcameras[tel].pixelscale
         )  # in x,y(=ra,dec) [arcsec]
 
     decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
-    offset_arcsec[0] = offset_arcsec[0] / np.cos(np.deg2rad(decj2000_deg))
+    correction_arcsec[0] = correction_arcsec[0] / np.cos(np.deg2rad(decj2000_deg))
 
     if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
         print(
-            "compensate: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
-            % (offset_arcsec[0], offset_arcsec[1], offset[0], offset[1])
+            "compensate signal: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
+            % (correction_arcsec[0], correction_arcsec[1], -offset[0], -offset[1])
         )
-        await telescopes[tel].offset_radec(command, *offset_arcsec)
-        return offset_arcsec
+        await telescopes[tel].offset_radec(command, *correction_arcsec)
+        return correction_arcsec
 
     else:
         return [0.0, 0.0]

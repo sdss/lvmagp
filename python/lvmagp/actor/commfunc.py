@@ -159,9 +159,9 @@ class LVMTelescope:
         self.latitude = site.lat
         self.longitude = site.long
 
-        self.scale_matrix = np.matrix(
-            [[1, 1], [1, 1]]  # [x_ra , y_ra ]
-        )  # [x_dec, y_dec]
+        self.scale_matrix = np.array(
+            [[0, 0], [0, 0]]
+        )  # (ra, dec) = (scale_matrix)*(x, y)
 
         self.ag_task = None
         self.ag_break = False

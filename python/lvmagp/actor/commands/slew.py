@@ -3,6 +3,8 @@ import os
 
 import click
 import numpy as np
+from astropy import units as u
+from astropy.coordinates import Angle
 from clu.command import Command
 
 from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
@@ -12,25 +14,6 @@ from lvmagp.actor.internalfunc import GuideImage, cal_pa, check_target
 from lvmagp.actor.user_parameters import usrpars
 
 from . import parser
-
-
-async def deg_to_dms(deg):
-    """
-    Convert the number in degree unit into a tuple consists of degree, minutes, and seconds.
-    Degree and minutes is integer, and seconds is float.
-
-    Parameters
-    ----------
-    exptime
-        Exposure time
-    """
-    absdeg = np.abs(deg)
-    d = np.floor(absdeg)
-    m = np.floor((absdeg - d) * 60)
-    s = (absdeg - d - m / 60) * 3600
-    if deg < 0:
-        d = -d
-    return (d, m, s)
 
 
 @parser.command()
@@ -141,17 +124,18 @@ async def slew(
         westcameras[tel].rotationangle = westguideimg.pa
         eastcameras[tel].rotationangle = eastguideimg.pa
 
-        ra2000_hms = await deg_to_dms(ra2000_d / 15)
-        dec2000_dms = await deg_to_dms(dec2000_d)
+        ra2000 = Angle(ra2000_d, u.degree)
+        dec2000 = Angle(dec2000_d, u.degree)
 
-        comp_ra_arcsec = (target_ra_h * 15 - ra2000_d) * 3600
-        comp_dec_arcsec = (target_dec_d - dec2000_d) * 3600
+        target_ra = Angle(target_ra_h, u.hour)
+        target_dec = Angle(target_dec_d, u.degree)
+
+        comp_ra_arcsec = (target_ra - ra2000).s
+        comp_dec_arcsec = (target_dec - dec2000).s
 
         command.info(
-            Img_ra2000="%02dh %02dm %06.3fs"
-            % (ra2000_hms[0], ra2000_hms[1], ra2000_hms[2]),
-            Img_dec2000="%02dd %02dm %06.3fs"
-            % (dec2000_dms[0], dec2000_dms[1], dec2000_dms[2]),
+            Img_ra2000=ra2000.to_string(unit=u.hour),
+            Img_dec2000=dec2000.to_string(unit=u.degree),
             Img_pa="%.3f deg" % pa_d,
             offset_ra="%.3f arcsec" % comp_ra_arcsec,
             offset_dec="%.3f arcsec" % comp_dec_arcsec,
