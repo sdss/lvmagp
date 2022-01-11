@@ -2,11 +2,16 @@ from __future__ import absolute_import, annotations, division, print_function
 
 from clu.actor import AMQPActor
 
-from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
-                                   LVMFocuser, LVMKMirror, LVMTANInstrument,
-                                   LVMTelescope, LVMWestCamera)
+from lvmagp.actor.commfunc import (
+    LVMEastCamera,  # noqa: F401
+    LVMFibselector,
+    LVMFocuser,
+    LVMKMirror,
+    LVMTelescope,
+    LVMWestCamera,
+)
 
-from .commands import parser as lvm_command_python
+from .commands import command_parser as lvm_command_python
 
 
 # from scpactor import __version__
@@ -31,6 +36,7 @@ class lvmagp(AMQPActor):
         westcameras: tuple[LVMEastCamera, ...] = (),
         focusers: tuple[LVMFocuser, ...] = (),
         kmirrors: tuple[LVMKMirror, ...] = (),
+        fiberselectors: tuple[LVMFibselector, ...] = (),
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -58,6 +64,7 @@ class lvmagp(AMQPActor):
         self.westcameras = {s.name: s for s in westcameras}
         self.focusers = {s.name: s for s in focusers}
         self.kmirrors = {s.name: s for s in kmirrors}
+        self.fibserselctors = {s.name: s for s in fiberselectors}
 
     @classmethod
     def from_config(cls, config, *args, **kwargs):
@@ -90,6 +97,8 @@ class lvmagp(AMQPActor):
 
                 instance.kmirrors.update({ctrname: LVMKMirror(ctrname)})
 
+                instance.fibserselctors.update({ctrname: LVMFibselector(ctrname)})
+
                 # print(ctrname,ctr)
 
         # print(instance.telescopes)
@@ -100,5 +109,6 @@ class lvmagp(AMQPActor):
             instance.westcameras,
             instance.focusers,
             instance.kmirrors,
+            instance.fibserselctors
         ]
         return instance

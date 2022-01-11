@@ -11,13 +11,14 @@ import importlib
 import os
 
 import click
-from clu.parsers.click import CluGroup, help_, ping, version, command_parser
+from clu.parsers.click import CluGroup, command_parser, help_, ping, version
 from cluplus.parsers.click import __commands
 
 
 @click.group(cls=CluGroup)
 def parser(*args):
     pass
+
 
 parser.add_command(ping)
 parser.add_command(version)

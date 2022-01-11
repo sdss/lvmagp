@@ -1,6 +1,6 @@
 from clu.command import Command
 
-from . import parser
+from . import command_parser as parser
 
 
 @parser.group()

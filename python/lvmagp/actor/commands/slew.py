@@ -1,5 +1,4 @@
 import asyncio
-import os
 
 import click
 import numpy as np
@@ -7,13 +6,18 @@ from astropy import units as u
 from astropy.coordinates import Angle
 from clu.command import Command
 
-from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
-                                   LVMFocuser, LVMKMirror, LVMTANInstrument,
-                                   LVMTelescope, LVMWestCamera)
+from lvmagp.actor.commfunc import (
+    LVMEastCamera,  # noqa: F401
+    LVMFibselector,
+    LVMFocuser,
+    LVMKMirror,
+    LVMTelescope,
+    LVMWestCamera,
+)
 from lvmagp.actor.internalfunc import GuideImage, cal_pa, check_target
 from lvmagp.actor.user_parameters import usrpars
 
-from . import parser
+from . import command_parser as parser
 
 
 @parser.command()
@@ -44,7 +48,6 @@ async def slew(
         The declination (J2000) of the target in degrees
     """
 
-    test_KHU = True
     long_d = telescopes[tel].longitude
     lat_d = telescopes[tel].latitude
 
@@ -77,11 +80,7 @@ async def slew(
         try:
             imgcmd = []
             imgcmd.append(westcameras[tel].test_exposure(command, usrpars.aqu_exptime))
-            # imgcmd.append(westcameras[tel].single_exposure(command, usrpars.aqu_exptime))
-            if not test_KHU:
-                imgcmd.append(
-                    eastcameras[tel].test_exposure(command, usrpars.aqu_exptime)
-                )
+            imgcmd.append(eastcameras[tel].test_exposure(command, usrpars.aqu_exptime))
             guideimgpath = await asyncio.gather(*imgcmd)
 
         except Exception:
@@ -89,30 +88,13 @@ async def slew(
 
         command.info("Astrometry ...")
 
-        if 0:  # Here should be changed to the camera version
-            pwd = os.path.dirname(os.path.abspath(__file__))
-            agpwd = pwd + "/../../../../"
-            # Here lvmcam path and naming rule for finding latest guide image..
-
-            guideimgpath = (
-                agpwd +
-                "testimg/focus_series/synthetic_image_median_field_5s_seeing_02.5.fits"
-            )  # noqa: E501
-
         westguideimg = GuideImage(guideimgpath[0])
-        eastguideimg = westguideimg
-
-        if not test_KHU:
-            eastguideimg = GuideImage(guideimgpath[1])
+        eastguideimg = GuideImage(guideimgpath[1])
 
         try:
-            # await guideimg.astrometry(ra_h=13, dec_d=-55)
             astcmd = []
             astcmd.append(westguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
-            if not test_KHU:
-                astcmd.append(
-                    eastguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d)
-                )
+            astcmd.append(eastguideimg.astrometry(ra_h=target_ra_h, dec_d=target_dec_d))
             cmd = await asyncio.gather(*astcmd)
 
         except Exception:
@@ -153,8 +135,7 @@ async def slew(
             else:
                 command.info(text="Compensating ...")
                 cmd = []
-                if not test_KHU:
-                    cmd.append(kmirrors[tel].moverel(command, -pa_d, "DEG"))
+                cmd.append(kmirrors[tel].moverel(command, -pa_d, "DEG"))
                 cmd.append(
                     telescopes[tel].offset_radec(
                         command, comp_ra_arcsec, comp_dec_arcsec

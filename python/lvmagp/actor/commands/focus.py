@@ -3,7 +3,7 @@ from clu.command import Command
 
 from lvmagp.actor.internalfunc import send_message  # noqa: F403
 
-from . import parser
+from . import command_parser as parser
 
 
 lvmtan = "lvm.sci.foc"
@@ -17,17 +17,7 @@ def focus(*args):
 @focus.command()
 @click.argument("STEPS", type=int)
 async def moverel(command: Command, steps: int):
-    """
-    pos = await send_message(
-        command, lvmtan, "getposition", returnval=True, body="Position"
-    )
 
-    reachable = await send_message(
-    command, lvmtan, "isreachable %d" % (pos+steps), returnval=True, body="Reachable"
-    )
-    if not reachable:
-        return command.fail(text="Target position is not reachable.")
-    """
     movecmd = await send_message(command, lvmtan, "moverelative %d" % steps)
     if movecmd:
         return command.finish(text="Move completed.")
@@ -36,13 +26,6 @@ async def moverel(command: Command, steps: int):
 @focus.command()
 @click.argument("POSITION", type=int)
 async def moveabs(command: Command, position: int):
-    """
-    reachable = await send_message(
-    command, lvmtan, "isreachable %d" % position, returnval=True, body="Reachable"
-    )
-    if not reachable:
-        return command.fail(text="Target position is not reachable.")
-    """
     movecmd = await send_message(command, lvmtan, "moveabsolute %d" % position)
     if movecmd:
         return command.finish(text="Move completed.")
