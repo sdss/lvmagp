@@ -4,9 +4,9 @@ import click
 import numpy as np
 from clu.command import Command
 
+from lvmagp.actor.commfunc import LVMEastCamera  # noqa: F401
 from lvmagp.actor.commfunc import (
-    LVMEastCamera,  # noqa: F401
-    LVMFibselector,
+    LVMFiborselector,
     LVMFocuser,
     LVMKMirror,
     LVMTelescope,
@@ -218,12 +218,12 @@ async def calibration(
     print(yoffsets)
 
     xscale_ra = (
-        np.sum(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
-        offset_per_step
+        np.sum(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)]))
+        / offset_per_step
     )  # exclude the first index (0,0)
     yscale_ra = (
-        np.sum(yoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
-        offset_per_step
+        np.sum(yoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)]))
+        / offset_per_step
     )  # exclude the first index (0,0)
 
     telescopes[tel].scale_matrix = np.linalg.inv(
@@ -382,7 +382,8 @@ async def autoguiding(
     if (
         np.abs(
             np.average(starflux / initflux - 1, weights=2.5 * np.log10(initflux * 10))
-        ) > usrpars.ag_flux_tolerance
+        )
+        > usrpars.ag_flux_tolerance
     ):
         return command.error(
             "Star flux variation %.3f is too large."

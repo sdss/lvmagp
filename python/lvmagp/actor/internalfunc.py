@@ -1,11 +1,9 @@
-import asyncio
 import os
+import subprocess
 import warnings
 from datetime import datetime
 
 import numpy as np
-
-# import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
@@ -144,7 +142,7 @@ class GuideImage:
 
         return True
 
-    async def astrometry(self, ra_h=-999, dec_d=-999):
+    def astrometry(self, ra_h=-999, dec_d=-999, returndict=None):
         """
         Conduct astrometry to find where the image is taken.
         Astromery result is saved in astrometry_result.txt in same directory with this python file,
@@ -157,41 +155,69 @@ class GuideImage:
         dec_d
             The initial guess for declination (J2000) in degrees
         """
+
+        returndict["ra"] = -999.0
+        returndict["dec"] = -999.0
+        returndict["pa"] = -999.0
+
         ospassword = "0000"
-        resultpath = (
-            os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
-        )
-        timeout = 10
-        scalelow = 2
-        scalehigh = 3
-        radius = 3
+        pathsplit = self.filepath.split("/")
+        if "age" in pathsplit[-1]:
+            resultpath = (
+                os.path.dirname(os.path.abspath(__file__)) +
+                "/astrometry_result_age.txt"
+            )
+        elif "agw" in pathsplit[-1]:
+            resultpath = (
+                os.path.dirname(os.path.abspath(__file__)) +
+                "/astrometry_result_agw.txt"
+            )
+        else:
+            resultpath = (
+                os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
+            )
+
+        timeout = 5.0
+        scalelow = 2.0
+        scalehigh = 3.0
+        radius = 3.0
 
         if ra_h == -999:
-            cmd = (
-                "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+            proc = subprocess.Popen(
+                [
+                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
             --downsample 2 --no-plots > %s"
-                % (ospassword, self.filepath, timeout, resultpath)
+                    % (ospassword, self.filepath, timeout, resultpath)
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                shell=True,
             )
 
         else:
-            cmd = "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
-            --downsample 2 --scale-units arcsecperpix --scale-low %f --scale-high %f --ra %f --dec %f \
-            --radius %f --no-plots > %s" % (  # noqa: E501
-                ospassword,
-                self.filepath,
-                timeout,
-                scalelow,
-                scalehigh,
-                ra_h * 15,
-                dec_d,
-                radius,
-                resultpath,
+            proc = subprocess.Popen(
+                [
+                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+            --downsample 2 --scale-units arcsecperpix --scale-low %f --scale-high \
+            %f --ra %f --dec %f --radius %f --no-plots > %s"
+                    % (  # noqa: E501
+                        ospassword,
+                        self.filepath,
+                        timeout,
+                        scalelow,
+                        scalehigh,
+                        ra_h * 15,
+                        dec_d,
+                        radius,
+                        resultpath,
+                    )
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                shell=True,
             )
 
-        proc = await asyncio.create_subprocess_shell(
-            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
-        await proc.communicate()
+        out, err = proc.communicate()
 
         with open(resultpath, "r") as f:
             result = f.readlines()
@@ -204,6 +230,8 @@ class GuideImage:
 
                 self.ra2000 = float(line[startidx + 1: mididx])
                 self.dec2000 = float(line[mididx + 1: endidx])
+                returndict["ra"] = self.ra2000
+                returndict["dec"] = self.dec2000
 
             elif "Field rotation angle" in line:
                 startidx = line.find("is")
@@ -213,6 +241,7 @@ class GuideImage:
                     self.pa = float(line[startidx + 3: endidx - 1])
                 elif line[endidx + 8] == "W":
                     self.pa = 360 - float(line[startidx + 3: endidx - 1])
+                returndict["pa"] = self.pa
 
             elif "Total CPU time limit reached!" in line:
                 raise Exception("Astrometry timeout")
