@@ -6,7 +6,7 @@ from clu.command import Command
 
 from lvmagp.actor.commfunc import LVMEastCamera  # noqa: F401
 from lvmagp.actor.commfunc import (
-    LVMFiborselector,
+    LVMFiberselector,
     LVMFocuser,
     LVMKMirror,
     LVMTelescope,
@@ -15,7 +15,7 @@ from lvmagp.actor.commfunc import (
 from lvmagp.actor.internalfunc import GuideImage  # noqa: F403
 from lvmagp.actor.user_parameters import usrpars
 
-from . import command_parser as parser
+from . import parser
 
 
 @parser.group()

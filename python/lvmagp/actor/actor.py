@@ -2,9 +2,9 @@ from __future__ import absolute_import, annotations, division, print_function
 
 from clu.actor import AMQPActor
 
-from .commands import command_parser as lvm_command_python
+from lvmagp.actor.commands import parser as lvm_command_python
 
-
+from lvmagp import __version__
 # from scpactor import __version__
 
 __all__ = ["lvmagp"]

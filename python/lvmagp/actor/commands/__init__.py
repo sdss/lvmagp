@@ -11,7 +11,7 @@ import importlib
 import os
 
 import click
-from clu.parsers.click import CluGroup, command_parser, help_, ping, version
+from clu.parsers.click import CluGroup, help_, ping, version
 from cluplus.parsers.click import __commands
 
 
@@ -23,7 +23,7 @@ def parser(*args):
 parser.add_command(ping)
 parser.add_command(version)
 parser.add_command(help_)
-command_parser.add_command(__commands)
+parser.add_command(__commands)
 
 # Autoimport all modules in this directory so that they are added to the parser.
 

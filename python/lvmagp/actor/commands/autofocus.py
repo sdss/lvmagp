@@ -3,7 +3,7 @@ from clu.command import Command
 
 from lvmagp.actor.commfunc import LVMTelescopeUnit
 
-from . import command_parser as parser
+from . import parser
 
 
 @parser.group()
