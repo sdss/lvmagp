@@ -33,6 +33,7 @@ generate-setup-file = false
 lvmagp = "lvmagp.__main__:lvmagp"
 
 [tool.poetry.dependencies]
+sphinx = {version = "^3", optional = true}
 python = ">3.7, <3.10"
 sdss-tree = ">=2.15.2"
 sdss-access = ">=0.2.3"
@@ -43,6 +44,9 @@ photutils = "^1.1.0"
 numpy = "^1.21.1"
 black = "^21.7-beta.0"
 sdss-cluplus = "^0.0.16"
+
+[tool.poetry.extras]
+docs = ["sphinx"]
 
 [tool.poetry.dev-dependencies]
 ipython = ">=7.11.0"

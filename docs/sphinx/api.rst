@@ -1,15 +1,15 @@
-
 .. _api:
 
-lvmagp Reference
-=========================
+API
+===
 
-.. _api-main:
+.. _api-lvmagp:
 
-Main
-----
+Actor
+-----
 
-.. automodule:: lvmagp.main
+.. automodule:: lvmagp.actor.actor
    :members:
    :undoc-members:
    :show-inheritance:
+

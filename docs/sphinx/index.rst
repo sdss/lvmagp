@@ -1,35 +1,28 @@
 
 lvmagp's documentation
-=============================================
+======================
 
-This is the documentation for the SDSS Python product lvmagp. The current version is |lvmagp_version|. You can install the package by doing
-
-.. code-block:: console
-
-  $ pip install sdss-lvmagp
-
-
-Contents
---------
+This is the documentation for the SDSS Python product lvmagp. The current version is |lvmagp_version|.
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 3
+  :hidden:
 
-  What's new in lvmagp? <CHANGELOG>
-  Introduction to lvmagp <intro>
-
-
-Reference
----------
+  README <readme>
 
 .. toctree::
-   :maxdepth: 1
+  :caption: Reference
+  :maxdepth: 3
+  :hidden:
 
-   api
+  api
+  actor-commands
 
+.. toctree::
+  :caption: Development
+  :maxdepth: 3
+  :hidden:
 
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
+  Changelog <changelog>
+  GitHub Repository <https://github.com/sdss/lvmagp>
+  Issues  <https://github.com/sdss/lvmagp/issues>
