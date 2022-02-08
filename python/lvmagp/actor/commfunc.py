@@ -554,7 +554,7 @@ class LVMTelescopeUnit(
         self.screen_alt_d = -999
         self.screen_az_d = -999
 
-    ############# Autofocus functions #########################
+    ######## Autofocus functions #############
     def coarse_autofocus(self):
         """
         Find the focus coarsely by scanning whole reachable position.

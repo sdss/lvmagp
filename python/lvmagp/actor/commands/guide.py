@@ -6,7 +6,7 @@ from clu.command import Command
 
 from lvmagp.actor.commfunc import LVMEastCamera  # noqa: F401
 from lvmagp.actor.commfunc import (
-    LVMFiborselector,
+    LVMFiberselector,
     LVMFocuser,
     LVMKMirror,
     LVMTelescope,
