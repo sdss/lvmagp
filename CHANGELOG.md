@@ -1,6 +1,3 @@
-.. _lvmagp-changelog:
-
-==========
 Change Log
 ==========
 
