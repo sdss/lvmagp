@@ -99,7 +99,7 @@ class GuideImage:
         for i in range(len(self.guidestarposition[:, 0])):
             xcenter = int(self.guidestarposition[i, 0])
             ycenter = int(self.guidestarposition[i, 1])
-            p_init = models.Gaussian2D(amplitude=30000, x_mean=xcenter, y_mean=ycenter)
+            p_init = models.Gaussian2D(amplitude=60000, x_mean=xcenter, y_mean=ycenter)
             fit_p = fitting.LevMarLSQFitter()
             xrange = np.arange(xcenter - windowradius, xcenter + windowradius)
             yrange = np.arange(ycenter - windowradius, ycenter + windowradius)
@@ -123,7 +123,7 @@ class GuideImage:
     def update_guidestar_properties(self):
         """
         Using ``twoDGaussianfit`` method, update guidestar properties in ``self.guidestarflux``,
-        ``self.guidestarposition``, ``self.guidestarsize``, and ``slef.FWHM``.
+        ``self.guidestarposition``, ``self.guidestarsize``, and ``self.FWHM``.
         """
         if len(self.guidestarposition) == 0:
             pass

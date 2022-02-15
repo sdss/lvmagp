@@ -6,7 +6,7 @@ from clu.command import Command
 
 from lvmagp.actor.commfunc import LVMEastCamera  # noqa: F401
 from lvmagp.actor.commfunc import (
-    LVMFiborselector,
+    LVMFiberselector,
     LVMFocuser,
     LVMKMirror,
     LVMTelescope,
@@ -25,7 +25,7 @@ def guide(*args):
 
 @guide.command()
 @click.argument("TEL", type=str)
-@click.option("--useteldata", type=float, is_flag=True)
+@click.option("--useteldata", type=bool, is_flag=True)
 async def start(
     command: Command,
     telescopes: dict[str, LVMTelescope],
@@ -279,7 +279,7 @@ async def autoguide_supervisor(
             useteldata,
         )
 
-        if telescopes[tel].ag_break is True:
+        if telescopes[tel].ag_break:
             telescopes[tel].ag_break = False
             break
 

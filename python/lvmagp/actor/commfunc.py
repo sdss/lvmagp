@@ -63,7 +63,7 @@ class LVMFocuser:
 
         try:
             self.amqpc.log.debug(f"{datetime.datetime.now()} | Move focus by {delta_f}")
-            self._foc.moveRelative(delta_f, unit="STEPS")
+            self._foc.moveRelative(delta_f, "STEPS")
 
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
@@ -88,13 +88,13 @@ class LVMFocuser:
                 self.amqpc.log.debug(
                     f"{datetime.datetime.now()} | Move focus to {value}"
                 )
-                self._foc.moveAbsolute(value, unit="STEPS")
+                self._foc.moveAbsolute(value, "STEPS")
             else:
                 temp_value = temp_vs_focus(temperature=temperature)
                 self.amqpc.log.debug(
                     f"{datetime.datetime.now()} | Move focus to {value} (estimated)"
                 )
-                self._foc.moveAbsolute(temp_value, unit="STEPS")
+                self._foc.moveAbsolute(temp_value, "STEPS")
 
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
@@ -112,7 +112,7 @@ class LVMFocuser:
             Unit of position
         """
         try:
-            position = self._foc.getPosition(unit=unit)["Position"]
+            position = self._foc.getPosition(unit)["Position"]
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
@@ -225,39 +225,7 @@ class LVMTelescope:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
 
-    def goto_park(self):
-        """
-        Move telescope to safe park position.
-
-        ======
-        Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope. Return error message
-            (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
-            abort observation (halt in LVMI_interface) and park telescope
-            (in this case, we assume user wants to park due to an emergency)
-        """
-        pass
-
-    def goto_zenith(self):
-        """
-        Point telescope to zenith
-
-        ======
-        Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope.
-            Return error message (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
-            repeat status command regularly until it returns idle,
-              then move telescope. Regularly give updates
-              (i.e. "waiting for instrument to become idle before moving telescope")
-        """
-
-    def slew_radec2000(self, target_ra_h, target_dec_d):
+    def _slew_radec2000(self, target_ra_h, target_dec_d):
         """
         Slew the telescope to given equatorial coordinates whose epoch is J2000.
 
@@ -272,13 +240,13 @@ class LVMTelescope:
             self.amqpc.log.debug(
                 f"{datetime.datetime.now()} | Start to slew telescope to RA {target_ra_h}, Dec {target_dec_d}."  # noqa: E501
             )
-            self._pwi.gotoRaDecJ2000(ra_h=target_ra_h, deg_d=target_dec_d)
+            self._pwi.gotoRaDecJ2000(target_ra_h, target_dec_d)
         except Exception as e:
             self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
             raise
         self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
 
-    def slew_altaz(self, target_alt_d, target_az_d):
+    def _slew_altaz(self, target_alt_d, target_az_d):
         """
         Slew the telescope to given horizontal coordinates.
 
@@ -293,13 +261,13 @@ class LVMTelescope:
             self.amqpc.log.debug(
                 f"{datetime.datetime.now()} | Start to slew telescope to Alt {target_alt_d}, Az {target_az_d}."  # noqa: E501
             )
-            self._pwi.gotoRaDecJ2000(alt_d=target_alt_d, az_d=target_az_d)
+            self._pwi.gotoAltAzJ2000(target_alt_d, target_az_d)
         except Exception as e:
             self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
             raise
         self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
 
-    def reset_offset_radec(self):
+    def _reset_offset_radec(self):
         """
         Reset the offset of both axes to zero.
         """
@@ -315,7 +283,7 @@ class LVMTelescope:
             f"{datetime.datetime.now()} | Zero offset setting completed."
         )
 
-    def offset_radec(self, ra_arcsec, dec_arcsec):
+    def _offset_radec(self, ra_arcsec, dec_arcsec):
         """
         Give some offset to the mount
 
@@ -326,18 +294,17 @@ class LVMTelescope:
         dec_arcsec
             Distance to move along declination axis in arcseconds
         """
-
+        self.amqpc.log.debug(
+            f"{datetime.datetime.now()} | Set telescope offsets ra={ra_arcsec}, dec={dec_arcsec}"  # noqa: E501
+        )
         try:
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | Set telescope offsets ra={ra_arcsec}, dec={dec_arcsec}"  # noqa: E501
-            )
             self._pwi.offset(ra_add_arcsec=ra_arcsec, dec_add_arcsec=dec_arcsec)
         except Exception as e:
             self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
             raise
         self.amqpc.log.debug(f"{datetime.datetime.now()} | Set offset done")
 
-    def get_dec2000_deg(self):
+    def _get_dec2000_deg(self):
         """
         Return the declination (J2000) of current position in degrees
         """
@@ -348,6 +315,25 @@ class LVMTelescope:
             raise
 
         return status["dec_j2000_degs"]
+
+    def _set_tracking(self, enable):
+        """
+        Turn on or off the mount tracking
+
+        Parameters
+        ----------
+        enable
+            If enable is True, tracking will be started. Otherwise, the tracking will be stopped.
+        """
+
+
+        s = "ON" if enable else "OFF"
+        self.amqpc.log.debug(f"{datetime.datetime.now()} | Set tracking {s}")
+        try:
+            self._pwi.setTracking(enable)
+        except Exception as e:
+            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            raise
 
 
 class LVMCamera:
@@ -377,7 +363,7 @@ class LVMCamera:
         )
 
         try:
-            path = self._cam.expose(exptime=exptime, num=1, camname=self.camname)[
+            path = self._cam.expose(exptime, 1, self.camname)[
                 "PATH"
             ]
         except Exception as e:
@@ -406,7 +392,7 @@ class LVMCamera:
 
         try:
             path = self._cam.expose(
-                exptime=exptime, num=1, camname=self.camname, testshot=True
+                exptime, 1, self.camname, testshot=""
             )["PATH"]
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
@@ -428,8 +414,12 @@ class LVMCamera:
         repeat
             The number of bias images
         """
+        self.amqpc.log.debug(
+            f"{datetime.datetime.now()} | Guider {self.camname} exposure started"
+        )
+
         try:
-            path = self._cam.expose(exptime=0, num=repeat, camname=self.camname)["PATH"]
+            path = self._cam.expose(0, repeat, self.camname)["PATH"]
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
@@ -440,6 +430,22 @@ class LVMCamera:
 
         return path.values()
 
+    def status(self):
+        '''
+        Return status of autoguide camera (i.e. power status, exposing/reading out/idle ).
+        '''
+
+        try:
+            status = self._cam.status()
+        except Exception as e:
+            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            raise
+
+        self.amqpc.log.info(
+            f"{datetime.datetime.now()} | {status}"
+        )
+
+        return status
 
 class LVMEastCamera(LVMCamera):
     """
@@ -510,6 +516,9 @@ class LVMTelescopeUnit(
             log_dir="/home/hojae/Desktop/lvmagp/logs",
             log=self.log,
         )
+        self.ag_on = False
+        self.ag_break = False
+
         # log_dir => How to fix??
         self.__connect_actors(
             enable_pwi, enable_foc, enable_agw, enable_age, enable_fibsel, enable_km
@@ -550,9 +559,6 @@ class LVMTelescopeUnit(
         self.offset_y = -999
         self.pixelscale = -999
         self.rotationangle = -999
-
-        self.screen_alt_d = -999
-        self.screen_az_d = -999
 
     ############# Autofocus functions #########################
     def coarse_autofocus(self):
@@ -692,14 +698,14 @@ class LVMTelescopeUnit(
             )
             raise LvmagpTargetOverTheLimit
 
-        self.reset_offset_radec()
+        self._reset_offset_radec()
 
         # Calculate position angle and rotate K-mirror  :: should be changed to traj method.
         target_pa_d0 = cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
 
         invoke(
             self.derotate(target_pa_d0 + target_pa_d),
-            self.slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
+            self._slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
         )
 
         self.amqpc.log.debug(
@@ -790,7 +796,7 @@ class LVMTelescopeUnit(
                     )
                     invoke(
                         self.derotate(target_pa_d - pa_d),
-                        self.offset_radec(
+                        self._offset_radec(
                             ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec
                         ),
                     )
@@ -845,7 +851,7 @@ class LVMTelescopeUnit(
             )
             raise LvmagpTargetOverTheLimit
 
-        self.reset_offset_radec()
+        self._reset_offset_radec()
 
         # Calculate position angle and rotate K-mirror  :: should be changed to traj method.
         target_pa_d0 = (
@@ -854,7 +860,7 @@ class LVMTelescopeUnit(
 
         invoke(
             self.derotate(target_pa_d0 + target_pa_d),
-            self.slew_altaz(target_alt_d=target_alt_d, target_az_d=target_az_d),
+            self._slew_altaz(target_alt_d=target_alt_d, target_az_d=target_az_d),
         )
 
         self.amqpc.log.debug(
@@ -877,60 +883,413 @@ class LVMTelescopeUnit(
               (i.e. "waiting for instrument to become idle before moving telescope")
         """
 
-        self.goto_aa(target_alt_d=self.screen_alt_d, target_az_d=self.screen_az_d)
+        self.goto_aa(target_alt_d=usrpars.screen_alt_d, target_az_d=usrpars.screen_az_d)
+
+    def goto_park(self):
+        """
+        Move telescope to safe park position.
+
+        ======
+        Comments and desired actions:
+        - Check dome safety interlock:
+            - if interlock is engaged, do not move the telescope. Return error message
+            (assume people are inside dome)
+        - run status (LVMI_interface) to check instrument status
+            - if not idle (i.e. carrying out any observations or calibrations),
+            abort observation (halt in LVMI_interface) and park telescope
+            (in this case, we assume user wants to park due to an emergency)
+        """
+        self.goto_aa(target_alt_d=usrpars.park_alt_d, target_az_d=usrpars.park_az_d)
+
+    def goto_zenith(self):
+        """
+        Point telescope to zenith
+
+        ======
+        Comments and desired actions:
+        - Check dome safety interlock:
+            - if interlock is engaged, do not move the telescope.
+            Return error message (assume people are inside dome)
+        - run status (LVMI_interface) to check instrument status
+            - if not idle (i.e. carrying out any observations or calibrations),
+            repeat status command regularly until it returns idle,
+              then move telescope. Regularly give updates
+              (i.e. "waiting for instrument to become idle before moving telescope")
+        """
+        self.goto_aa(target_alt_d=89.9999, target_az_d=180.)
+
+    def track_on(self, derotator=True):
+        '''
+        Turn on tracking, optionally track in rotation, optionally
+        supply non-sidereal track rates.
+
+        Parameters
+        ----------
+        derotator
+            If True, derotator will work to compensate the field rotation.
+        '''
+        self._set_tracking(enable=True)
+        if derotator:
+            pass  # do something to derotate the field
+
+    def track_off(self):
+        '''
+        Turn off mount tracking and field derotating.
+        '''
+
+        self._set_tracking(enable=False)
+        # do something to stop the derotator
 
     ############# Autoguide functions #########################
     def offset(
-        self,
-        target=None,
-        delta_ra=None,
-        delta_dec=None,
-        delta_x=None,
-        delta_y=None,
-        offset_gbox=False,
+        self, target=None, delta_ra=None, delta_dec=None, delta_x=None, delta_y=None, delta_pa=None
     ):
         """
-        Pointing offset: change track rates
+        Normal offset (for guiding): do NOT change track rates
 
-        ======
-        Comments and desired actions:
+        Parameters
+        ----------
+        target
+            ???
+        delta_ra
+            Offset in ra direction in arcsecond (+/- = E/W)
+        delta_dec
+            Offset in dec direction in arcsecond(+/- = N/S)
+        delta_x
+            Offset in x direction in guide frame in pixel(+/- = R/L)
+        delta_y
+            Offset in y direction in guide frame in pixel (+/- = U/D)
+        delta_pa
+            Offset in position angle in degree (+/- = CW/CCW)
         """
+
         pass
 
-    def guide_offset(
-        self, target=None, delta_ra=None, delta_dec=None, delta_x=None, delta_y=None
+    def dither(self, delta_x=None, delta_y=None, delta_pa=None):
+        """
+        move the guider set points (guide boxes) by specified amount; used to move accurate
+        offsets by letting the guider do the work. used, e.g., for dithering.
+
+        Parameters
+        ----------
+        delta_x
+            Offset in x direction in guide frame in pixel(+/- = R/L)
+        delta_y
+            Offset in y direction in guide frame in pixel (+/- = U/D)
+        delta_pa
+            Offset in position angle in degree (+/- = CW/CCW)
+        """
+
+        pass
+
+
+    def guide_on(self, useteldata=False, guide_parameters=None):
+        '''
+        Start guiding, or modify parameters of running guide loop.  <--- modify????
+        guide_parameters is a dictionary containing additional parameters for
+        the guiders, e.g. exposure times, cadence, PID parameters, readout or window modes, ...
+
+        useteldata
+            If ``useteldata`` is flagged, the sequence will use the pixel scale and
+            rotation angle from LVMTelescope.
+            Otherwise, the sequence will get pixel scale from LVMCamera, and
+            it assumes that the camera is north-oriented.
+        guide_parameters
+            exposure times, cadence, PID parameters, readout or window modes, ... ???
+        '''
+        if self.ag_on:
+            pass #raise lvmagpguidealreadyrunning ?????
+
+        try:
+            autoguide_supervisor(useteldata,
+                    timeout=3600)
+            await telescopes[tel].ag_task
+
+        except asyncio.TimeoutError:
+                command.error("Autoguide timeout")
+
+        finally:
+                telescopes[tel].ag_task = None
+
+        return command.finish("Guide stopped")
+
+
+    def guide_off(self):
+        '''
+        Turn off guiding, revert to tracking (track_on).
+        '''
+        if tel in telescopes:
+            if telescopes[tel].ag_task is not None:
+                telescopes[tel].ag_break = True
+            else:
+                return command.fail(
+                    text="There is no autoguiding loop for telescope '%s'" % tel
+                )
+        else:
+            return command.fail(text="Telescope '%s' does not exist" % tel)
+
+        return command.finish()
+
+    '''
+    async def calibration():
+        """
+        Run calibration sequence to calculate the transformation
+        from the equatorial coordinates to the xy coordinates of the image.
+        """
+
+        offset_per_step = usrpars.ag_cal_offset_per_step
+        num_step = usrpars.ag_cal_num_step
+
+        if tel not in telescopes:
+            return command.fail(text="Telescope '%s' does not exist" % tel)
+
+        decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
+
+        xpositions, ypositions = [], []
+
+        initposition, initflux = await find_guide_stars(
+            command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
+        )
+        xpositions.append(initposition[:, 0])
+        ypositions.append(initposition[:, 1])
+
+        await asyncio.sleep(3)
+
+        # dec axis calibration
+        for step in range(1, num_step + 1):
+            await telescopes[tel].offset_radec(command, 0, offset_per_step)
+            position, flux = await find_guide_stars(
+                command,
+                telescopes,
+                eastcameras,
+                westcameras,
+                focusers,
+                kmirrors,
+                tel,
+                positionguess=initposition,
+            )
+            xpositions.append(position[:, 0])
+            ypositions.append(position[:, 1])
+
+        await telescopes[tel].offset_radec(command, 0, -num_step * offset_per_step)
+
+        xoffsets = np.array(xpositions) - xpositions[0]
+        yoffsets = np.array(ypositions) - ypositions[0]
+
+        print(xpositions)
+        print(xoffsets)
+        print(ypositions)
+        print(yoffsets)
+
+        xscale_dec = (
+                np.average(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+                offset_per_step
+        )  # displacement along x-axis by ra offset in pixel per arcsec. exclude the first index (0,0)
+        yscale_dec = (
+                np.average(yoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)])) /
+                offset_per_step
+        )  # exclude the first index (0,0)
+
+        # ra axis calibration
+        xpositions = [initposition[:, 0]]
+        ypositions = [initposition[:, 1]]
+
+        for step in range(1, num_step + 1):
+            await telescopes[tel].offset_radec(
+                command, offset_per_step / np.cos(np.deg2rad(decj2000_deg)), 0
+            )
+            position, flux = await find_guide_stars(
+                command,
+                telescopes,
+                eastcameras,
+                westcameras,
+                focusers,
+                kmirrors,
+                tel,
+                positionguess=initposition,
+            )
+            xpositions.append(position[:, 0])
+            ypositions.append(position[:, 1])
+
+        await telescopes[tel].offset_radec(
+            command, -num_step * offset_per_step / np.cos(np.deg2rad(decj2000_deg)), 0
+        )
+
+        xoffsets = np.array(xpositions) - xpositions[0]
+        yoffsets = np.array(ypositions) - ypositions[0]
+
+        print(xpositions)
+        print(xoffsets)
+        print(ypositions)
+        print(yoffsets)
+
+        xscale_ra = (
+                np.sum(xoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)]))
+                / offset_per_step
+        )  # exclude the first index (0,0)
+        yscale_ra = (
+                np.sum(yoffsets[1:] / np.array([[i] * 3 for i in range(1, num_step + 1)]))
+                / offset_per_step
+        )  # exclude the first index (0,0)
+
+        telescopes[tel].scale_matrix = np.linalg.inv(
+            np.array([[xscale_ra, xscale_dec], [yscale_ra, yscale_dec]])
+        )  # inverse matrix.. linear system of equations..
+        return command.finish(
+            xscale_ra="%.3f pixel/arcsec" % xscale_ra,
+            yscale_ra="%.3f pixel/arcsec" % yscale_ra,
+            xscale_dec="%.3f pixel/arcsec" % xscale_dec,
+            yscale_dec="%.3f pixel/arcsec" % yscale_dec,
+        )
+    '''
+
+    def autoguide_supervisor(self, useteldata):
+        """
+        Manage the autoguide sequence.
+        It starts real autoguide loop and keeps it until the break signal comes.
+
+        Parameters
+        ----------
+        tel
+            Telescope to autoguide
+        useteldata
+            If ``useteldata`` is flagged,
+            the sequence will use the pixel scale and rotation angle from LVMTelescope.
+            Otherwise, the sequence will get pixel scale from LVMCamera, and
+            it assumes that the camera is north-oriented and both axes of mount are orthogonal.
+        """
+        initposition, initflux = self.find_guide_stars()
+
+        while 1:
+            await autoguiding(
+                initposition,
+                initflux,
+                useteldata,
+            )
+
+            if telescopes[tel].ag_break:
+                telescopes[tel].ag_break = False
+                break
+
+        return True
+
+    async def find_guide_stars(self, positionguess=None):
+        """
+        Expose an image, and find three guide stars from the image.
+        Also calculate the center coordinates and fluxes of found stars.
+
+        Parameters
+        ----------
+        positionguess
+            Initial guess of guidestar position.
+            It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
+            If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding
+            based on ``positionguess`` without finding new stars.
+        """
+
+        # take an image for astrometry
+        command.info("Taking image...")
+
+        try:
+            imgcmd = []
+            imgcmd.append(westcameras[tel].single_exposure(command, usrpars.ag_exptime))
+            imgcmd.append(eastcameras[tel].single_exposure(command, usrpars.ag_exptime))
+
+            guideimgpath = await asyncio.gather(*imgcmd)
+
+        except Exception:
+            return command.fail(fail="Camera error")
+
+        westguideimg = GuideImage(guideimgpath[0])
+        eastguideimg = GuideImage(guideimgpath[1])
+
+        if positionguess is None:
+            starposition = westguideimg.findstars()
+        else:
+            westguideimg.guidestarposition = positionguess
+            westguideimg.update_guidestar_properties()
+            starposition = westguideimg.guidestarposition
+        starflux = westguideimg.guidestarflux
+
+        return starposition, starflux
+
+    async def autoguiding(self, initposition,
+            initflux,
+            useteldata,
     ):
         """
-        Guiding offset: do NOT change track rates
+        Expose an image, and calculate offset from the image and initial values.
+        Compensate the offset.
 
-        ======
-        Comments and desired actions:
+        Parameters
+        ----------
+        tel
+            Telescope to autoguide
+        initposition
+            Position of guide stars when the autoguide is started
+        initflux
+            Flux of guide stars when the autoguide is started
+        positionguess
+            Initial guess of guidestar position.
+            It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
+            If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding
+            based on ``positionguess`` without finding new stars.
         """
+        starposition, starflux = self.find_guide_stars(
+            positionguess=initposition,
+        )
 
-    pass
+        if (
+                np.abs(
+                    np.average(starflux / initflux - 1, weights=2.5 * np.log10(initflux * 10))
+                )
+                > usrpars.ag_flux_tolerance
+        ):
+            return command.error(
+                "Star flux variation %.3f is too large."
+                % np.abs(
+                    np.average(
+                        starflux / initflux - 1, weights=2.5 * np.log10(initflux * 10)
+                    )
+                )
+            )
 
-    def offset_gbox(self, delta_x=None, delta_y=None, delta_pa=None):
-        """
-        move the guider set points by specified amount; used to move accurate
-        offsets by letting the guider do the work. used, e.g., for dithering.
-        ======
-        Comments and desired actions:
-        """
+        offset = np.mean(starposition - initposition, axis=0)  # in x,y [pixel]
 
-    pass
+        if useteldata:
+            offset_arcsec = np.dot(
+                telescopes[tel].scale_matrix, offset
+            )  # in x,y(=ra,dec) [arcsec]
+            correction_arcsec = -np.array(offset_arcsec)
 
-    def paoffset(self, delta_PA=None):
-        """
-        Apply a relative rotation offset by moving the K-mirror
+        else:
+            theta = np.radians(westcameras[tel].rotationangle)
+            c, s = np.cos(theta), np.sin(theta)
+            R = np.array(((c, -s), (s, c)))  # inverse rotation matrix
+            correction_arcsec = -(
+                    np.dot(R, offset) * westcameras[tel].pixelscale
+            )  # in x,y(=ra,dec) [arcsec]
 
-        Parameters:
-            delta_PA (float): rotation offset in degrees (+/- = E/W)
+        decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
+        correction_arcsec[0] /= np.cos(np.deg2rad(decj2000_deg))
+        correction_arcsec[1] *= -1
 
-        Returns:
-            None
-        """
+        if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
+            command.info(
+                "compensate signal: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
+                % (correction_arcsec[0], correction_arcsec[1], -offset[0], -offset[1])
+            )
+            await telescopes[tel].offset_radec(command, *correction_arcsec)
+            return correction_arcsec
 
-    pass
+        else:
+            return [0.0, 0.0]
+
+    def zero_coordinates(self):
+        '''
+        Zero-out mount model once pointing is verified.
+        '''
+        pass  #what is this?
 
     def check_safety_interlock(self):
         pass

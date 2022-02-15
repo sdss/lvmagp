@@ -30,7 +30,7 @@ async def slew(
     """
 
     telunit = LVMTelescopeUnit(tel)
-    telunit.slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d)
+    telunit.goto_eq(target_ra_h=target_ra_h, target_dec_d=target_dec_d)
     del telunit
 
     return command.finish(text="Acquisition done")

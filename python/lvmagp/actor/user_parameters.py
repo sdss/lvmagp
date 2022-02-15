@@ -1,4 +1,9 @@
 class usrpars:
+    # special positions
+    screen_alt_d = -999
+    screen_az_d = -999
+    park_alt_d = -999
+    park_az_d = -999
 
     # autofocus parameters
     af_incremental = 100  # step size for each movement
