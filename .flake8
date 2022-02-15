@@ -4,7 +4,11 @@ ignore =
     H101
     N
     W504
-
+    E266
+    F401
+    F841
+    W503
+    
 per-file-ignores =
     */__init__.py:E,W
 
