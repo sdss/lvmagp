@@ -983,7 +983,7 @@ class LVMTelescopeUnit(
         pass
 
 
-    def guide_on(self, useteldata=False, guide_parameters=None):
+    async def guide_on(self, useteldata=False, guide_parameters=None):
         '''
         Start guiding, or modify parameters of running guide loop.  <--- modify????
         guide_parameters is a dictionary containing additional parameters for
@@ -1143,7 +1143,7 @@ class LVMTelescopeUnit(
         )
     '''
 
-    def autoguide_supervisor(self, useteldata):
+    async def autoguide_supervisor(self, useteldata):
         """
         Manage the autoguide sequence.
         It starts real autoguide loop and keeps it until the break signal comes.
