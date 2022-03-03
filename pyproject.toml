@@ -43,6 +43,7 @@ photutils = "^1.1.0"
 numpy = "^1.21.1"
 black = "^21.7-beta.0"
 sdss-cluplus = "^0.0.16"
+sdss-lvmtipo = "^0.0.7"
 
 [tool.poetry.dev-dependencies]
 ipython = ">=7.31.1"

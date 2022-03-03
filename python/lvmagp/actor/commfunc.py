@@ -2,6 +2,8 @@ import datetime
 import logging
 import sys
 import uuid
+# import asyncio, threading
+# from multiprocessing.pool import ThreadPool
 from multiprocessing import Manager, Process
 
 import astropy.units as u
@@ -160,7 +162,7 @@ class LVMKMirror:
 
         try:
             self.amqpc.log.debug(f"{datetime.datetime.now()} | Move Kmirror to {pa}")
-            self._km.moveAbsolute(pa, unit="DEG")
+            self._km.moveAbsolute(pa, "DEG")
 
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
@@ -391,7 +393,7 @@ class LVMCamera:
         )
 
         try:
-            path = self._cam.expose(
+             path = self._cam.expose(
                 exptime, 1, self.camname, testshot=""
             )["PATH"]
         except Exception as e:
@@ -466,6 +468,11 @@ class LVMEastCamera(LVMCamera):
         try:
             self._cam = Proxy(self.amqpc, self.lvmcam)
             self._cam.start()
+            try:
+                self._cam.disconnect()
+                self._cam.connect(name=self.camname)
+            except Exception as e:
+                self._cam.connect(name=self.camname)
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
@@ -490,6 +497,11 @@ class LVMWestCamera(LVMCamera):
         try:
             self._cam = Proxy(self.amqpc, self.lvmcam)
             self._cam.start()
+            try:
+                self._cam.disconnect()
+                self._cam.connect(name=self.camname)
+            except Exception as e:
+                self._cam.connect(name=self.camname)
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
@@ -621,12 +633,35 @@ class LVMTelescopeUnit(
         """
         exptime = usrpars.af_exptime
         imgcmd_w, imgcmd_e = None, None
+        
+        # pool = ThreadPool(processes=2)
+        # a_agw = pool.apply_async(self.agw.single_exposure, (exptime,))
+        # a_age = pool.apply_async(self.age.single_exposure, (exptime,))
+
+        # p_agw = Process(
+        #             target=self.agw.single_exposure,
+        #             args=(exptime,),
+        #         )
+        # p_age = Process(
+        #             target=self.age.single_exposure,
+        #             args=(exptime,),
+        #         )
 
         try:
             if self.name != "phot":
-                imgcmd_w, imgcmd_e = invoke(
+                # imgcmd_w, imgcmd_e = (
+                #     a_agw.get(), 
+                #     a_age.get() 
+                # )
+
+                # p_agw.start()
+                # p_age.start()
+                # p_agw.join()
+                # p_age.join()
+                
+                imgcmd_w, imgcmd_e = (
                     self.agw.single_exposure(exptime=exptime),
-                    self.age.single_exposure(exptime=exptime),
+                    self.age.single_exposure(exptime=exptime)
                 )
             else:
                 imgcmd_w = self.agw.single_exposure(exptime=exptime)
@@ -635,10 +670,10 @@ class LVMTelescopeUnit(
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
-
-        guideimg_w = GuideImage(imgcmd_w["PATH"]["0"])
+        
+        guideimg_w = GuideImage(imgcmd_w)
         guideimg_w.findstars()
-        guideimg_e = GuideImage(imgcmd_e["PATH"]["0"])
+        guideimg_e = GuideImage(imgcmd_e)
         guideimg_e.findstars()
         FWHM = 0.5 * (guideimg_w.FWHM + guideimg_e.FWHM)
 
@@ -703,10 +738,10 @@ class LVMTelescopeUnit(
         # Calculate position angle and rotate K-mirror  :: should be changed to traj method.
         target_pa_d0 = cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
 
-        invoke(
-            self.derotate(target_pa_d0 + target_pa_d),
-            self._slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
-        )
+        # invoke(
+        self.derotate(target_pa_d0 + target_pa_d)
+        self._slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
+        # )
 
         self.amqpc.log.debug(
             f"{datetime.datetime.now()} | (lvmagp) Initial slew completed"
@@ -715,7 +750,7 @@ class LVMTelescopeUnit(
         for iter in range(usrpars.aqu_max_iter + 1):
 
             # take an image for astrometry
-            guideimgpath = invoke(
+            guideimgpath = (
                 self.agw.test_exposure(usrpars.aqu_exptime),
                 self.age.test_exposure(usrpars.aqu_exptime),
             )
@@ -771,12 +806,12 @@ class LVMTelescopeUnit(
             comp_dec_arcsec = (target_dec - dec2000).arcsecond
 
             self.amqpc.log.info(
-                f"{datetime.datetime.now()} | (lvmagp) Astrometry result"
-                f"Img_ra2000={ra2000.to_string(unit=u.hour)}"
-                f"Img_dec2000={dec2000.to_string(unit=u.degree)}"
-                f"Img_pa={pa_d:%.3f} deg"
-                f"offset_ra={comp_ra_arcsec:%.3f} arcsec"
-                f"offset_dec={comp_dec_arcsec:%.3f} arcsec"
+                f"{datetime.datetime.now()} | (lvmagp) Astrometry result"+
+                f"Img_ra2000={ra2000.to_string(unit=u.hour)}"+
+                f"Img_dec2000={dec2000.to_string(unit=u.degree)}"+
+                f"Img_pa={pa_d:.3f} deg"+
+                f"offset_ra={comp_ra_arcsec:.3f} arcsec"+
+                f"offset_dec={comp_dec_arcsec:.3f} arcsec"
             )
 
             # Compensation  // Compensation for K-mirror based on astrometry result?
@@ -794,12 +829,12 @@ class LVMTelescopeUnit(
                     self.amqpc.log.debug(
                         f"{datetime.datetime.now()} | (lvmagp) Compensate offset: #{iter}"
                     )
-                    invoke(
-                        self.derotate(target_pa_d - pa_d),
-                        self._offset_radec(
-                            ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec
-                        ),
-                    )
+                    # invoke(
+                    self.derotate(target_pa_d - pa_d),
+                    self._offset_radec(
+                        ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec
+                    ),
+                    # )
             else:
                 break
 
@@ -858,10 +893,10 @@ class LVMTelescopeUnit(
             0  # I dont know ... # cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
         )
 
-        invoke(
-            self.derotate(target_pa_d0 + target_pa_d),
-            self._slew_altaz(target_alt_d=target_alt_d, target_az_d=target_az_d),
-        )
+        # invoke(
+        self.derotate(target_pa_d0 + target_pa_d)
+        self._slew_altaz(target_alt_d=target_alt_d, target_az_d=target_az_d),
+        # )
 
         self.amqpc.log.debug(
             f"{datetime.datetime.now()} | (lvmagp) Initial slew completed"

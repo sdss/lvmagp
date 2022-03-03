@@ -28,7 +28,8 @@ class GuideImage:
         self.initFWHM = 3
         self.FWHM = -999
         self.hdu = fits.open(self.filepath)
-        self.data, self.hdr = self.hdu[0].data[0], self.hdu[0].header
+        print(self.hdu.info())
+        self.data, self.hdr = self.hdu[0].data, self.hdu[0].header
         self.mean, self.median, self.std = sigma_clipped_stats(self.data, sigma=3.0)
         self.guidestarposition = np.zeros(1)
         self.guidestarflux = np.zeros(1)
@@ -369,6 +370,7 @@ def check_target(ra_h, dec_d, long_d, lat_d):
     """
     alt, az = star_altaz(ra_h, dec_d, long_d, lat_d)
     alt_low, alt_high = define_visb_limit(az)
+    print(f'alt_low = {alt_low} | alt = {alt} | alt_high = {alt_high}')
     if (alt_low < alt) and (alt < alt_high):
         return True
     else:
