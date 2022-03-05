@@ -1,3 +1,10 @@
+from sdsstools import read_yaml_file
+import os
+
+config = '../../etc/lvmagp.yml'
+config = os.path.abspath(config)
+config = read_yaml_file(config)
+
 class usrpars:
     # special positions
     screen_alt_d = -999
@@ -26,6 +33,11 @@ class usrpars:
 
     ag_cal_offset_per_step = 5.0  # Step size for calibration in arcseconds
     ag_cal_num_step = 3  # number of steps of calibration per axis
+
+    pixelscale = config['sci']['agw']['pixelscale']
+    offset_x = config['sci']['agw']['offset_x']
+    offset_y = config['sci']['agw']['offset_y']
+    rotationangle = config['sci']['agw']['rotationangle']
 
 
 def temp_vs_focus(temperature):

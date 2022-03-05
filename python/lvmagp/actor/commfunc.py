@@ -30,6 +30,8 @@ from lvmagp.exceptions import (
     LvmagpTargetOverTheLimit,
 )
 
+import time
+
 
 class LVMFocuser:
     """
@@ -147,7 +149,7 @@ class LVMKMirror:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
 
-    async def cal_traj(self, command):
+    def cal_traj(self):
         pass
 
     def derotate(self, pa=None):
@@ -350,6 +352,9 @@ class LVMCamera:
 
         self.amqpc = None
         self._cam = None
+
+        self.pixelscale = usrpars.pixelscale
+        self.rotationangle = usrpars.rotationangle
 
     def single_exposure(self, exptime):
         """
@@ -567,10 +572,10 @@ class LVMTelescopeUnit(
 
     def __read_parameters(self):
         # should be predefined somewhere...
-        self.offset_x = -999
-        self.offset_y = -999
-        self.pixelscale = -999
-        self.rotationangle = -999
+        self.offset_x = usrpars.offset_x
+        self.offset_y = usrpars.offset_y
+        # self.pixelscale = -999
+        # self.rotationangle = -999
 
     ############# Autofocus functions #########################
     def coarse_autofocus(self):
@@ -751,8 +756,8 @@ class LVMTelescopeUnit(
 
             # take an image for astrometry
             guideimgpath = (
-                self.agw.test_exposure(usrpars.aqu_exptime),
-                self.age.test_exposure(usrpars.aqu_exptime),
+                self.agw.single_exposure(usrpars.aqu_exptime),
+                self.age.single_exposure(usrpars.aqu_exptime),
             )
 
             westguideimg = GuideImage(guideimgpath[0])
@@ -793,8 +798,8 @@ class LVMTelescopeUnit(
             ra2000_d = 0.5 * (eastguideimg.ra2000 + westguideimg.ra2000)
             dec2000_d = 0.5 * (eastguideimg.dec2000 + westguideimg.dec2000)
             pa_d = 0.5 * (eastguideimg.pa + westguideimg.pa)
-            # LVMWestCamera.rotationangle = westguideimg.pa   should be defined to which place?
-            # LVMEastCamera.rotationangle = eastguideimg.pa   should be defined to which place?
+            self.agw.rotationangle = westguideimg.pa  
+            self.age.rotationangle = eastguideimg.pa 
 
             ra2000 = Angle(ra2000_d, u.degree)
             dec2000 = Angle(dec2000_d, u.degree)
@@ -1018,7 +1023,7 @@ class LVMTelescopeUnit(
         pass
 
 
-    async def guide_on(self, useteldata=False, guide_parameters=None):
+    def guide_on(self, useteldata=False, guide_parameters=None):
         '''
         Start guiding, or modify parameters of running guide loop.  <--- modify????
         guide_parameters is a dictionary containing additional parameters for
@@ -1036,37 +1041,34 @@ class LVMTelescopeUnit(
             pass #raise lvmagpguidealreadyrunning ?????
 
         try:
-            autoguide_supervisor(useteldata,
-                    timeout=3600)
-            await telescopes[tel].ag_task
+            self.autoguide_supervisor(useteldata)
+            self._ag_task
 
-        except asyncio.TimeoutError:
-                command.error("Autoguide timeout")
+        except Exception as e:
+                self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+                raise
 
         finally:
-                telescopes[tel].ag_task = None
+                self.ag_task = None
 
-        return command.finish("Guide stopped")
+        return  self.amqpc.log.debug(f"{datetime.datetime.now()} | Guide stopped")
 
 
     def guide_off(self):
         '''
         Turn off guiding, revert to tracking (track_on).
         '''
-        if tel in telescopes:
-            if telescopes[tel].ag_task is not None:
-                telescopes[tel].ag_break = True
-            else:
-                return command.fail(
-                    text="There is no autoguiding loop for telescope '%s'" % tel
-                )
+        if self.ag_task is not None:
+            self.ag_break = True
         else:
-            return command.fail(text="Telescope '%s' does not exist" % tel)
+            return self.amqpc.log.error(
+                f"There is no autoguiding loop for telescope {self.name}"
+            )
 
-        return command.finish()
+        return
 
-    '''
-    async def calibration():
+    
+    def calibration(self):
         """
         Run calibration sequence to calculate the transformation
         from the equatorial coordinates to the xy coordinates of the image.
@@ -1075,38 +1077,24 @@ class LVMTelescopeUnit(
         offset_per_step = usrpars.ag_cal_offset_per_step
         num_step = usrpars.ag_cal_num_step
 
-        if tel not in telescopes:
-            return command.fail(text="Telescope '%s' does not exist" % tel)
-
-        decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
+        decj2000_deg = self._get_dec2000_deg()
 
         xpositions, ypositions = [], []
 
-        initposition, initflux = await find_guide_stars(
-            command, telescopes, eastcameras, westcameras, focusers, kmirrors, tel
-        )
+        initposition, initflux = self.find_guide_stars()
         xpositions.append(initposition[:, 0])
         ypositions.append(initposition[:, 1])
 
-        await asyncio.sleep(3)
+        time.sleep(3)
 
         # dec axis calibration
         for step in range(1, num_step + 1):
-            await telescopes[tel].offset_radec(command, 0, offset_per_step)
-            position, flux = await find_guide_stars(
-                command,
-                telescopes,
-                eastcameras,
-                westcameras,
-                focusers,
-                kmirrors,
-                tel,
-                positionguess=initposition,
-            )
+            self._offset_radec(0, offset_per_step)
+            position, flux = self.find_guide_stars(positionguess=initposition)
             xpositions.append(position[:, 0])
             ypositions.append(position[:, 1])
 
-        await telescopes[tel].offset_radec(command, 0, -num_step * offset_per_step)
+        self._offset_radec(0, -num_step * offset_per_step)
 
         xoffsets = np.array(xpositions) - xpositions[0]
         yoffsets = np.array(ypositions) - ypositions[0]
@@ -1130,24 +1118,15 @@ class LVMTelescopeUnit(
         ypositions = [initposition[:, 1]]
 
         for step in range(1, num_step + 1):
-            await telescopes[tel].offset_radec(
-                command, offset_per_step / np.cos(np.deg2rad(decj2000_deg)), 0
+            self._offset_radec(
+                offset_per_step / np.cos(np.deg2rad(decj2000_deg)), 0
             )
-            position, flux = await find_guide_stars(
-                command,
-                telescopes,
-                eastcameras,
-                westcameras,
-                focusers,
-                kmirrors,
-                tel,
-                positionguess=initposition,
-            )
+            position, flux = self.find_guide_stars(positionguess=initposition)
             xpositions.append(position[:, 0])
             ypositions.append(position[:, 1])
 
-        await telescopes[tel].offset_radec(
-            command, -num_step * offset_per_step / np.cos(np.deg2rad(decj2000_deg)), 0
+        self._offset_radec(
+            -num_step * offset_per_step / np.cos(np.deg2rad(decj2000_deg)), 0
         )
 
         xoffsets = np.array(xpositions) - xpositions[0]
@@ -1167,18 +1146,20 @@ class LVMTelescopeUnit(
                 / offset_per_step
         )  # exclude the first index (0,0)
 
-        telescopes[tel].scale_matrix = np.linalg.inv(
+        self.scale_matrix = np.linalg.inv(
             np.array([[xscale_ra, xscale_dec], [yscale_ra, yscale_dec]])
         )  # inverse matrix.. linear system of equations..
-        return command.finish(
-            xscale_ra="%.3f pixel/arcsec" % xscale_ra,
-            yscale_ra="%.3f pixel/arcsec" % yscale_ra,
-            xscale_dec="%.3f pixel/arcsec" % xscale_dec,
-            yscale_dec="%.3f pixel/arcsec" % yscale_dec,
-        )
-    '''
 
-    async def autoguide_supervisor(self, useteldata):
+        return self.amqpc.log.debug(
+            f"{datetime.datetime.now()} |"+
+            f'xscale_ra={xscale_ra} pixel/arcsec'+
+            f'yscale_ra={yscale_ra} pixel/arcsec'+
+            f'xscale_dec={xscale_dec} pixel/arcsec'+
+            f'yscale_dec={yscale_dec} pixel/arcsec'
+        )
+    
+
+    def autoguide_supervisor(self, useteldata):
         """
         Manage the autoguide sequence.
         It starts real autoguide loop and keeps it until the break signal comes.
@@ -1196,19 +1177,19 @@ class LVMTelescopeUnit(
         initposition, initflux = self.find_guide_stars()
 
         while 1:
-            await autoguiding(
+            self.autoguiding(
                 initposition,
                 initflux,
                 useteldata,
             )
 
-            if telescopes[tel].ag_break:
-                telescopes[tel].ag_break = False
+            if self.ag_break:
+                self.ag_break = False
                 break
 
         return True
 
-    async def find_guide_stars(self, positionguess=None):
+    def find_guide_stars(self, positionguess=None):
         """
         Expose an image, and find three guide stars from the image.
         Also calculate the center coordinates and fluxes of found stars.
@@ -1223,17 +1204,22 @@ class LVMTelescopeUnit(
         """
 
         # take an image for astrometry
-        command.info("Taking image...")
+        self.amqpc.log.debug(
+                f"{datetime.datetime.now()} | Taking image..."
+        )
 
         try:
-            imgcmd = []
-            imgcmd.append(westcameras[tel].single_exposure(command, usrpars.ag_exptime))
-            imgcmd.append(eastcameras[tel].single_exposure(command, usrpars.ag_exptime))
+            # guideimgpath = await asyncio.gather(*imgcmd)
+            guideimgpath = [
+                self.agw.single_exposure(usrpars.ag_exptime),
+                self.age.single_exposure(usrpars.ag_exptime)
+            ]
 
-            guideimgpath = await asyncio.gather(*imgcmd)
-
-        except Exception:
-            return command.fail(fail="Camera error")
+        except Exception as e:
+            self.amqpc.log.error(
+                f"{datetime.datetime.now()} | {e}"
+            )
+            raise
 
         westguideimg = GuideImage(guideimgpath[0])
         eastguideimg = GuideImage(guideimgpath[1])
@@ -1248,7 +1234,7 @@ class LVMTelescopeUnit(
 
         return starposition, starflux
 
-    async def autoguiding(self, initposition,
+    def autoguiding(self, initposition,
             initflux,
             useteldata,
     ):
@@ -1280,7 +1266,7 @@ class LVMTelescopeUnit(
                 )
                 > usrpars.ag_flux_tolerance
         ):
-            return command.error(
+            return self.amqpc.log.error(
                 "Star flux variation %.3f is too large."
                 % np.abs(
                     np.average(
@@ -1298,23 +1284,23 @@ class LVMTelescopeUnit(
             correction_arcsec = -np.array(offset_arcsec)
 
         else:
-            theta = np.radians(westcameras[tel].rotationangle)
+            theta = np.radians(self.agw.rotationangle)
             c, s = np.cos(theta), np.sin(theta)
             R = np.array(((c, -s), (s, c)))  # inverse rotation matrix
             correction_arcsec = -(
-                    np.dot(R, offset) * westcameras[tel].pixelscale
+                    np.dot(R, offset) * self.agw.pixelscale
             )  # in x,y(=ra,dec) [arcsec]
 
-        decj2000_deg = await telescopes[tel].get_dec2000_deg(command)
+        decj2000_deg = self._get_dec2000_deg()
         correction_arcsec[0] /= np.cos(np.deg2rad(decj2000_deg))
         correction_arcsec[1] *= -1
 
         if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
-            command.info(
+            self.amqpc.log.debug(
                 "compensate signal: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
                 % (correction_arcsec[0], correction_arcsec[1], -offset[0], -offset[1])
             )
-            await telescopes[tel].offset_radec(command, *correction_arcsec)
+            self._offset_radec(*correction_arcsec)
             return correction_arcsec
 
         else:

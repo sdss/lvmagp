@@ -9,7 +9,7 @@ from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from photutils.detection import DAOStarFinder
-from scipy.spatial import KDTree
+from scipy.spatial import cKDTree
 
 
 class GuideImage:
@@ -71,7 +71,7 @@ class GuideImage:
         self.liststarpass = []
         for i in range(len(positions[:, 0])):
             positions_del = np.delete(positions, i, 0)
-            kdtree = KDTree(positions_del)
+            kdtree = cKDTree(positions_del)
             dist, idx = kdtree.query(positions[i])
             if dist > 5.0 * self.initFWHM:
                 self.liststarpass.append(i)

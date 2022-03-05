@@ -4,7 +4,10 @@ sci = LVMTelescopeUnit("sci")
 
 # sci.fine_autofocus()
 
-# sci.goto_aa(58, 315)
-# sci.goto_eq(50, -80)
+sci.goto_aa(58, 315)
+# sci.goto_eq(22.5, -10.5)
 
-# sci.find_guide_stars()
+# print(sci.find_guide_stars())
+# sci.guide_on()
+# sci.calibration()
+
