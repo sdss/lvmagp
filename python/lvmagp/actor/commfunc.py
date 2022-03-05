@@ -698,14 +698,13 @@ class LVMTelescopeUnit(
         Point telescope to position using RA and dec (J2000).
 
         Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope.
+            Check dome safety interlock: if interlock is engaged, do not move the telescope.
             Return error message (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
+
+            run status (LVMI_interface) to check instrument status: if not idle (i.e. carrying out any observations or calibrations),
             repeat status command regularly until it returns idle,
-              then move telescope. Regularly give updates
-              (i.e. "waiting for instrument to become idle before moving telescope")
+            then move telescope. Regularly give updates
+            (i.e. "waiting for instrument to become idle before moving telescope")
 
         Parameters
         ----------
@@ -850,16 +849,14 @@ class LVMTelescopeUnit(
         Point telescope to position using alt/az (i.e. point to screen or manually park)
         It does not run additional compensation based on astrometry.
 
-        ======
         Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope.
+            Check dome safety interlock: if interlock is engaged, do not move the telescope.
             Return error message (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
+            
+            run status (LVMI_interface) to check instrument status: if not idle (i.e. carrying out any observations or calibrations),
             repeat status command regularly until it returns idle,
-              then move telescope. Regularly give updates
-              (i.e. "waiting for instrument to become idle before moving telescope")
+            then move telescope. Regularly give updates
+            (i.e. "waiting for instrument to become idle before moving telescope")
 
         Parameters
         ----------
@@ -911,16 +908,15 @@ class LVMTelescopeUnit(
         """
         Point telescope to screen for dome flats
 
-        ======
         Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope.
+            Check dome safety interlock: if interlock is engaged, do not move the telescope.
             Return error message (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
+
+            run status (LVMI_interface) to check instrument status: if not idle (i.e. carrying out any observations or calibrations),
             repeat status command regularly until it returns idle,
-              then move telescope. Regularly give updates
-              (i.e. "waiting for instrument to become idle before moving telescope")
+            then move telescope. Regularly give updates
+            (i.e. "waiting for instrument to become idle before moving telescope")
+
         """
 
         self.goto_aa(target_alt_d=usrpars.screen_alt_d, target_az_d=usrpars.screen_az_d)
@@ -929,15 +925,14 @@ class LVMTelescopeUnit(
         """
         Move telescope to safe park position.
 
-        ======
         Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope. Return error message
+            Check dome safety interlock: if interlock is engaged, do not move the telescope. Return error message
             (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
+
+            run status (LVMI_interface) to check instrument status: if not idle (i.e. carrying out any observations or calibrations),
             abort observation (halt in LVMI_interface) and park telescope
             (in this case, we assume user wants to park due to an emergency)
+
         """
         self.goto_aa(target_alt_d=usrpars.park_alt_d, target_az_d=usrpars.park_az_d)
 
@@ -945,16 +940,15 @@ class LVMTelescopeUnit(
         """
         Point telescope to zenith
 
-        ======
         Comments and desired actions:
-        - Check dome safety interlock:
-            - if interlock is engaged, do not move the telescope.
+            Check dome safety interlock: if interlock is engaged, do not move the telescope.
             Return error message (assume people are inside dome)
-        - run status (LVMI_interface) to check instrument status
-            - if not idle (i.e. carrying out any observations or calibrations),
+            
+            run status (LVMI_interface) to check instrument status: if not idle (i.e. carrying out any observations or calibrations),
             repeat status command regularly until it returns idle,
-              then move telescope. Regularly give updates
-              (i.e. "waiting for instrument to become idle before moving telescope")
+            then move telescope. Regularly give updates
+            (i.e. "waiting for instrument to become idle before moving telescope")
+
         """
         self.goto_aa(target_alt_d=89.9999, target_az_d=180.)
 
@@ -1029,6 +1023,8 @@ class LVMTelescopeUnit(
         guide_parameters is a dictionary containing additional parameters for
         the guiders, e.g. exposure times, cadence, PID parameters, readout or window modes, ...
 
+        Parameters
+        ----------
         useteldata
             If ``useteldata`` is flagged, the sequence will use the pixel scale and
             rotation angle from LVMTelescope.
