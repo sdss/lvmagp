@@ -169,7 +169,7 @@ class GuideImage:
         returndict["dec"] = -999.0
         returndict["pa"] = -999.0
 
-        ospassword = "0000"
+        ospassword = "user"
         pathsplit = self.filepath.split("/")
         if "age" in pathsplit[-1]:
             resultpath = (
@@ -187,8 +187,8 @@ class GuideImage:
             )
 
         timeout = 5.0
-        scalelow = 2.0
-        scalehigh = 3.0
+        scalelow = 1.0
+        scalehigh = 1.5
         radius = 3.0
 
         if ra_h == -999:

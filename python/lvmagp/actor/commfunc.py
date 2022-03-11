@@ -249,6 +249,31 @@ class LVMTelescope:
             raise
         self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
 
+    def _slew_radec2000_offset(self, target_ra_h, target_dec_d):
+            """
+            Slew the telescope to given equatorial coordinates whose epoch is J2000.
+
+            Parameters
+            ----------
+            target_ra_h
+                Target right ascension in hours in J2000 epoch
+            target_dec_d
+                Target declination in degrees in J2000 epoch
+            """
+            offset_ra = 0 #+ (1/3600)*(24/360)
+            offset_dec = -30/60 #+ 1/3600
+
+            try:
+                self.amqpc.log.debug(
+                    f"{datetime.datetime.now()} | Start to slew telescope to RA {target_ra_h}, Dec {target_dec_d}."  # noqa: E501
+                )
+                self._pwi.gotoRaDecJ2000(target_ra_h + offset_ra, target_dec_d + offset_dec)
+            except Exception as e:
+                self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+                raise
+            self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
+
+
     def _slew_altaz(self, target_alt_d, target_az_d):
         """
         Slew the telescope to given horizontal coordinates.
@@ -727,7 +752,7 @@ class LVMTelescopeUnit(
         # Check status to confirm the system is in idle state?
 
         # Check the target is in reachable area
-        long_d = self.latitude
+        long_d = self.longitude
         lat_d = self.latitude
 
         if not check_target(target_ra_h, target_dec_d, long_d, lat_d):
@@ -743,7 +768,7 @@ class LVMTelescopeUnit(
 
         # invoke(
         self.derotate(target_pa_d0 + target_pa_d)
-        self._slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
+        self._slew_radec2000_offset(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
         # )
 
         self.amqpc.log.debug(
@@ -804,6 +829,8 @@ class LVMTelescopeUnit(
 
             target_ra = Angle(target_ra_h, u.hour)
             target_dec = Angle(target_dec_d, u.degree)
+            print('target_ra', target_ra)
+            print('target_dec', target_dec)
 
             comp_ra_arcsec = (target_ra - ra2000).arcsecond
             comp_dec_arcsec = (target_dec - dec2000).arcsecond
@@ -833,10 +860,8 @@ class LVMTelescopeUnit(
                         f"{datetime.datetime.now()} | (lvmagp) Compensate offset: #{iter}"
                     )
                     # invoke(
-                    self.derotate(target_pa_d - pa_d),
-                    self._offset_radec(
-                        ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec
-                    ),
+                    self.derotate(target_pa_d - pa_d)
+                    self._offset_radec(ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec)
                     # )
             else:
                 break
@@ -1251,9 +1276,18 @@ class LVMTelescopeUnit(
             If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding
             based on ``positionguess`` without finding new stars.
         """
+
+        self._pwi.offset(ra_add_arcsec=3, dec_add_arcsec=-2)
+
+        time.sleep(1)
+
         starposition, starflux = self.find_guide_stars(
             positionguess=initposition,
         )
+
+        print(f'initposition = {initposition} | initflux = {initflux}')
+        print(f'starposition = {starposition} | starflux = {starflux}')
+
 
         if (
                 np.abs(
@@ -1287,7 +1321,7 @@ class LVMTelescopeUnit(
             )  # in x,y(=ra,dec) [arcsec]
 
         decj2000_deg = self._get_dec2000_deg()
-        correction_arcsec[0] /= np.cos(np.deg2rad(decj2000_deg))
+        correction_arcsec[0] /= -np.cos(np.deg2rad(decj2000_deg))
         correction_arcsec[1] *= -1
 
         if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
