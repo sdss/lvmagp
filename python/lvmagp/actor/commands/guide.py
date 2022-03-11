@@ -22,7 +22,6 @@ from . import command_parser as parser
 def guide(*args):
     pass
 
-
 @guide.command()
 @click.argument("TEL", type=str)
 @click.option("--useteldata", type=bool, is_flag=True)

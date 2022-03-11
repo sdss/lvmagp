@@ -12,6 +12,7 @@ from astropy.coordinates import Angle
 from clu import AMQPClient
 from cluplus.proxy import Proxy, invoke
 from lvmtipo.site import Site
+from lvmtipo.siderostat import Siderostat
 
 from sdsstools import get_logger
 
@@ -77,7 +78,7 @@ class LVMFocuser:
 
     def focus(self, value=None, temperature=None):
         """
-        Move focus to a particular value or a first guess given a temperature
+        Move focus to a particular value or a first guess from a given temperature
 
         Parameters:
             value (float): if provided, focus stage moves to this step value
@@ -149,17 +150,15 @@ class LVMKMirror:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
 
-    def cal_traj(self):
-        pass
-
-    def derotate(self, pa=None):
+    def derotate(self, pa):
         """
         Derotate the field to correct the given position angle.
 
         Parameters
         ----------
         pa
-            Target position angle to be corrected
+            Target position angle to be corrected.
+            The direction where position = pa will head up after the derotation.
         """
 
         try:

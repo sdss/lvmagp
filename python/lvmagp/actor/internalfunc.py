@@ -100,7 +100,12 @@ class GuideImage:
         for i in range(len(self.guidestarposition[:, 0])):
             xcenter = int(self.guidestarposition[i, 0])
             ycenter = int(self.guidestarposition[i, 1])
-            p_init = models.Gaussian2D(amplitude=60000, x_mean=xcenter, y_mean=ycenter)
+
+            if self.guidestarflux[0] > 1:
+                amplitude = int(self.guidestarflux[i])
+                # p_init.amplitude.min = 0.8*amplitude
+                # p_init.amplitude.max = 1.2*amplitude
+
             fit_p = fitting.LevMarLSQFitter()
             xrange = np.arange(xcenter - windowradius, xcenter + windowradius)
             yrange = np.arange(ycenter - windowradius, ycenter + windowradius)
@@ -109,10 +114,13 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                    ycenter - windowradius: ycenter + windowradius,
-                    xcenter - windowradius: xcenter + windowradius,
+                ycenter - windowradius: ycenter + windowradius,
+                xcenter - windowradius: xcenter + windowradius,
                 ]
             )
+            maxindex = Z.argmax()
+            xmax, ymax = X[maxindex], Y[maxindex]
+            p_init = models.Gaussian2D(amplitude=60000, x_mean=xmax, y_mean=ymax)
 
             with warnings.catch_warnings():
                 # Ignore model linearity warning from the fitter
