@@ -2,10 +2,10 @@ import datetime
 import logging
 import sys
 import uuid
-# import asyncio, threading
-# from multiprocessing.pool import ThreadPool
 from multiprocessing import Manager, Process
-
+from threading import Thread
+import time
+import signal
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import Angle
@@ -30,8 +30,6 @@ from lvmagp.exceptions import (
     LvmagpInterlockEngaged,
     LvmagpTargetOverTheLimit,
 )
-
-import time
 
 
 class LVMFocuser:
@@ -380,7 +378,9 @@ class LVMCamera:
         self.pixelscale = usrpars.pixelscale
         self.rotationangle = usrpars.rotationangle
 
-    def single_exposure(self, exptime):
+    def single_exposure(self, exptime
+    # , result=None
+    ):
         """
         Take a single exposure
 
@@ -400,12 +400,18 @@ class LVMCamera:
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
+        
+        # if result is not None:
+        #     try:
+        #         result.append(path['0'])
+        #     except Exception as e:
+        #         result.put(path['0'])
 
         self.amqpc.log.debug(
             f"{datetime.datetime.now()} | Guider {self.camname} exposure done"
         )
 
-        return path["0"]
+        return path['0']
 
     def test_exposure(self, exptime):
         """
@@ -662,32 +668,8 @@ class LVMTelescopeUnit(
         """
         exptime = usrpars.af_exptime
         imgcmd_w, imgcmd_e = None, None
-        
-        # pool = ThreadPool(processes=2)
-        # a_agw = pool.apply_async(self.agw.single_exposure, (exptime,))
-        # a_age = pool.apply_async(self.age.single_exposure, (exptime,))
-
-        # p_agw = Process(
-        #             target=self.agw.single_exposure,
-        #             args=(exptime,),
-        #         )
-        # p_age = Process(
-        #             target=self.age.single_exposure,
-        #             args=(exptime,),
-        #         )
-
         try:
             if self.name != "phot":
-                # imgcmd_w, imgcmd_e = (
-                #     a_agw.get(), 
-                #     a_age.get() 
-                # )
-
-                # p_agw.start()
-                # p_age.start()
-                # p_agw.join()
-                # p_age.join()
-                
                 imgcmd_w, imgcmd_e = (
                     self.agw.single_exposure(exptime=exptime),
                     self.age.single_exposure(exptime=exptime)
@@ -778,6 +760,51 @@ class LVMTelescopeUnit(
         for iter in range(usrpars.aqu_max_iter + 1):
 
             # take an image for astrometry
+
+            # result = Queue()
+            # processes = []
+            # processes.append(
+            #     Process(
+            #         target=self.agw.single_exposure,
+            #         args=(usrpars.aqu_exptime, result),
+            #     )
+            # )
+            # processes.append(
+            #     Process(
+            #         target=self.age.single_exposure,
+            #         args=(usrpars.aqu_exptime, result),
+            #     )
+            # )
+            # for p in processes:
+            #     p.start()
+            # for p in processes:
+            #     p.join()
+            # print(result)
+
+            # result = list()
+            # threads = []
+            # threads.append(
+            #     Thread(
+            #         target=self.agw.single_exposure,
+            #         args=(usrpars.aqu_exptime, result),
+            #     )
+            # )
+            # threads.append(
+            #     Thread(
+            #         target=self.age.single_exposure,
+            #         args=(usrpars.aqu_exptime, result),
+            #     )
+            # )
+            # for t in threads:
+            #     t.start()
+            # for t in threads:
+            #     t.join()
+            # guideimgpath = result
+
+            self.amqpc.log.debug(
+                f"{datetime.datetime.now()} | (lvmagp) Astrometry..."
+            )
+            
             guideimgpath = (
                 self.agw.single_exposure(usrpars.aqu_exptime),
                 self.age.single_exposure(usrpars.aqu_exptime),
@@ -835,14 +862,12 @@ class LVMTelescopeUnit(
             comp_ra_arcsec = (target_ra - ra2000).arcsecond
             comp_dec_arcsec = (target_dec - dec2000).arcsecond
 
-            self.amqpc.log.info(
-                f"{datetime.datetime.now()} | (lvmagp) Astrometry result"+
-                f"Img_ra2000={ra2000.to_string(unit=u.hour)}"+
-                f"Img_dec2000={dec2000.to_string(unit=u.degree)}"+
-                f"Img_pa={pa_d:.3f} deg"+
-                f"offset_ra={comp_ra_arcsec:.3f} arcsec"+
-                f"offset_dec={comp_dec_arcsec:.3f} arcsec"
-            )
+            self.amqpc.log.info(f"{datetime.datetime.now()} | (lvmagp) Astrometry result")
+            self.amqpc.log.info(f"Img_ra2000={ra2000.to_string(unit=u.hour)}")
+            self.amqpc.log.info(f"Img_dec2000={dec2000.to_string(unit=u.degree)}")
+            self.amqpc.log.info(f"Img_pa={pa_d:.3f} deg")
+            self.amqpc.log.info(f"offset_ra={comp_ra_arcsec:.3f} arcsec")
+            self.amqpc.log.info(f"offset_dec={comp_dec_arcsec:.3f} arcsec")
 
             # Compensation  // Compensation for K-mirror based on astrometry result?
             # may be by offset method..
@@ -1041,7 +1066,10 @@ class LVMTelescopeUnit(
         pass
 
 
-    def guide_on(self, useteldata=False, guide_parameters=None):
+    def handler(self, signum, frame):
+        self.guide_off()
+
+    def guide_on(self, timeout=None, useteldata=False, guide_parameters=None):
         '''
         Start guiding, or modify parameters of running guide loop.  <--- modify????
         guide_parameters is a dictionary containing additional parameters for
@@ -1060,18 +1088,32 @@ class LVMTelescopeUnit(
         if self.ag_on:
             pass #raise lvmagpguidealreadyrunning ?????
 
+        self.ag_task = True
+        self.amqpc.log.debug(
+                f"{datetime.datetime.now()} | (lvmagp) Autoguide Start"
+        )
+
+        signal.signal(signal.SIGINT, self.handler)
+        if timeout is not None:
+            signal.signal(signal.SIGALRM, self.handler)
+            signal.alarm(timeout)
+
         try:
-            self.autoguide_supervisor(useteldata)
-            self._ag_task
+            t = Thread(target=self.autoguide_supervisor, args=(useteldata, ))
+            t.setDaemon(True)
+            t.start()
 
         except Exception as e:
                 self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
                 raise
+        # if self.ag_break:
+        #     self.amqpc.log.debug(
+        #         f"{datetime.datetime.now()} | (lvmagp) Autoguide Done"
+        #     )
+        # finally:
+        #         self.ag_task = None
 
-        finally:
-                self.ag_task = None
-
-        return  self.amqpc.log.debug(f"{datetime.datetime.now()} | Guide stopped")
+        # return  self.amqpc.log.debug(f"{datetime.datetime.now()} | Guide stopped")
 
 
     def guide_off(self):

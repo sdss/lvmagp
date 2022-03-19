@@ -2,14 +2,18 @@ from lvmagp.actor.commfunc import LVMTelescopeUnit
 
 sci = LVMTelescopeUnit("sci")
 
-# sci.fine_autofocus()
-
-# sci.goto_aa(58, 315)
-sci.goto_eq(12.2, -17.5)
-
-# print(sci.find_guide_stars())
-# sci.track_off()
-# sci.track_on()
+sci.fine_autofocus()
+sci.goto_eq(8, -38)
 sci.guide_on()
-# sci.calibration()
 
+import time
+def my_exposure(exptime):
+    print("my_exposure Start")
+    time.sleep(exptime)
+    print("my_exposure Done")
+    return True 
+
+res = my_exposure(60)
+
+if (res): 
+    sci.guide_off()
