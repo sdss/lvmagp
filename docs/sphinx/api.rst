@@ -1,6 +1,6 @@
-.. _module:
+.. _api:
 
-Module
+API
 ======
 
 .. automodule:: lvmagp.actor.commfunc

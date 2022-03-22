@@ -15,7 +15,7 @@ This is the documentation for the SDSS Python product lvmagp. The current versio
   :maxdepth: 3
   :hidden:
 
-  module
+  api
 
 .. toctree::
   :caption: Development
