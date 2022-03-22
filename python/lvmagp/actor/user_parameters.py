@@ -6,7 +6,7 @@ class usrpars:
     park_az_d = -999
 
     # autofocus parameters
-    af_incremental = 10000  # step size for each movement
+    af_incremental = 100  # step size for each movement
     af_repeat = 5  # the number of steps
     af_exptime = 3  # in seconds
 

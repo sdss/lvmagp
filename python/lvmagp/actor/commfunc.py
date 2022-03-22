@@ -1065,11 +1065,7 @@ class LVMTelescopeUnit(
 
         pass
 
-
-    def handler(self, signum, frame):
-        self.guide_off()
-
-    def guide_on(self, timeout=None, useteldata=False, guide_parameters=None):
+    def guide_on(self, useteldata=False, guide_parameters=None):
         '''
         Start guiding, or modify parameters of running guide loop.  <--- modify????
         guide_parameters is a dictionary containing additional parameters for
@@ -1093,23 +1089,14 @@ class LVMTelescopeUnit(
                 f"{datetime.datetime.now()} | (lvmagp) Autoguide Start"
         )
 
-        signal.signal(signal.SIGINT, self.handler)
-        if timeout is not None:
-            signal.signal(signal.SIGALRM, self.handler)
-            signal.alarm(timeout)
-
         try:
             t = Thread(target=self.autoguide_supervisor, args=(useteldata, ))
-            t.setDaemon(True)
             t.start()
 
         except Exception as e:
                 self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
                 raise
-        # if self.ag_break:
-        #     self.amqpc.log.debug(
-        #         f"{datetime.datetime.now()} | (lvmagp) Autoguide Done"
-        #     )
+
         # finally:
         #         self.ag_task = None
 
@@ -1122,6 +1109,7 @@ class LVMTelescopeUnit(
         '''
         if self.ag_task is not None:
             self.ag_break = True
+            self.ag_task = None
         else:
             return self.amqpc.log.error(
                 f"There is no autoguiding loop for telescope {self.name}"
@@ -1238,12 +1226,16 @@ class LVMTelescopeUnit(
         """
         initposition, initflux = self.find_guide_stars()
 
+        # counter = 0
         while 1:
+            print("autoguiding loop Start")
             self.autoguiding(
                 initposition,
                 initflux,
                 useteldata,
             )
+            print("autoguiding loop Done")
+            # counter = counter + 1
 
             if self.ag_break:
                 self.ag_break = False
