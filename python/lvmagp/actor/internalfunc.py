@@ -1,16 +1,15 @@
-import asyncio
 import os
+import subprocess
 import warnings
 from datetime import datetime
 
 import numpy as np
-# import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.modeling import fitting, models
 from astropy.stats import sigma_clipped_stats
 from astropy.time import Time
 from photutils.detection import DAOStarFinder
-from scipy.spatial import KDTree
+from scipy.spatial import cKDTree
 
 
 class GuideImage:
@@ -29,7 +28,8 @@ class GuideImage:
         self.initFWHM = 3
         self.FWHM = -999
         self.hdu = fits.open(self.filepath)
-        self.data, self.hdr = self.hdu[0].data[0], self.hdu[0].header
+        print(self.hdu.info())
+        self.data, self.hdr = self.hdu[0].data, self.hdu[0].header
         self.mean, self.median, self.std = sigma_clipped_stats(self.data, sigma=3.0)
         self.guidestarposition = np.zeros(1)
         self.guidestarflux = np.zeros(1)
@@ -51,10 +51,13 @@ class GuideImage:
         nstar
             The number of stars to be found
         """
+        edgewidth = 20
+        mask = np.ones(self.data.shape, dtype=bool)
+        mask[edgewidth:-edgewidth, edgewidth:-edgewidth] = False
         daofind = DAOStarFinder(
             fwhm=self.initFWHM, threshold=3.0 * self.std, peakmax=60000 - self.median
         )  # 1sigma = FWHM/(2*sqrt(2ln2)); FWHM = sigma * (2*sqrt(2ln2))
-        sources = daofind(self.data[10:-10, 10:-10] - self.median)
+        sources = daofind(self.data - self.median, mask=mask)
         posnflux = np.array(
             [sources["xcentroid"], sources["ycentroid"], sources["flux"]]
         )  # xcoord, ycoord, flux
@@ -68,7 +71,7 @@ class GuideImage:
         self.liststarpass = []
         for i in range(len(positions[:, 0])):
             positions_del = np.delete(positions, i, 0)
-            kdtree = KDTree(positions_del)
+            kdtree = cKDTree(positions_del)
             dist, idx = kdtree.query(positions[i])
             if dist > 5.0 * self.initFWHM:
                 self.liststarpass.append(i)
@@ -97,7 +100,12 @@ class GuideImage:
         for i in range(len(self.guidestarposition[:, 0])):
             xcenter = int(self.guidestarposition[i, 0])
             ycenter = int(self.guidestarposition[i, 1])
-            p_init = models.Gaussian2D(amplitude=10000, x_mean=xcenter, y_mean=ycenter)
+
+            if self.guidestarflux[0] > 1:
+                amplitude = int(self.guidestarflux[i])
+                # p_init.amplitude.min = 0.8*amplitude
+                # p_init.amplitude.max = 1.2*amplitude
+
             fit_p = fitting.LevMarLSQFitter()
             xrange = np.arange(xcenter - windowradius, xcenter + windowradius)
             yrange = np.arange(ycenter - windowradius, ycenter + windowradius)
@@ -106,10 +114,13 @@ class GuideImage:
             Y = np.ravel(Y)
             Z = np.ravel(
                 (self.data - self.median)[
-                    ycenter - windowradius: ycenter + windowradius,
-                    xcenter - windowradius: xcenter + windowradius,
+                ycenter - windowradius: ycenter + windowradius,
+                xcenter - windowradius: xcenter + windowradius,
                 ]
             )
+            maxindex = Z.argmax()
+            xmax, ymax = X[maxindex], Y[maxindex]
+            p_init = models.Gaussian2D(amplitude=60000, x_mean=xmax, y_mean=ymax)
 
             with warnings.catch_warnings():
                 # Ignore model linearity warning from the fitter
@@ -121,7 +132,7 @@ class GuideImage:
     def update_guidestar_properties(self):
         """
         Using ``twoDGaussianfit`` method, update guidestar properties in ``self.guidestarflux``,
-        ``self.guidestarposition``, ``self.guidestarsize``, and ``slef.FWHM``.
+        ``self.guidestarposition``, ``self.guidestarsize``, and ``self.FWHM``.
         """
         if len(self.guidestarposition) == 0:
             pass
@@ -140,7 +151,7 @@ class GuideImage:
 
         return True
 
-    async def astrometry(self, ra_h=-999, dec_d=-999):
+    def astrometry(self, ra_h=-999, dec_d=-999, returndict=None):
         """
         Conduct astrometry to find where the image is taken.
         Astromery result is saved in astrometry_result.txt in same directory with this python file,
@@ -153,41 +164,69 @@ class GuideImage:
         dec_d
             The initial guess for declination (J2000) in degrees
         """
-        ospassword = "0000"
-        resultpath = (
-            os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
-        )
-        timeout = 10
-        scalelow = 2
-        scalehigh = 3
-        radius = 1
+
+        returndict["ra"] = -999.0
+        returndict["dec"] = -999.0
+        returndict["pa"] = -999.0
+
+        ospassword = "user"
+        pathsplit = self.filepath.split("/")
+        if "age" in pathsplit[-1]:
+            resultpath = (
+                os.path.dirname(os.path.abspath(__file__)) +
+                "/astrometry_result_age.txt"
+            )
+        elif "agw" in pathsplit[-1]:
+            resultpath = (
+                os.path.dirname(os.path.abspath(__file__)) +
+                "/astrometry_result_agw.txt"
+            )
+        else:
+            resultpath = (
+                os.path.dirname(os.path.abspath(__file__)) + "/astrometry_result.txt"
+            )
+
+        timeout = 5.0
+        scalelow = 1.0
+        scalehigh = 1.5
+        radius = 3.0
 
         if ra_h == -999:
-            cmd = (
-                "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+            proc = subprocess.Popen(
+                [
+                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
             --downsample 2 --no-plots > %s"
-                % (ospassword, self.filepath, timeout, resultpath)
+                    % (ospassword, self.filepath, timeout, resultpath)
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                shell=True,
             )
 
         else:
-            cmd = "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
-            --downsample 2 --scale-units arcsecperpix --scale-low %f --scale-high %f --ra %f --dec %f \
-            --radius %f --no-plots > %s" % (  # noqa: E501
-                ospassword,
-                self.filepath,
-                timeout,
-                scalelow,
-                scalehigh,
-                ra_h * 15,
-                dec_d,
-                radius,
-                resultpath,
+            proc = subprocess.Popen(
+                [
+                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+            --downsample 2 --scale-units arcsecperpix --scale-low %f --scale-high \
+            %f --ra %f --dec %f --radius %f --no-plots > %s"
+                    % (  # noqa: E501
+                        ospassword,
+                        self.filepath,
+                        timeout,
+                        scalelow,
+                        scalehigh,
+                        ra_h * 15,
+                        dec_d,
+                        radius,
+                        resultpath,
+                    )
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                shell=True,
             )
 
-        proc = await asyncio.create_subprocess_shell(
-            cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
-        await proc.communicate()
+        out, err = proc.communicate()
 
         with open(resultpath, "r") as f:
             result = f.readlines()
@@ -200,6 +239,8 @@ class GuideImage:
 
                 self.ra2000 = float(line[startidx + 1: mididx])
                 self.dec2000 = float(line[mididx + 1: endidx])
+                returndict["ra"] = self.ra2000
+                returndict["dec"] = self.dec2000
 
             elif "Field rotation angle" in line:
                 startidx = line.find("is")
@@ -209,6 +250,7 @@ class GuideImage:
                     self.pa = float(line[startidx + 3: endidx - 1])
                 elif line[endidx + 8] == "W":
                     self.pa = 360 - float(line[startidx + 3: endidx - 1])
+                returndict["pa"] = self.pa
 
             elif "Total CPU time limit reached!" in line:
                 raise Exception("Astrometry timeout")
@@ -336,6 +378,7 @@ def check_target(ra_h, dec_d, long_d, lat_d):
     """
     alt, az = star_altaz(ra_h, dec_d, long_d, lat_d)
     alt_low, alt_high = define_visb_limit(az)
+    print(f'alt_low = {alt_low} | alt = {alt} | alt_high = {alt_high}')
     if (alt_low < alt) and (alt < alt_high):
         return True
     else:

@@ -33,7 +33,7 @@ generate-setup-file = false
 lvmagp = "lvmagp.__main__:lvmagp"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">3.7, <3.10"
 sdss-tree = ">=2.15.2"
 sdss-access = ">=0.2.3"
 sdsstools = ">=0.4.0"
@@ -42,9 +42,11 @@ click = "^8.0.1"
 photutils = "^1.1.0"
 numpy = "^1.21.1"
 black = "^21.7-beta.0"
+sdss-cluplus = "^0.0.16"
+sdss-lvmtipo = "^0.0.7"
 
 [tool.poetry.dev-dependencies]
-ipython = ">=7.11.0"
+ipython = ">=7.31.1"
 matplotlib = ">=3.1.1"
 flake8 = ">=3.7.9"
 doc8 = ">=0.8.0"

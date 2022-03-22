@@ -1,26 +1,221 @@
-Reading input file 1 of 1: "/home/sumin/lvmcam/python/lvmcam/assets/testshot.fits"...
+Reading input file 1 of 1: "/home/hojae/Desktop/lvmagp/testimg/autoguide_sample/assets/2459550/sci.agw-00000061.fits"...
 Extracting sources...
-This looks like a multi-color image: processing the first image plane only.  (NAXIS=3)
 Downsampling by 2...
-simplexy: found 663 sources.
+simplexy: found 204 sources.
 Solving...
-Reading file "/home/sumin/lvmcam/python/lvmcam/assets/testshot.axy"...
-Only searching for solutions within 1 degrees of RA,Dec (92.25,24.33)
+Reading file "/home/hojae/Desktop/lvmagp/testimg/autoguide_sample/assets/2459550/sci.agw-00000061.axy"...
+Field 1 did not solve (index index-4219.fits, field objects 1-10).
+Field 1 did not solve (index index-4218.fits, field objects 1-10).
+Field 1 did not solve (index index-4217.fits, field objects 1-10).
+Field 1 did not solve (index index-4216.fits, field objects 1-10).
+Field 1 did not solve (index index-4215.fits, field objects 1-10).
+Field 1 did not solve (index index-4214.fits, field objects 1-10).
+Field 1 did not solve (index index-4213.fits, field objects 1-10).
+Field 1 did not solve (index index-4212.fits, field objects 1-10).
 Field 1 did not solve (index index-4211.fits, field objects 1-10).
 Field 1 did not solve (index index-4210.fits, field objects 1-10).
 Field 1 did not solve (index index-4209.fits, field objects 1-10).
 Field 1 did not solve (index index-4208.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-11.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-10.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-09.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-08.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-07.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-06.fits, field objects 1-10).
 Field 1 did not solve (index index-4207-05.fits, field objects 1-10).
-  log-odds ratio 574.743 (4.05134e+249), 117 match, 0 conflict, 311 distractors, 137 index.
-  RA,Dec = (92.2496,24.3312), pixel scale 2.59625 arcsec/pix.
-  Hit/miss:   Hit/miss: +++++++++-+++++++++++++++-+++-+--+++-++++++-+-++-+-++-+-+-++-+-++-++---++--++-+++-++-++++-+++-++-+--
-Field 1: solved with index index-4206-05.fits.
-Field 1 solved: writing to file /home/sumin/lvmcam/python/lvmcam/assets/testshot.solved to indicate this.
-Field: /home/sumin/lvmcam/python/lvmcam/assets/testshot.fits
-Field center: (RA,Dec) = (92.250015, 24.331394) deg.
-Field center: (RA H:M:S, Dec D:M:S) = (06:09:00.004, +24:19:53.018).
-Field size: 69.2532 x 47.6139 arcminutes
-Field rotation angle: up is 99.4551 degrees E of N
+Field 1 did not solve (index index-4207-04.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-03.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-02.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-01.fits, field objects 1-10).
+Field 1 did not solve (index index-4207-00.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-11.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-10.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-09.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-08.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-07.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-06.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-05.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-04.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-03.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-02.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-01.fits, field objects 1-10).
+Field 1 did not solve (index index-4206-00.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-11.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-10.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-09.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-08.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-07.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-06.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-05.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-04.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-03.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-02.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-01.fits, field objects 1-10).
+Field 1 did not solve (index index-4205-00.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-47.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-46.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-45.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-44.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-43.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-42.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-41.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-40.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-39.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-38.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-37.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-36.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-35.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-34.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-33.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-32.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-31.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-30.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-29.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-28.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-27.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-26.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-25.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-24.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-23.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-22.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-21.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-20.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-19.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-18.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-17.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-16.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-15.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-14.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-13.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-12.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-11.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-10.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-09.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-08.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-07.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-06.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-05.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-04.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-03.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-02.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-01.fits, field objects 1-10).
+Field 1 did not solve (index index-4204-00.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-47.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-46.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-45.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-44.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-43.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-42.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-41.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-40.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-39.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-38.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-37.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-36.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-35.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-34.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-33.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-32.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-31.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-30.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-29.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-28.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-27.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-26.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-25.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-24.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-23.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-22.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-21.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-20.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-19.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-18.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-17.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-16.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-15.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-14.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-13.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-12.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-11.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-10.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-09.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-08.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-07.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-06.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-05.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-04.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-03.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-02.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-01.fits, field objects 1-10).
+Field 1 did not solve (index index-4203-00.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-47.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-46.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-45.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-44.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-43.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-42.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-41.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-40.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-39.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-38.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-37.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-36.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-35.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-34.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-33.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-32.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-31.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-30.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-29.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-28.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-27.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-26.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-25.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-24.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-23.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-22.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-21.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-20.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-19.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-18.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-17.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-16.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-15.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-14.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-13.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-12.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-11.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-10.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-09.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-08.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-07.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-06.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-05.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-04.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-03.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-02.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-01.fits, field objects 1-10).
+Field 1 did not solve (index index-4202-00.fits, field objects 1-10).
+Field 1 did not solve (index index-4119.fits, field objects 1-10).
+Field 1 did not solve (index index-4118.fits, field objects 1-10).
+Field 1 did not solve (index index-4117.fits, field objects 1-10).
+Field 1 did not solve (index index-4116.fits, field objects 1-10).
+Field 1 did not solve (index index-4115.fits, field objects 1-10).
+Field 1 did not solve (index index-4114.fits, field objects 1-10).
+Field 1 did not solve (index index-4113.fits, field objects 1-10).
+Field 1 did not solve (index index-4112.fits, field objects 1-10).
+Field 1 did not solve (index index-4111.fits, field objects 1-10).
+Field 1 did not solve (index index-4110.fits, field objects 1-10).
+  log-odds ratio 112.466 (6.9726e+48), 14 match, 0 conflict, 13 distractors, 18 index.
+  RA,Dec = (23.2259,30.6133), pixel scale 2.59927 arcsec/pix.
+  Hit/miss:   Hit/miss: +++-++-+-++-+-++--+-+-----+(best)-------------------------------------------------------------------------
+Field 1: solved with index index-4109.fits.
+Field 1 solved: writing to file /home/hojae/Desktop/lvmagp/testimg/autoguide_sample/assets/2459550/sci.agw-00000061.solved to indicate this.
+Field: /home/hojae/Desktop/lvmagp/testimg/autoguide_sample/assets/2459550/sci.agw-00000061.fits
+Field center: (RA,Dec) = (23.226178, 30.613631) deg.
+Field center: (RA H:M:S, Dec D:M:S) = (01:32:54.283, +30:36:49.071).
+Field size: 69.2351 x 47.6152 arcminutes
+Field rotation angle: up is 108.942 degrees E of N
 Field parity: pos
-Creating new FITS file "/home/sumin/lvmcam/python/lvmcam/assets/testshot.new"...
+Creating new FITS file "/home/hojae/Desktop/lvmagp/testimg/autoguide_sample/assets/2459550/sci.agw-00000061.new"...
 

@@ -2,17 +2,12 @@ from __future__ import absolute_import, annotations, division, print_function
 
 from clu.actor import AMQPActor
 
-from lvmagp.actor.commfunc import (LVMEastCamera, LVMFibsel,  # noqa: F401
-                                   LVMFocuser, LVMKMirror, LVMTANInstrument,
-                                   LVMTelescope, LVMWestCamera)
-
-from .commands import parser as lvm_command_python
+from .commands import command_parser as lvm_command_python
 
 
 # from scpactor import __version__
 
 __all__ = ["lvmagp"]
-tel_list = ["sci", "skye", "skyw", "spec"]
 
 
 class lvmagp(AMQPActor):
@@ -26,11 +21,6 @@ class lvmagp(AMQPActor):
     def __init__(
         self,
         *args,
-        telescopes: tuple[LVMTelescope, ...] = (),
-        eastcameras: tuple[LVMEastCamera, ...] = (),
-        westcameras: tuple[LVMEastCamera, ...] = (),
-        focusers: tuple[LVMFocuser, ...] = (),
-        kmirrors: tuple[LVMKMirror, ...] = (),
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -53,52 +43,10 @@ class lvmagp(AMQPActor):
         }
         self.load_schema(self.schema, is_file=False)
 
-        self.telescopes = {s.name: s for s in telescopes}
-        self.eastcameras = {s.name: s for s in eastcameras}
-        self.westcameras = {s.name: s for s in westcameras}
-        self.focusers = {s.name: s for s in focusers}
-        self.kmirrors = {s.name: s for s in kmirrors}
-
     @classmethod
     def from_config(cls, config, *args, **kwargs):
         instance = super(lvmagp, cls).from_config(config, *args, **kwargs)
         assert isinstance(instance, lvmagp)
         assert isinstance(instance.config, dict)
 
-        for (ctrname, ctr) in instance.config.items():
-            if ctrname in tel_list:
-                # print(ctrname, ctr)
-                instance.telescopes.update({ctrname: LVMTelescope(ctrname, "KHU")})
-
-                instance.eastcameras.update({ctrname: LVMEastCamera(ctrname)})
-                instance.eastcameras[ctrname].pixelscale = ctr["age"]["pixelscale"]
-                instance.eastcameras[ctrname].offset_x = ctr["age"]["offset_x"]
-                instance.eastcameras[ctrname].offset_y = ctr["age"]["offset_y"]
-                instance.eastcameras[ctrname].rotationangle = ctr["age"][
-                    "rotationangle"
-                ]
-
-                instance.westcameras.update({ctrname: LVMWestCamera(ctrname)})
-                instance.westcameras[ctrname].pixelscale = ctr["agw"]["pixelscale"]
-                instance.westcameras[ctrname].offset_x = ctr["agw"]["offset_x"]
-                instance.westcameras[ctrname].offset_y = ctr["agw"]["offset_y"]
-                instance.westcameras[ctrname].rotationangle = ctr["agw"][
-                    "rotationangle"
-                ]
-
-                instance.focusers.update({ctrname: LVMFocuser(ctrname)})
-
-                instance.kmirrors.update({ctrname: LVMKMirror(ctrname)})
-
-                # print(ctrname,ctr)
-
-        # print(instance.telescopes)
-
-        instance.parser_args = [
-            instance.telescopes,
-            instance.eastcameras,
-            instance.westcameras,
-            instance.focusers,
-            instance.kmirrors,
-        ]
         return instance

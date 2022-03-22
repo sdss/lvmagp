@@ -75,3 +75,96 @@ class LvmagpDeprecationWarning(LvmagpUserWarning):
     """A warning for deprecated features."""
 
     pass
+
+
+class LvmagpActorMissing(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = (
+            "Some of lower actors (lvmtan, lvmpwi, lvmcam) are missing.\
+            Check these actors are running."
+            if not message
+            else message
+        )
+
+        super(LvmagpActorMissing, self).__init__(message)
+
+
+class LvmagpNotExistingHardware(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = (
+            "There does not exist hardware which has this name."
+            if not message
+            else message
+        )
+
+        super(LvmagpNotExistingHardware, self).__init__(message)
+
+
+class LvmagpFocuserError(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = (
+            "Focuser failed. Check the focuser hardware." if not message else message
+        )
+
+        super(LvmagpFocuserError, self).__init__(message)
+
+
+class LvmagpTelescopeError(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = (
+            "Telescope(mount) failed. Check the mount hardware."
+            if not message
+            else message
+        )
+
+        super(LvmagpTelescopeError, self).__init__(message)
+
+
+class LvmagpInterlockEngaged(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = "Interlock is engaged. Unlock the system." if not message else message
+
+        super(LvmagpInterlockEngaged, self).__init__(message)
+
+
+class LvmagpTargetOverTheLimit(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = (
+            "Target is over the limit. Check the coordinates or set another target."
+            if not message
+            else message
+        )
+
+        super(LvmagpTargetOverTheLimit, self).__init__(message)
+
+
+class LvmagpAcquisitionFailed(LvmagpError):
+    """A custom exception for not yet implemented features."""
+
+    def __init__(self, message=None):
+
+        message = (
+            "Telescope failed to center the target after several compensation."
+            if not message
+            else message
+        )
+
+        super(LvmagpAcquisitionFailed, self).__init__(message)

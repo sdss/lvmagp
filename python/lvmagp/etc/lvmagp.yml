@@ -11,7 +11,7 @@ sci:
     pixelscale: 2.60
     offset_x: 0.0
     offset_y: 0.0
-    rotationangle: 100.0
+    rotationangle: 140.0
   foc:
     varA: null
   km:
@@ -77,5 +77,5 @@ actor:
   name: lvmagp
   host: localhost
   port: 5672
-  version: '0.2.3a'
-  log_dir: './logs'
+  version: '0.2.5a'
+  log_dir: '../../../../logs'

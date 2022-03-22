@@ -3,7 +3,7 @@ from clu.command import Command
 
 from lvmagp.actor.internalfunc import send_message  # noqa: F403
 
-from . import parser
+from . import command_parser as parser
 
 
 lvmcam = "lvmcam"
