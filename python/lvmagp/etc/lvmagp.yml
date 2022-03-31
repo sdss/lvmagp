@@ -1,4 +1,3 @@
-# A dictionary of controller name to ??
 sci:
   tel:
     varA: null
@@ -11,7 +10,7 @@ sci:
     pixelscale: 2.60
     offset_x: 0.0
     offset_y: 0.0
-    rotationangle: 140.0
+    rotationangle: 0.0
   foc:
     varA: null
   km:

@@ -1,13 +1,8 @@
-import datetime
-import logging
-import sys
-import uuid
+import sys, uuid, datetime, logging
 from multiprocessing import Manager, Process
 from threading import Thread
-import time
-import signal
-import astropy.units as u
 import numpy as np
+import astropy.units as u
 from astropy.coordinates import Angle, SkyCoord
 from clu import AMQPClient
 from cluplus.proxy import Proxy, invoke
@@ -15,6 +10,7 @@ from lvmtipo.site import Site
 from lvmtipo.siderostat import Siderostat
 from lvmtipo.target import Target
 from sdsstools import get_logger
+import yaml
 
 from lvmagp.actor.internalfunc import (
     GuideImage,
@@ -616,11 +612,13 @@ class LVMTelescopeUnit(
         )
 
     def __read_parameters(self):
-        # should be predefined somewhere...
-        self.offset_x = usrpars.offset_x
-        self.offset_y = usrpars.offset_y
-        self.pixelscale = usrpars.pixelscale
-        self.rotationangle = usrpars.rotationangle
+        with open('../etc/lvmagp.yml') as f:
+            conf = yaml.load(f, Loader=yaml.FullLoader)
+        data = conf[self.name]['agw']
+        self.offset_x = data['offset_x']
+        self.offset_y = data['offset_y']
+        self.pixelscale = data['pixelscale']
+        self.rotationangle = data['rotationangle']
 
     ############# Autofocus functions #########################
     def coarse_autofocus(self):

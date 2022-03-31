@@ -5,6 +5,10 @@ class usrpars:
     park_alt_d = -999
     park_az_d = -999
 
+    # coarse autofocus parameters
+    caf_incremental = 1000  # step size for each movement
+    caf_exptime = 3  # in seconds
+
     # autofocus parameters
     af_incremental = 100  # step size for each movement
     af_repeat = 5  # the number of steps
@@ -28,7 +32,7 @@ class usrpars:
     ag_cal_num_step = 3  # number of steps of calibration per axis
 
     #should be detached to invididual file for multiple device units
-    pixelscale = 2.60 #1.01
+    pixelscale = 1.01
     offset_x = 0.0
     offset_y = 0.0
     rotationangle = 0.0
