@@ -8,12 +8,12 @@ import time
 import signal
 import astropy.units as u
 import numpy as np
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, SkyCoord
 from clu import AMQPClient
 from cluplus.proxy import Proxy, invoke
 from lvmtipo.site import Site
 from lvmtipo.siderostat import Siderostat
-
+from lvmtipo.target import Target
 from sdsstools import get_logger
 
 from lvmagp.actor.internalfunc import (
@@ -150,24 +150,42 @@ class LVMKMirror:
 
     def derotate(self, pa):
         """
-        Derotate the field to correct the given position angle.
+        Derotate the field to correct the given field angle.
 
         Parameters
         ----------
         pa
-            Target position angle to be corrected.
-            The direction where position = pa will head up after the derotation.
+            Target field angle to be corrected.
+            The direction where pa = field angle will head up after the derotation.
         """
 
         try:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | Move Kmirror to {pa}")
+            self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotate Kmirror to {pa}")
             self._km.moveAbsolute(pa, "DEG")
 
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Move Kmirror done")
+        self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotating Kmirror done")
 
+
+    def _kmoffset(self, delta_pa):
+        """
+        Rotate K-mirror by given offset angle in degree.
+
+        Parameters
+        ----------
+        delta_pa
+            Offset angle for K-mirror to be rotated.
+        """
+        try:
+            self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotate Kmirror by {delta_pa}")
+            self._km.moveRelative(delta_pa, "DEG")
+
+        except Exception as e:
+            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            raise
+        self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotating Kmirror done")
 
 class LVMFiberselector:
     """
@@ -206,17 +224,6 @@ class LVMTelescope:
         self.amqpc = amqpc
         self.lvmpwi = "lvm." + tel + ".pwi"
         self._pwi = None
-
-        site = Site(name=sitename)
-        self.latitude = site.lat
-        self.longitude = site.long
-
-        self.scale_matrix = np.array(
-            [[0, 0], [0, 0]]
-        )  # (ra, dec) = (scale_matrix)*(x, y)
-
-        self.ag_task = None
-        self.ag_break = False
 
         try:
             self._pwi = Proxy(self.amqpc, self.lvmpwi)
@@ -375,8 +382,6 @@ class LVMCamera:
         self.amqpc = None
         self._cam = None
 
-        self.pixelscale = usrpars.pixelscale
-        self.rotationangle = usrpars.rotationangle
 
     def single_exposure(self, exptime
     # , result=None
@@ -548,6 +553,7 @@ class LVMTelescopeUnit(
     def __init__(
         self,
         tel,
+        sitename = "LCO",
         enable_pwi=True,
         enable_foc=True,
         enable_agw=True,
@@ -563,8 +569,17 @@ class LVMTelescopeUnit(
             log_dir="/home/hojae/Desktop/lvmagp/logs",
             log=self.log,
         )
+
+        self.site = Site(name=sitename)
+        self.latitude = self.site.lat
+        self.longitude = self.site.long
+
+        self.ag_task = None
         self.ag_on = False
         self.ag_break = False
+
+        self.siderostat = Siderostat()
+        self.target = None
 
         # log_dir => How to fix??
         self.__connect_actors(
@@ -604,8 +619,8 @@ class LVMTelescopeUnit(
         # should be predefined somewhere...
         self.offset_x = usrpars.offset_x
         self.offset_y = usrpars.offset_y
-        # self.pixelscale = -999
-        # self.rotationangle = -999
+        self.pixelscale = usrpars.pixelscale
+        self.rotationangle = usrpars.rotationangle
 
     ############# Autofocus functions #########################
     def coarse_autofocus(self):
@@ -697,7 +712,6 @@ class LVMTelescopeUnit(
         target_ra_h,
         target_dec_d,
         target_pa_d=0,
-        target="optical_axis",
         ra_d=False,
     ):
         """
@@ -720,8 +734,6 @@ class LVMTelescopeUnit(
             The declination (J2000) of the target in degrees
         target_pa_d
             Desired position angle of the image
-        target
-            ???
         ra_d
             If ``True``, the RA of target should be given in degrees.
         """
@@ -736,6 +748,10 @@ class LVMTelescopeUnit(
         # Check the target is in reachable area
         long_d = self.longitude
         lat_d = self.latitude
+        if ra_d:
+            target_ra_h /= 15
+        self.target = Target(SkyCoord(ra=target_ra_h*u.hourangle, dec=target_dec_d*u.degree))
+
 
         if not check_target(target_ra_h, target_dec_d, long_d, lat_d):
             self.amqpc.log.debug(
@@ -1025,15 +1041,14 @@ class LVMTelescopeUnit(
 
     ############# Autoguide functions #########################
     def offset(
-        self, target=None, delta_ra=None, delta_dec=None, delta_x=None, delta_y=None, delta_pa=None
+        self, delta_ra=None, delta_dec=None, delta_x=None, delta_y=None, delta_pa=None
     ):
         """
         Normal offset (for guiding): do NOT change track rates
+        It returns applied offset values.
 
         Parameters
         ----------
-        target
-            ???
         delta_ra
             Offset in ra direction in arcsecond (+/- = E/W)
         delta_dec
@@ -1046,7 +1061,37 @@ class LVMTelescopeUnit(
             Offset in position angle in degree (+/- = CW/CCW)
         """
 
-        pass
+        if (delta_ra is not None) or (delta_dec is not None):
+            self._offset_radec(ra_arcsec=delta_ra, dec_arcsec=delta_dec)
+            returnval = ['radec', delta_ra, delta_dec]
+
+        if (delta_x is not None) or (delta_y is not None):
+            P = np.array([-1, -1])  # inversion matrix
+            # (x-axis by right-hand coordinate to left-hand, y-axis by siderostat mirror)
+            offset_xy = np.array([delta_x, delta_y])
+
+            if self.name == 'phot':
+                theta = -self.siderostat.fieldAngle(self.site, self.target)
+                c, s = np.cos(theta), np.sin(theta)
+                R = np.array([[c, -s], [s, c]])  # rotation matrix
+            else:
+                R = np.array([[1,0],[0,1]])
+
+            offset_radec = np.dot(R, offset_xy) * self.pixelscale
+
+            decj2000_deg = self._get_dec2000_deg()
+            offset_radec[0] /= np.cos(np.deg2rad(decj2000_deg))
+            offset_radec *= P
+
+            self._offset_radec(ra_arcsec=offset_radec[0], dec_arcsec=offset_radec[1])
+            returnval = ['radec', offset_radec[0], offset_radec[1]]
+
+        if (delta_pa is not None):
+            self._kmoffset(delta_pa)
+            returnval = ['pa', delta_pa]
+
+        return returnval
+
 
     def dither(self, delta_x=None, delta_y=None, delta_pa=None):
         """
@@ -1065,7 +1110,7 @@ class LVMTelescopeUnit(
 
         pass
 
-    def guide_on(self, useteldata=False, guide_parameters=None):
+    def guide_on(self, guide_parameters=None):
         '''
         Start guiding, or modify parameters of running guide loop.  <--- modify????
         guide_parameters is a dictionary containing additional parameters for
@@ -1090,7 +1135,7 @@ class LVMTelescopeUnit(
         )
 
         try:
-            t = Thread(target=self.autoguide_supervisor, args=(useteldata, ))
+            t = Thread(target=self.autoguide_supervisor)
             t.start()
 
         except Exception as e:
@@ -1117,7 +1162,8 @@ class LVMTelescopeUnit(
 
         return
 
-    
+
+    '''
     def calibration(self):
         """
         Run calibration sequence to calculate the transformation
@@ -1207,9 +1253,9 @@ class LVMTelescopeUnit(
             f'xscale_dec={xscale_dec} pixel/arcsec'+
             f'yscale_dec={yscale_dec} pixel/arcsec'
         )
-    
+    '''
 
-    def autoguide_supervisor(self, useteldata):
+    def autoguide_supervisor(self):
         """
         Manage the autoguide sequence.
         It starts real autoguide loop and keeps it until the break signal comes.
@@ -1218,11 +1264,6 @@ class LVMTelescopeUnit(
         ----------
         tel
             Telescope to autoguide
-        useteldata
-            If ``useteldata`` is flagged,
-            the sequence will use the pixel scale and rotation angle from LVMTelescope.
-            Otherwise, the sequence will get pixel scale from LVMCamera, and
-            it assumes that the camera is north-oriented and both axes of mount are orthogonal.
         """
         initposition, initflux = self.find_guide_stars()
 
@@ -1231,8 +1272,7 @@ class LVMTelescopeUnit(
             print("autoguiding loop Start")
             self.autoguiding(
                 initposition,
-                initflux,
-                useteldata,
+                initflux
             )
             print("autoguiding loop Done")
             # counter = counter + 1
@@ -1290,7 +1330,6 @@ class LVMTelescopeUnit(
 
     def autoguiding(self, initposition,
             initflux,
-            useteldata,
     ):
         """
         Expose an image, and calculate offset from the image and initial values.
@@ -1304,16 +1343,11 @@ class LVMTelescopeUnit(
             Position of guide stars when the autoguide is started
         initflux
             Flux of guide stars when the autoguide is started
-        positionguess
-            Initial guess of guidestar position.
-            It should be given in np.ndarray as [[x1, y1], [x2, y2], ...]
-            If ``positionguess`` is not None, ``find_guide_stars`` only conduct center finding
-            based on ``positionguess`` without finding new stars.
         """
 
-        self._pwi.offset(ra_add_arcsec=3, dec_add_arcsec=-2)
+        #self._pwi.offset(ra_add_arcsec=3, dec_add_arcsec=-2)
 
-        time.sleep(1)
+        #time.sleep(1)
 
         starposition, starflux = self.find_guide_stars(
             positionguess=initposition,
@@ -1340,31 +1374,15 @@ class LVMTelescopeUnit(
 
         offset = np.mean(starposition - initposition, axis=0)  # in x,y [pixel]
 
-        if useteldata:
-            offset_arcsec = np.dot(
-                telescopes[tel].scale_matrix, offset
-            )  # in x,y(=ra,dec) [arcsec]
-            correction_arcsec = -np.array(offset_arcsec)
-
-        else:
-            theta = np.radians(self.agw.rotationangle)
-            c, s = np.cos(theta), np.sin(theta)
-            R = np.array(((c, -s), (s, c)))  # inverse rotation matrix
-            correction_arcsec = -(
-                    np.dot(R, offset) * self.agw.pixelscale
-            )  # in x,y(=ra,dec) [arcsec]
-
-        decj2000_deg = self._get_dec2000_deg()
-        correction_arcsec[0] /= -np.cos(np.deg2rad(decj2000_deg))
-        correction_arcsec[1] *= -1
-
         if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
+            correction = self.offset(delta_x=-offset[0], delta_y=-offset[1])
+
             self.amqpc.log.debug(
                 "compensate signal: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
-                % (correction_arcsec[0], correction_arcsec[1], -offset[0], -offset[1])
+                % (correction[1], correction[2], -offset[0], -offset[1])
             )
-            self._offset_radec(*correction_arcsec)
-            return correction_arcsec
+
+            return correction[1:3]
 
         else:
             return [0.0, 0.0]

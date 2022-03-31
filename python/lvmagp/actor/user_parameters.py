@@ -27,10 +27,11 @@ class usrpars:
     ag_cal_offset_per_step = 5.0  # Step size for calibration in arcseconds
     ag_cal_num_step = 3  # number of steps of calibration per axis
 
-    pixelscale = 1.01
+    #should be detached to invididual file for multiple device units
+    pixelscale = 2.60 #1.01
     offset_x = 0.0
     offset_y = 0.0
-    rotationangle = 140.0
+    rotationangle = 0.0
 
 
 def temp_vs_focus(temperature):
