@@ -10,7 +10,7 @@ sci:
     pixelscale: 2.60
     offset_x: 0.0
     offset_y: 0.0
-    rotationangle: 0.0
+    rotationangle: 149.0
   foc:
     varA: null
   km:

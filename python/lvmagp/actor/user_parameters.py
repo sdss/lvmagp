@@ -21,7 +21,7 @@ class usrpars:
 
     # autoguide parameters
     ag_exptime = 3  # exposure time for autoguide in seconds
-    ag_halfboxsize = 15  # 1/2 of box in pixel
+    ag_halfboxsize = 10  # 1/2 of box in pixel
     # ag_minsnr = 6
     ag_min_offset = 0.3  # minimum offset to do correction in pixel
     ag_flux_tolerance = (
@@ -30,12 +30,6 @@ class usrpars:
 
     ag_cal_offset_per_step = 5.0  # Step size for calibration in arcseconds
     ag_cal_num_step = 3  # number of steps of calibration per axis
-
-    #should be detached to invididual file for multiple device units
-    pixelscale = 1.01
-    offset_x = 0.0
-    offset_y = 0.0
-    rotationangle = 0.0
 
 
 def temp_vs_focus(temperature):

@@ -498,7 +498,7 @@ class LVMEastCamera(LVMCamera):
     def __init__(self, tel, amqpc):
         super().__init__()
         self.amqpc = amqpc
-        self.lvmcam = "lvm." + tel + ".age"
+        self.lvmcam = "lvm.cam"  #"lvm." + tel + ".age"
         self.camname = tel + ".age"
 
         try:
@@ -527,7 +527,7 @@ class LVMWestCamera(LVMCamera):
     def __init__(self, tel, amqpc):
         super().__init__()
         self.amqpc = amqpc
-        self.lvmcam = "lvm." + tel + ".agw"
+        self.lvmcam = "lvm.cam"  # "lvm." + tel + ".agw"
         self.camname = tel + ".agw"
 
         try:
@@ -553,7 +553,7 @@ class LVMTelescopeUnit(
         enable_pwi=True,
         enable_foc=True,
         enable_agw=True,
-        enable_age=True,
+        enable_age=False,
         enable_fibsel=False,
         enable_km=True,
     ):
@@ -598,6 +598,8 @@ class LVMTelescopeUnit(
 
             if enable_age is True:
                 self.age = LVMEastCamera(self.name, self.amqpc)
+            else:
+                self.age = self.agw
 
             if enable_fibsel is True:
                 LVMFiberselector.__init__(self, self.name, self.amqpc)
@@ -612,7 +614,9 @@ class LVMTelescopeUnit(
         )
 
     def __read_parameters(self):
-        with open('../etc/lvmagp.yml') as f:
+
+        #with open('../etc/lvmagp.yml') as f:
+        with open('/home/sumin/lvmagp/python/lvmagp/etc/lvmagp.yml') as f:
             conf = yaml.load(f, Loader=yaml.FullLoader)
         data = conf[self.name]['agw']
         self.offset_x = data['offset_x']
@@ -682,14 +686,15 @@ class LVMTelescopeUnit(
         exptime = usrpars.af_exptime
         imgcmd_w, imgcmd_e = None, None
         try:
-            if self.name != "phot":
-                imgcmd_w, imgcmd_e = (
-                    self.agw.single_exposure(exptime=exptime),
-                    self.age.single_exposure(exptime=exptime)
-                )
-            else:
-                imgcmd_w = self.agw.single_exposure(exptime=exptime)
-                imgcmd_e = imgcmd_w
+            #20220401
+            #if self.name != "phot":
+            #    imgcmd_w, imgcmd_e = (
+            #        self.agw.single_exposure(exptime=exptime),
+            #        self.age.single_exposure(exptime=exptime)
+            #    )
+            #else:
+            imgcmd_w = self.agw.single_exposure(exptime=exptime)
+            imgcmd_e = imgcmd_w
 
         except Exception as e:
             self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
@@ -818,11 +823,14 @@ class LVMTelescopeUnit(
             self.amqpc.log.debug(
                 f"{datetime.datetime.now()} | (lvmagp) Astrometry..."
             )
-            
-            guideimgpath = (
-                self.agw.single_exposure(usrpars.aqu_exptime),
-                self.age.single_exposure(usrpars.aqu_exptime),
-            )
+
+            #20220401
+            #guideimgpath = (
+            #    self.agw.single_exposure(usrpars.aqu_exptime),
+            #    self.age.single_exposure(usrpars.aqu_exptime),
+            #)
+            guideimgpath = self.agw.single_exposure(usrpars.aqu_exptime)
+            guideimgpath = [guideimgpath, guideimgpath]
 
             westguideimg = GuideImage(guideimgpath[0])
             eastguideimg = GuideImage(guideimgpath[1])
@@ -870,8 +878,6 @@ class LVMTelescopeUnit(
 
             target_ra = Angle(target_ra_h, u.hour)
             target_dec = Angle(target_dec_d, u.degree)
-            print('target_ra', target_ra)
-            print('target_dec', target_dec)
 
             comp_ra_arcsec = (target_ra - ra2000).arcsecond
             comp_dec_arcsec = (target_dec - dec2000).arcsecond
@@ -1064,12 +1070,14 @@ class LVMTelescopeUnit(
             returnval = ['radec', delta_ra, delta_dec]
 
         if (delta_x is not None) or (delta_y is not None):
-            P = np.array([-1, -1])  # inversion matrix
+            P = np.array([1, -1])  # inversion matrix
             # (x-axis by right-hand coordinate to left-hand, y-axis by siderostat mirror)
             offset_xy = np.array([delta_x, delta_y])
 
-            if self.name == 'phot':
-                theta = -self.siderostat.fieldAngle(self.site, self.target)
+            if self.name == 'sci':  # 20220401 'phot':
+                #theta = -self.siderostat.fieldAngle(self.site, self.target, ambi=None)   20220401
+                theta = np.deg2rad(self.rotationangle)
+
                 c, s = np.cos(theta), np.sin(theta)
                 R = np.array([[c, -s], [s, c]])  # rotation matrix
             else:
@@ -1108,7 +1116,7 @@ class LVMTelescopeUnit(
 
         pass
 
-    def guide_on(self, guide_parameters=None):
+    def guide_on(self, guide_parameters=None, ra_h=None, dec_d=None):
         '''
         Start guiding, or modify parameters of running guide loop.  <--- modify????
         guide_parameters is a dictionary containing additional parameters for
@@ -1124,6 +1132,7 @@ class LVMTelescopeUnit(
         guide_parameters
             exposure times, cadence, PID parameters, readout or window modes, ... ???
         '''
+        self.target = Target(SkyCoord(ra=ra_h*u.hourangle, dec=dec_d*u.degree))
         if self.ag_on:
             pass #raise lvmagpguidealreadyrunning ?????
 
@@ -1302,10 +1311,13 @@ class LVMTelescopeUnit(
 
         try:
             # guideimgpath = await asyncio.gather(*imgcmd)
-            guideimgpath = [
-                self.agw.single_exposure(usrpars.ag_exptime),
-                self.age.single_exposure(usrpars.ag_exptime)
-            ]
+            #20220401
+            #guideimgpath = [
+            #    self.agw.single_exposure(usrpars.ag_exptime),
+            #    self.age.single_exposure(usrpars.ag_exptime)
+            #]
+            guideimgpath = self.agw.single_exposure(usrpars.ag_exptime)
+            guideimgpath = [guideimgpath, guideimgpath]
 
         except Exception as e:
             self.amqpc.log.error(

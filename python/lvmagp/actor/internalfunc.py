@@ -29,7 +29,7 @@ class GuideImage:
         self.FWHM = -999
         self.hdu = fits.open(self.filepath)
         print(self.hdu.info())
-        self.data, self.hdr = self.hdu[0].data, self.hdu[0].header
+        self.data, self.hdr = self.hdu[0].data[0], self.hdu[0].header
         self.mean, self.median, self.std = sigma_clipped_stats(self.data, sigma=3.0)
         self.guidestarposition = np.zeros(1)
         self.guidestarflux = np.zeros(1)
@@ -58,6 +58,7 @@ class GuideImage:
             fwhm=self.initFWHM, threshold=3.0 * self.std, peakmax=60000 - self.median
         )  # 1sigma = FWHM/(2*sqrt(2ln2)); FWHM = sigma * (2*sqrt(2ln2))
         sources = daofind(self.data - self.median, mask=mask)
+
         posnflux = np.array(
             [sources["xcentroid"], sources["ycentroid"], sources["flux"]]
         )  # xcoord, ycoord, flux
@@ -169,7 +170,7 @@ class GuideImage:
         returndict["dec"] = -999.0
         returndict["pa"] = -999.0
 
-        ospassword = "user"
+        ospassword = "0000"
         pathsplit = self.filepath.split("/")
         if "age" in pathsplit[-1]:
             resultpath = (
@@ -187,8 +188,8 @@ class GuideImage:
             )
 
         timeout = 5.0
-        scalelow = 1.0
-        scalehigh = 1.5
+        scalelow = 2.0
+        scalehigh = 3.0
         radius = 3.0
 
         if ra_h == -999:
