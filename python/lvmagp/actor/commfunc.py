@@ -18,6 +18,9 @@ from lvmagp.actor.internalfunc import (
     check_target,
     define_visb_limit,
     findfocus,
+    print_debug,
+    print_error,
+    print_info,
 )
 from lvmagp.actor.user_parameters import temp_vs_focus, usrpars
 from lvmagp.exceptions import (
@@ -26,6 +29,8 @@ from lvmagp.exceptions import (
     LvmagpInterlockEngaged,
     LvmagpTargetOverTheLimit,
 )
+
+# import time
 
 
 class LVMFocuser:
@@ -49,7 +54,7 @@ class LVMFocuser:
             self._foc.start()
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
     def focusoffset(self, delta_f=None):
@@ -61,13 +66,13 @@ class LVMFocuser:
         """
 
         try:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | Move focus by {delta_f}")
+            print_debug(self.amqpc, f"Move focus by {delta_f}")
             self._foc.moveRelative(delta_f, "STEPS")
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Move focus done")
+        print_debug(self.amqpc, "Move focus done")
         return True
 
     def focus(self, value=None, temperature=None):
@@ -84,22 +89,18 @@ class LVMFocuser:
 
         try:
             if value is not None:
-                self.amqpc.log.debug(
-                    f"{datetime.datetime.now()} | Move focus to {value}"
-                )
+                print_debug(self.amqpc, f"Move focus to {value}")
                 self._foc.moveAbsolute(value, "STEPS")
             else:
                 temp_value = temp_vs_focus(temperature=temperature)
-                self.amqpc.log.debug(
-                    f"{datetime.datetime.now()} | Move focus to {value} (estimated)"
-                )
+                print_debug(self.amqpc, f"{datetime.datetime.now()} | Move focus to {value} (estimated)")
                 self._foc.moveAbsolute(temp_value, "STEPS")
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Move focus done")
+        print_debug(self.amqpc, "Move focus done")
 
     def getfocusposition(self, unit="STEPS"):
         """
@@ -113,12 +114,10 @@ class LVMFocuser:
         try:
             position = self._foc.getPosition(unit)["Position"]
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
-        self.amqpc.log.info(
-            f"{datetime.datetime.now()} | Current focus position: {position}"
-        )
+        print_info(self.amqpc, f"Current focus position: {position}")
         return position
 
 
@@ -141,7 +140,7 @@ class LVMKMirror:
             self._km.start()
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
     def derotate(self, pa):
@@ -156,13 +155,13 @@ class LVMKMirror:
         """
 
         try:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotate Kmirror to {pa}")
+            print_debug(self.amqpc, f"Rotate Kmirror to {pa}")
             self._km.moveAbsolute(pa, "DEG")
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotating Kmirror done")
+        print_debug(self.amqpc, "Rotating Kmirror done")
 
 
     def _kmoffset(self, delta_pa):
@@ -175,13 +174,13 @@ class LVMKMirror:
             Offset angle for K-mirror to be rotated.
         """
         try:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotate Kmirror by {delta_pa}")
+            print_debug(self.amqpc, f"Rotate Kmirror by {delta_pa}")
             self._km.moveRelative(delta_pa, "DEG")
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Rotating Kmirror done")
+        print_debug(self.amqpc, "Rotating Kmirror done")
 
 class LVMFiberselector:
     """
@@ -202,7 +201,7 @@ class LVMFiberselector:
             self._fibsel.start()
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
 
@@ -226,7 +225,7 @@ class LVMTelescope:
             self._pwi.start()
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
     def _slew_radec2000(self, target_ra_h, target_dec_d):
@@ -241,38 +240,12 @@ class LVMTelescope:
             Target declination in degrees in J2000 epoch
         """
         try:
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | Start to slew telescope to RA {target_ra_h}, Dec {target_dec_d}."  # noqa: E501
-            )
+            print_debug(self.amqpc, f"Start to slew telescope to RA {target_ra_h}, Dec {target_dec_d}.")  # noqa: E501
             self._pwi.gotoRaDecJ2000(target_ra_h, target_dec_d)
         except Exception as e:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
-
-    def _slew_radec2000_offset(self, target_ra_h, target_dec_d):
-            """
-            Slew the telescope to given equatorial coordinates whose epoch is J2000.
-
-            Parameters
-            ----------
-            target_ra_h
-                Target right ascension in hours in J2000 epoch
-            target_dec_d
-                Target declination in degrees in J2000 epoch
-            """
-            offset_ra = 0 #+ (1/3600)*(24/360)
-            offset_dec = -30/60 #+ 1/3600
-
-            try:
-                self.amqpc.log.debug(
-                    f"{datetime.datetime.now()} | Start to slew telescope to RA {target_ra_h}, Dec {target_dec_d}."  # noqa: E501
-                )
-                self._pwi.gotoRaDecJ2000(target_ra_h + offset_ra, target_dec_d + offset_dec)
-            except Exception as e:
-                self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
-                raise
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
+        print_debug(self.amqpc, "Slew completed.")
 
 
     def _slew_altaz(self, target_alt_d, target_az_d):
@@ -287,30 +260,24 @@ class LVMTelescope:
             Target azimuth in degree
         """
         try:
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | Start to slew telescope to Alt {target_alt_d}, Az {target_az_d}."  # noqa: E501
-            )
+            print_debug(self.amqpc, f"Start to slew telescope to Alt {target_alt_d}, Az {target_az_d}.")  # noqa: E501
             self._pwi.gotoAltAzJ2000(target_alt_d, target_az_d)
         except Exception as e:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Slew completed.")
+        print_debug(self.amqpc, "Slew completed.")
 
     def _reset_offset_radec(self):
         """
         Reset the offset of both axes to zero.
         """
         try:
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | Set telescope offsets to zero."
-            )
+            print_debug(self.amqpc, "Set telescope offsets to zero.")
             self._pwi.offset(ra_reset=0, dec_reset=0)
         except Exception as e:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Zero offset setting completed."
-        )
+        print_debug(self.amqpc, "Zero offset setting completed.")
 
     def _offset_radec(self, ra_arcsec, dec_arcsec):
         """
@@ -323,15 +290,13 @@ class LVMTelescope:
         dec_arcsec
             Distance to move along declination axis in arcseconds
         """
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Set telescope offsets ra={ra_arcsec}, dec={dec_arcsec}"  # noqa: E501
-        )
+        print_debug(self.amqpc, f"Set telescope offsets ra={ra_arcsec}, dec={dec_arcsec}")  # noqa: E501
         try:
             self._pwi.offset(ra_add_arcsec=ra_arcsec, dec_add_arcsec=dec_arcsec)
         except Exception as e:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Set offset done")
+        print_debug(self.amqpc, "Set offset done")
 
     def _get_dec2000_deg(self):
         """
@@ -340,7 +305,7 @@ class LVMTelescope:
         try:
             status = self._pwi.status()
         except Exception as e:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
         return status["dec_j2000_degs"]
@@ -357,11 +322,11 @@ class LVMTelescope:
 
 
         s = "ON" if enable else "OFF"
-        self.amqpc.log.debug(f"{datetime.datetime.now()} | Set tracking {s}")
+        print_debug(self.amqpc, f"Set tracking {s}")
         try:
             self._pwi.setTracking(enable)
         except Exception as e:
-            self.amqpc.log.debug(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
 
@@ -379,9 +344,7 @@ class LVMCamera:
         self._cam = None
 
 
-    def single_exposure(self, exptime
-    # , result=None
-    ):
+    def single_exposure(self, exptime):
         """
         Take a single exposure
 
@@ -390,27 +353,17 @@ class LVMCamera:
         exptime
             Exposure time
         """
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Guider {self.camname} exposure started"
-        )
+        print_debug(self.amqpc, f"Guider {self.camname} exposure started")
 
         try:
             path = self._cam.expose(exptime, 1, self.camname)[
                 "PATH"
             ]
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
-        
-        # if result is not None:
-        #     try:
-        #         result.append(path['0'])
-        #     except Exception as e:
-        #         result.put(path['0'])
 
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Guider {self.camname} exposure done"
-        )
+        print_debug(self.amqpc, f"Guider {self.camname} exposure done")
 
         return path['0']
 
@@ -424,21 +377,18 @@ class LVMCamera:
         exptime
             Exposure time
         """
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Guider {self.camname} exposure started"
-        )
+
+        print_debug(self.amqpc, f"Guider {self.camname} exposure started")
 
         try:
              path = self._cam.expose(
                 exptime, 1, self.camname, testshot=""
             )["PATH"]
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Guider {self.camname} exposure done"
-        )
+        print_debug(self.amqpc, f"Guider {self.camname} exposure done")
 
         return path["0"]
 
@@ -452,19 +402,15 @@ class LVMCamera:
         repeat
             The number of bias images
         """
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Guider {self.camname} exposure started"
-        )
+        print_debug(self.amqpc, f"Guider {self.camname} exposure started")
 
         try:
             path = self._cam.expose(0, repeat, self.camname)["PATH"]
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | Guider {self.camname} exposure done"
-        )
+        print_debug(self.amqpc, f"Guider {self.camname} exposure done")
 
         return path.values()
 
@@ -476,12 +422,10 @@ class LVMCamera:
         try:
             status = self._cam.status()
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
-        self.amqpc.log.info(
-            f"{datetime.datetime.now()} | {status}"
-        )
+        print_info(self.amqpc, status)
 
         return status
 
@@ -498,7 +442,7 @@ class LVMEastCamera(LVMCamera):
     def __init__(self, tel, amqpc):
         super().__init__()
         self.amqpc = amqpc
-        self.lvmcam = "lvm.cam"  #"lvm." + tel + ".age"
+        self.lvmcam = "lvm." + tel + ".age"
         self.camname = tel + ".age"
 
         try:
@@ -510,7 +454,7 @@ class LVMEastCamera(LVMCamera):
             except Exception as e:
                 self._cam.connect(name=self.camname)
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
 
@@ -527,7 +471,7 @@ class LVMWestCamera(LVMCamera):
     def __init__(self, tel, amqpc):
         super().__init__()
         self.amqpc = amqpc
-        self.lvmcam = "lvm.cam"  # "lvm." + tel + ".agw"
+        self.lvmcam = "lvm." + tel + ".agw"
         self.camname = tel + ".agw"
 
         try:
@@ -539,7 +483,7 @@ class LVMWestCamera(LVMCamera):
             except Exception as e:
                 self._cam.connect(name=self.camname)
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
 
 
@@ -571,7 +515,7 @@ class LVMTelescopeUnit(
         self.longitude = self.site.long
 
         self.ag_task = None
-        self.ag_on = False
+        # self.ag_on = False
         self.ag_break = False
 
         self.siderostat = Siderostat()
@@ -609,14 +553,12 @@ class LVMTelescopeUnit(
         except Exception:
             raise LvmagpActorMissing
 
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | All instrument actors are connected."
-        )
+        print_debug(self.amqpc, "All instrument actors are connected.")
 
     def __read_parameters(self):
 
         #with open('../etc/lvmagp.yml') as f:
-        with open('/home/sumin/lvmagp/python/lvmagp/etc/lvmagp.yml') as f:
+        with open('../../etc/lvmagp.yml') as f:
             conf = yaml.load(f, Loader=yaml.FullLoader)
         data = conf[self.name]['agw']
         self.offset_x = data['offset_x']
@@ -639,9 +581,7 @@ class LVMTelescopeUnit(
         incremental = usrpars.af_incremental
         repeat = usrpars.af_repeat
 
-        self.amqpc.log.info(
-            f"{datetime.datetime.now()} | (lvmagp) Fine autofocus start"
-        )
+        print_info(self.amqpc, "(lvmagp) Fine autofocus start")
 
         # get current pos of focus stage
         currentposition = self.getfocusposition(unit="STEPS")
@@ -655,9 +595,7 @@ class LVMTelescopeUnit(
 
         # Take picture & picture analysis
         FWHM_tmp = self.__get_fwhm()
-        self.amqpc.log.info(
-            f"{datetime.datetime.now()} | Focus at {currentposition}: {FWHM_tmp}"
-        )
+        print_info(self.amqpc, f"Focus at {currentposition}: {FWHM_tmp}")
         FWHM.append(FWHM_tmp)
 
         for iteration in range(repeat - 1):
@@ -673,9 +611,7 @@ class LVMTelescopeUnit(
         # Fitting
         bestposition, bestfocus = findfocus(position, FWHM)
         self.focus(value=bestposition)
-        self.amqpc.log.info(
-            f"{datetime.datetime.now()} | (lvmagp) Fine autofocus done: pos={bestposition}, focus={bestfocus}"  # noqa: E501
-        )
+        print_info(self.amqpc, f"(lvmagp) Fine autofocus done: pos={bestposition}, focus={bestfocus}")  # noqa: E501
 
         return bestposition, bestfocus
 
@@ -686,18 +622,18 @@ class LVMTelescopeUnit(
         exptime = usrpars.af_exptime
         imgcmd_w, imgcmd_e = None, None
         try:
-            #20220401
-            #if self.name != "phot":
-            #    imgcmd_w, imgcmd_e = (
-            #        self.agw.single_exposure(exptime=exptime),
-            #        self.age.single_exposure(exptime=exptime)
-            #    )
-            #else:
-            imgcmd_w = self.agw.single_exposure(exptime=exptime)
-            imgcmd_e = imgcmd_w
+            if self.name != "phot":
+                imgcmd_w, imgcmd_e = invoke(
+                    self.agw._cam.async_expose(usrpars.aqu_exptime, 1, self.agw.camname),
+                    self.age._cam.async_expose(usrpars.aqu_exptime, 1, self.age.camname),
+                )
+                imgcmd_w, imgcmd_e = imgcmd_w["PATH"]["0"], imgcmd_e["PATH"]["0"]
+            else:
+                imgcmd_w = self.agw.single_exposure(exptime=exptime)
+                imgcmd_e = imgcmd_w
 
         except Exception as e:
-            self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
+            print_error(self.amqpc, e)
             raise
         
         guideimg_w = GuideImage(imgcmd_w)
@@ -741,9 +677,7 @@ class LVMTelescopeUnit(
             If ``True``, the RA of target should be given in degrees.
         """
         if self.check_safety_interlock():
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | (lvmagp) safety interlock engaged"
-            )
+            print_debug(self.amqpc, "(lvmagp) safety interlock engaged")
             raise LvmagpInterlockEngaged
 
         # Check status to confirm the system is in idle state?
@@ -753,13 +687,11 @@ class LVMTelescopeUnit(
         lat_d = self.latitude
         if ra_d:
             target_ra_h /= 15
+
         self.target = Target(SkyCoord(ra=target_ra_h*u.hourangle, dec=target_dec_d*u.degree))
 
-
         if not check_target(target_ra_h, target_dec_d, long_d, lat_d):
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | (lvmagp) Target is over the limit"
-            )
+            print_debug(self.amqpc, "(lvmagp) Target is over the limit")
             raise LvmagpTargetOverTheLimit
 
         self._reset_offset_radec()
@@ -767,70 +699,42 @@ class LVMTelescopeUnit(
         # Calculate position angle and rotate K-mirror  :: should be changed to traj method.
         target_pa_d0 = cal_pa(target_ra_h, target_dec_d, long_d, lat_d)
 
-        # invoke(
-        self.derotate(target_pa_d0 + target_pa_d)
-        self._slew_radec2000_offset(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
-        # )
+        # self.derotate(target_pa_d0 + target_pa_d)
+        # self._slew_radec2000(target_ra_h=target_ra_h, target_dec_d=target_dec_d),
+        
+        pa = target_pa_d0 + target_pa_d
 
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | (lvmagp) Initial slew completed"
+        print_debug(self.amqpc, f"Rotate Kmirror to {pa}")
+        print_debug(self.amqpc, f"Start to slew telescope to RA {target_ra_h}, Dec {target_dec_d}.")  # noqa: E501
+
+        invoke(
+            self._km.async_moveAbsolute(pa , "DEG"),
+            self._pwi.async_gotoRaDecJ2000(target_ra_h, target_dec_d-30/60),
         )
+
+        print_debug(self.amqpc, "Rotating Kmirror done")
+        print_debug(self.amqpc, "Slew completed.")
+
+        print_debug(self.amqpc, "(lvmagp) Initial slew completed")
 
         for iter in range(usrpars.aqu_max_iter + 1):
 
             # take an image for astrometry
+            
+            print_debug(self.amqpc, "(lvmagp) Astrometry...")
 
-            # result = Queue()
-            # processes = []
-            # processes.append(
-            #     Process(
-            #         target=self.agw.single_exposure,
-            #         args=(usrpars.aqu_exptime, result),
-            #     )
-            # )
-            # processes.append(
-            #     Process(
-            #         target=self.age.single_exposure,
-            #         args=(usrpars.aqu_exptime, result),
-            #     )
-            # )
-            # for p in processes:
-            #     p.start()
-            # for p in processes:
-            #     p.join()
-            # print(result)
+            print_debug(self.amqpc, f"{self.agw.camname} exposure started")
+            print_debug(self.amqpc, f"{self.age.camname} exposure started")
 
-            # result = list()
-            # threads = []
-            # threads.append(
-            #     Thread(
-            #         target=self.agw.single_exposure,
-            #         args=(usrpars.aqu_exptime, result),
-            #     )
-            # )
-            # threads.append(
-            #     Thread(
-            #         target=self.age.single_exposure,
-            #         args=(usrpars.aqu_exptime, result),
-            #     )
-            # )
-            # for t in threads:
-            #     t.start()
-            # for t in threads:
-            #     t.join()
-            # guideimgpath = result
-
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | (lvmagp) Astrometry..."
+            guideimgpath = invoke(
+                self.agw._cam.async_expose(usrpars.aqu_exptime, 1, self.agw.camname, testshot=True),
+                self.age._cam.async_expose(usrpars.aqu_exptime, 1, self.age.camname, testshot=True)
             )
+        
+            guideimgpath = [guideimgpath[0]["PATH"]["0"], guideimgpath[1]["PATH"]["0"]]
 
-            #20220401
-            #guideimgpath = (
-            #    self.agw.single_exposure(usrpars.aqu_exptime),
-            #    self.age.single_exposure(usrpars.aqu_exptime),
-            #)
-            guideimgpath = self.agw.single_exposure(usrpars.aqu_exptime)
-            guideimgpath = [guideimgpath, guideimgpath]
+            print_debug(self.amqpc, f"{self.agw.camname} exposure done")
+            print_debug(self.amqpc, f"{self.age.camname} exposure done")
 
             westguideimg = GuideImage(guideimgpath[0])
             eastguideimg = GuideImage(guideimgpath[1])
@@ -882,12 +786,12 @@ class LVMTelescopeUnit(
             comp_ra_arcsec = (target_ra - ra2000).arcsecond
             comp_dec_arcsec = (target_dec - dec2000).arcsecond
 
-            self.amqpc.log.info(f"{datetime.datetime.now()} | (lvmagp) Astrometry result")
-            self.amqpc.log.info(f"Img_ra2000={ra2000.to_string(unit=u.hour)}")
-            self.amqpc.log.info(f"Img_dec2000={dec2000.to_string(unit=u.degree)}")
-            self.amqpc.log.info(f"Img_pa={pa_d:.3f} deg")
-            self.amqpc.log.info(f"offset_ra={comp_ra_arcsec:.3f} arcsec")
-            self.amqpc.log.info(f"offset_dec={comp_dec_arcsec:.3f} arcsec")
+            print_debug(self.amqpc, "(lvmagp) Astrometry result")
+            print_info(self.amqpc, f"Img_ra2000={ra2000.to_string(unit=u.hour)}")
+            print_info(self.amqpc, f"Img_dec2000={dec2000.to_string(unit=u.degree)}")
+            print_info(self.amqpc, f"Img_pa={pa_d:.3f} deg")
+            print_info(self.amqpc, f"offset_ra={comp_ra_arcsec:.3f} arcsec")
+            print_info(self.amqpc, f"offset_dec={comp_dec_arcsec:.3f} arcsec")
 
             # Compensation  // Compensation for K-mirror based on astrometry result?
             # may be by offset method..
@@ -896,18 +800,28 @@ class LVMTelescopeUnit(
                 usrpars.aqu_tolerance_arcsec
             ):
                 if iter >= usrpars.aqu_max_iter:
-                    self.amqpc.log.debug(
-                        f"{datetime.datetime.now()} | (lvmagp) Acquisition compensation failed"
-                    )
+                    print_debug(self.amqpc, "(lvmagp) Acquisition compensation failed")
                     raise LvmagpAcquisitionFailed
                 else:
-                    self.amqpc.log.debug(
-                        f"{datetime.datetime.now()} | (lvmagp) Compensate offset: #{iter}"
+                    print_debug(self.amqpc, f"(lvmagp) Compensate offset: #{iter}")
+                    
+                    pa = target_pa_d - pa_d
+
+                    print_debug(self.amqpc, f"Rotate Kmirror to {pa}")
+                    print_debug(self.amqpc, f"Set telescope offsets ra={comp_ra_arcsec}, dec={comp_dec_arcsec}")
+                    
+                    invoke(
+                        self._km.async_moveAbsolute(pa, "DEG"),
+                        self._pwi.async_offset(ra_add_arcsec=comp_ra_arcsec, dec_add_arcsec=comp_dec_arcsec)
                     )
-                    # invoke(
-                    self.derotate(target_pa_d - pa_d)
-                    self._offset_radec(ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec)
-                    # )
+
+                    print_debug(self.amqpc, "Rotating Kmirror done")
+                    print_debug(self.amqpc, "Set offset done")
+
+                    # # invoke(
+                    # self.derotate(target_pa_d - pa_d)
+                    # self._offset_radec(ra_arcsec=comp_ra_arcsec, dec_arcsec=comp_dec_arcsec)
+                    # # )
             else:
                 break
 
@@ -942,9 +856,7 @@ class LVMTelescopeUnit(
         """
 
         if self.check_safety_interlock():
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | (lvmagp) safety interlock engaged"
-            )
+            print_debug(self.amqpc, "(lvmagp) safety interlock engaged")
             raise LvmagpInterlockEngaged
 
         # Check status to confirm the system is in idle state?
@@ -952,9 +864,7 @@ class LVMTelescopeUnit(
         # Check the target is in reachable area
         alt_low, alt_high = define_visb_limit(target_az_d)
         if not (alt_low < target_alt_d) or not (target_alt_d < alt_high):
-            self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | (lvmagp) Target is over the limit"
-            )
+            print_debug(self.amqpc, "(lvmagp) Target is over the limit")
             raise LvmagpTargetOverTheLimit
 
         self._reset_offset_radec()
@@ -969,9 +879,7 @@ class LVMTelescopeUnit(
         self._slew_altaz(target_alt_d=target_alt_d, target_az_d=target_az_d),
         # )
 
-        self.amqpc.log.debug(
-            f"{datetime.datetime.now()} | (lvmagp) Initial slew completed"
-        )
+        print_debug(self.amqpc, "(lvmagp) Initial slew completed")
 
     def goto_screen(self):
         """
@@ -1075,8 +983,11 @@ class LVMTelescopeUnit(
             offset_xy = np.array([delta_x, delta_y])
 
             if self.name == 'sci':  # 20220401 'phot':
-                #theta = -self.siderostat.fieldAngle(self.site, self.target, ambi=None)   20220401
-                theta = np.deg2rad(self.rotationangle)
+                #20220401
+                theta = -self.siderostat.fieldAngle(self.site, self.target, ambi=None)
+                print_debug(self.amqpc, f"field angle={np.rad2deg(theta)}")
+   
+                # theta = np.deg2rad(self.rotationangle)
 
                 c, s = np.cos(theta), np.sin(theta)
                 R = np.array([[c, -s], [s, c]])  # rotation matrix
@@ -1132,22 +1043,22 @@ class LVMTelescopeUnit(
         guide_parameters
             exposure times, cadence, PID parameters, readout or window modes, ... ???
         '''
-        self.target = Target(SkyCoord(ra=ra_h*u.hourangle, dec=dec_d*u.degree))
-        if self.ag_on:
-            pass #raise lvmagpguidealreadyrunning ?????
+        if ra_h is not None and dec_d is not None:
+            self.target = Target(SkyCoord(ra=ra_h*u.hourangle, dec=dec_d*u.degree))
+        # if self.ag_on:
+        #     pass #raise lvmagpguidealreadyrunning ?????
 
         self.ag_task = True
-        self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | (lvmagp) Autoguide Start"
-        )
+        print_debug(self.amqpc, "(lvmagp) Autoguide Start")
 
         try:
             t = Thread(target=self.autoguide_supervisor)
+            # t.setDaemon(True)
             t.start()
 
         except Exception as e:
-                self.amqpc.log.error(f"{datetime.datetime.now()} | {e}")
-                raise
+            print_error(self.amqpc, e)
+            raise
 
         # finally:
         #         self.ag_task = None
@@ -1162,13 +1073,9 @@ class LVMTelescopeUnit(
         if self.ag_task is not None:
             self.ag_break = True
             self.ag_task = None
+            return
         else:
-            return self.amqpc.log.error(
-                f"There is no autoguiding loop for telescope {self.name}"
-            )
-
-        return
-
+            return print_error(self.amqpc, f"There is no autoguiding loop for telescope {self.name}")
 
     '''
     def calibration(self):
@@ -1274,15 +1181,15 @@ class LVMTelescopeUnit(
         """
         initposition, initflux = self.find_guide_stars()
 
-        # counter = 0
         while 1:
-            print("autoguiding loop Start")
+            print_debug(self.amqpc, "autoguiding loop Start")
+            
             self.autoguiding(
                 initposition,
                 initflux
             )
-            print("autoguiding loop Done")
-            # counter = counter + 1
+            
+            print_debug(self.amqpc, "autoguiding loop Done")
 
             if self.ag_break:
                 self.ag_break = False
@@ -1305,24 +1212,28 @@ class LVMTelescopeUnit(
         """
 
         # take an image for astrometry
-        self.amqpc.log.debug(
-                f"{datetime.datetime.now()} | Taking image..."
-        )
+        print_debug(self.amqpc, "Taking image...")
 
         try:
-            # guideimgpath = await asyncio.gather(*imgcmd)
-            #20220401
-            #guideimgpath = [
+            # guideimgpath = [
             #    self.agw.single_exposure(usrpars.ag_exptime),
             #    self.age.single_exposure(usrpars.ag_exptime)
-            #]
-            guideimgpath = self.agw.single_exposure(usrpars.ag_exptime)
-            guideimgpath = [guideimgpath, guideimgpath]
+            # ]
+
+            print_debug(self.amqpc, f"{self.agw.camname} exposure started")
+            print_debug(self.amqpc, f"{self.age.camname} exposure started")
+
+            guideimgpath = invoke(
+                self.agw._cam.async_expose(usrpars.aqu_exptime, 1, self.agw.camname),
+                self.age._cam.async_expose(usrpars.aqu_exptime, 1, self.age.camname)
+            )
+            guideimgpath = [guideimgpath[0]["PATH"]["0"], guideimgpath[1]["PATH"]["0"]]
+
+            print_debug(self.amqpc, f"{self.agw.camname} exposure done")
+            print_debug(self.amqpc, f"{self.age.camname} exposure done")
 
         except Exception as e:
-            self.amqpc.log.error(
-                f"{datetime.datetime.now()} | {e}"
-            )
+            print_error(self.amqpc, e)
             raise
 
         westguideimg = GuideImage(guideimgpath[0])
@@ -1356,15 +1267,15 @@ class LVMTelescopeUnit(
         """
 
         #self._pwi.offset(ra_add_arcsec=3, dec_add_arcsec=-2)
-
+        
         #time.sleep(1)
 
         starposition, starflux = self.find_guide_stars(
             positionguess=initposition,
         )
 
-        print(f'initposition = {initposition} | initflux = {initflux}')
-        print(f'starposition = {starposition} | starflux = {starflux}')
+        print_debug(self.amqpc, f'initposition = {initposition} | initflux = {initflux}')
+        print_debug(self.amqpc, f'starposition = {starposition} | starflux = {starflux}')
 
 
         if (
@@ -1373,7 +1284,7 @@ class LVMTelescopeUnit(
                 )
                 > usrpars.ag_flux_tolerance
         ):
-            return self.amqpc.log.error(
+            return print_error(self.amqpc, 
                 "Star flux variation %.3f is too large."
                 % np.abs(
                     np.average(
@@ -1387,7 +1298,7 @@ class LVMTelescopeUnit(
         if (np.sqrt(offset[0] ** 2 + offset[1] ** 2)) > usrpars.ag_min_offset:
             correction = self.offset(delta_x=-offset[0], delta_y=-offset[1])
 
-            self.amqpc.log.debug(
+            print_debug(self.amqpc, 
                 "compensate signal: ra %.2f arcsec dec %.2f arcsec   x %.2f pixel y %.2f pixel"
                 % (correction[1], correction[2], -offset[0], -offset[1])
             )

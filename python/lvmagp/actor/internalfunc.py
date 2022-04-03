@@ -170,7 +170,6 @@ class GuideImage:
         returndict["dec"] = -999.0
         returndict["pa"] = -999.0
 
-        ospassword = "0000"
         pathsplit = self.filepath.split("/")
         if "age" in pathsplit[-1]:
             resultpath = (
@@ -195,9 +194,9 @@ class GuideImage:
         if ra_h == -999:
             proc = subprocess.Popen(
                 [
-                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+                    "/usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
             --downsample 2 --no-plots > %s"
-                    % (ospassword, self.filepath, timeout, resultpath)
+                    % (self.filepath, timeout, resultpath)
                 ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
@@ -207,11 +206,10 @@ class GuideImage:
         else:
             proc = subprocess.Popen(
                 [
-                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+                    "/usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
             --downsample 2 --scale-units arcsecperpix --scale-low %f --scale-high \
             %f --ra %f --dec %f --radius %f --no-plots > %s"
-                    % (  # noqa: E501
-                        ospassword,
+                    % (
                         self.filepath,
                         timeout,
                         scalelow,
@@ -379,7 +377,6 @@ def check_target(ra_h, dec_d, long_d, lat_d):
     """
     alt, az = star_altaz(ra_h, dec_d, long_d, lat_d)
     alt_low, alt_high = define_visb_limit(az)
-    print(f'alt_low = {alt_low} | alt = {alt} | alt_high = {alt_high}')
     if (alt_low < alt) and (alt < alt_high):
         return True
     else:
@@ -435,3 +432,12 @@ if __name__ == "__main__":
     pos, foc = findfocus(position, focus)
     print (pos,foc)
 """
+
+def print_debug(amqpc, msg):
+    amqpc.log.debug(f"{datetime.now()} | {msg}")
+
+def print_error(amqpc, msg):
+    amqpc.log.error(f"{datetime.now()} | {msg}")
+
+def print_info(amqpc, msg):
+    amqpc.log.info(f"{datetime.now()} | {msg}")
