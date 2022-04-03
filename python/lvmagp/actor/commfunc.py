@@ -709,7 +709,7 @@ class LVMTelescopeUnit(
 
         invoke(
             self._km.async_moveAbsolute(pa , "DEG"),
-            self._pwi.async_gotoRaDecJ2000(target_ra_h, target_dec_d-30/60),
+            self._pwi.async_gotoRaDecJ2000(target_ra_h, target_dec_d),
         )
 
         print_debug(self.amqpc, "Rotating Kmirror done")
