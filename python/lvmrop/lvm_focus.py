@@ -34,7 +34,7 @@ class Focus:
                 files[east].append(rc[east]["filename"])
                 files[west].append(rc[west]["filename"])
                 
-            print(files)
+            logger.debug(str(files))
 
         except Exception as ex:
            logger.error(ex)
