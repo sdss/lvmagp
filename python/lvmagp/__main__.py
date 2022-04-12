@@ -15,7 +15,7 @@ from clu.tools import cli_coro as cli_coro_lvm
 
 from sdsstools.daemonizer import DaemonGroup
 
-from lvmagp.actor.actor import lvmagp as lvmagpInstance
+from lvmagp.actor.actor import LvmagpActor
 
 
 @click.group(cls=DefaultGroup, default="actor", default_if_no_args=True)
@@ -48,7 +48,7 @@ async def actor(ctx):
     default_config_file = os.path.join(os.path.dirname(__file__), "etc/lvmagp.yml")
     config_file = ctx.obj["config_file"] or default_config_file
 
-    lvmagp_obj = lvmagpInstance.from_config(config_file)
+    lvmagp_obj = LvmagpActor.from_config(config_file)
     if ctx.obj["verbose"]:
         lvmagp_obj.log.fh.setLevel(0)
         lvmagp_obj.log.sh.setLevel(0)

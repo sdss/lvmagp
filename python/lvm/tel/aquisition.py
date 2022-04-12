@@ -5,9 +5,9 @@
 # @Filename: lvm/tel/aquisition.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvmrop.lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
-from lvmrop.lvm.tel.focus import Focus
-from lvmrop.lvm.tel.astrometry import Astrometry
+from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+from lvm.tel.focus import Focus
+from lvm.tel.astrometry import Astrometry
 
 
 async def aquisition(telsubsys, ra, dec, exptime, fine_focus=False):

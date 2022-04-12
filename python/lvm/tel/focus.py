@@ -5,7 +5,7 @@
 # @Filename: lvm/tel/focus.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvmrop.lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 
 from math import nan
 
@@ -32,7 +32,7 @@ class Focus:
            raise ex
 
 
-    async def fine(self):
+    async def fine(self, exptime=1):
         try:
             east="east"
             west="west"
@@ -43,7 +43,7 @@ class Focus:
                 await self.telsubsys.foc.moveAbsolute(p)
                 
                 logger.debug(f"expose 1")
-                rc = await self.telsubsys.agc.expose(1)
+                rc = await self.telsubsys.agc.expose(exptime)
                 files[east].append(rc[east]["filename"])
                 files[west].append(rc[west]["filename"])
                 
@@ -71,7 +71,10 @@ def main():
                         help="Nominal focus based on temp")
 
     parser.add_argument("-f", '--fine', action='store_true',
-                        help="Fine focus")
+                        help="Fine focus with expotime - default 1.0 sec")
+
+    parser.add_argument("-e", '--expotime', type=float, default=1.0,
+                        help="Exposure time")
 
 
     args = parser.parse_args()
@@ -87,7 +90,7 @@ def main():
         lvm.execute(focus.nominal(args.nominal), verbose=args.verbose)
 
     if args.fine:
-        lvm.execute(focus.fine(), verbose=args.verbose)
+        lvm.execute(focus.fine(args.expotime), verbose=args.verbose)
 
 if __name__ == '__main__':
 

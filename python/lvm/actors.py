@@ -37,12 +37,19 @@ class lvm:
         km = Proxy(lvm_amqpc, "lvm.sci.km")
         pwi = Proxy(lvm_amqpc, "lvm.sci.pwi")
         agc = Proxy(lvm_amqpc, "lvm.sci.agcam")
+        ag = Proxy(lvm_amqpc, "lvm.sci.ag")
+
         async def start():
             await lvm_amqpc.start()
-            await lvm.sci.foc.start()
-            await lvm.sci.km.start()
-            await lvm.sci.pwi.start()
-            await lvm.sci.agc.start()
+            rc = await asyncio.gather(
+                lvm.sci.foc.start(),
+                lvm.sci.km.start(),
+                lvm.sci.pwi.start(),
+                lvm.sci.agc.start(),
+                lvm.sci.ag.start(),
+                return_exceptions=True
+            )
+            logger.debug(str(rc))
             return lvm.sci
 
 
@@ -51,12 +58,19 @@ class lvm:
         km = Proxy(lvm_amqpc, "lvm.skye.km")
         pwi = Proxy(lvm_amqpc, "lvm.skye.pwi")
         agc = Proxy(lvm_amqpc, "lvm.skye.agcam")
+        ag = Proxy(lvm_amqpc, "lvm.skye.ag")
+        
         async def start():
             await lvm_amqpc.start()
-            await lvm.skye.foc.start()
-            await lvm.skye.km.start()
-            await lvm.skye.pwi.start()
-            await lvm.skye.agc.start()
+            await invoke(
+                lvm.skye.foc.start(),
+                lvm.skye.km.start(),
+                lvm.skye.pwi.start(),
+                lvm.skye.agc.start(),
+                lvm.skye.ag.start(),
+                return_exceptions=True
+            )
+            logger.debug(str(rc))
             return lvm.skye
 
 
@@ -65,12 +79,18 @@ class lvm:
         km = Proxy(lvm_amqpc, "lvm.skyw.km")
         pwi = Proxy(lvm_amqpc, "lvm.skyw.pwi")
         agc = Proxy(lvm_amqpc, "lvm.skyw.agcam")
+        ag = Proxy(lvm_amqpc, "lvm.skyw.ag")
         async def start():
             await lvm_amqpc.start()
-            await lvm.skyw.foc.start()
-            await lvm.skyw.km.start()
-            await lvm.skyw.pwi.start()
-            await lvm.skyw.agc.start()
+            await invoke(
+                lvm.skyw.foc.start(),
+                lvm.skyw.km.start(),
+                lvm.skyw.pwi.start(),
+                lvm.skyw.agc.start(),
+                lvm.skyw.ag.start(),
+                return_exceptions=True
+            )
+            logger.debug(str(rc))
             return lvm.skyw
 
 
@@ -79,12 +99,18 @@ class lvm:
         fibsel = Proxy(lvm_amqpc, "lvm.spec.fibsel")
         pwi = Proxy(lvm_amqpc, "lvm.spec.pwi")
         agc = Proxy(lvm_amqpc, "lvm.spec.agcam")
+        ag = Proxy(lvm_amqpc, "lvm.spec.ag")
         async def start():
             await lvm_amqpc.start()
-            await lvm.spec.foc.start()
-            await lvm.spec.fibsel.start()
-            await lvm.spec.pwi.start()
-            await lvm.spec.agc.start()
+            await invoke(
+                lvm.spec.foc.start(),
+                lvm.spec.fibsel.start(),
+                lvm.spec.pwi.start(),
+                lvm.spec.agc.start(),
+                lvm.spec.ag.start(),
+                return_exceptions=True
+            )
+            logger.debug(str(rc))
             return lvm.spec
 
 

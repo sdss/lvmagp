@@ -5,7 +5,7 @@
 # @Filename: lvm/tel/astrometry.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvmrop.lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 
 from math import nan
 
@@ -27,6 +27,7 @@ class Astrometry:
         except Exception as ex:
            logger.error(ex)
            raise ex
+
 
 def main():
     import argparse

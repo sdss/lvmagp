@@ -10,7 +10,7 @@ from .commands import command_parser as lvm_command_python
 __all__ = ["lvmagp"]
 
 
-class lvmagp(AMQPActor):
+class LvmagpActor(AMQPActor):
     """AGP actor.
     In addition to the normal arguments and keyword parameters for
     `~clu.actor.AMQPActor`, the class accepts the following parameters.
@@ -26,27 +26,35 @@ class lvmagp(AMQPActor):
         super().__init__(*args, **kwargs)
 
         self.schema = {
-            "type": "object",
-            "properties": {
-                "fail": {"type": "string"},
-                "Img_ra2000": {"type": "string"},
-                "Img_dec2000": {"type": "string"},
-                "Img_pa": {"type": "string"},
-                "offset_ra": {"type": "string"},
-                "offset_dec": {"type": "string"},
-                "xscale_ra": {"type": "string"},
-                "yscale_ra": {"type": "string"},
-                "xscale_dec": {"type": "string"},
-                "yscale_dec": {"type": "string"},
-            },
-            "additionalProperties": False,
+                    "type": "object",
+                    "properties": {
+                     },
+                     "additionalProperties": True,
         }
+
         self.load_schema(self.schema, is_file=False)
+
+        if kwargs['verbose']:
+            self.log.sh.setLevel(DEBUG)
+            self.log.sh.formatter = StreamFormatter(fmt='%(asctime)s %(name)s %(levelname)s %(filename)s:%(lineno)d: \033[1m%(message)s\033[21m') 
 
     @classmethod
     def from_config(cls, config, *args, **kwargs):
-        instance = super(lvmagp, cls).from_config(config, *args, **kwargs)
-        assert isinstance(instance, lvmagp)
+        instance = super(LvmagpActor, cls).from_config(config, *args, **kwargs)
+
+        assert isinstance(instance, LvmagpActor)
         assert isinstance(instance.config, dict)
 
         return instance
+
+    async def start(self):
+        """Start actor."""
+        await super().start()
+
+        self.log.debug("Start done")
+        
+    async def stop(self):
+        """Stop actor."""
+        await super().stop()
+
+        self.log.debug("Stop done")
