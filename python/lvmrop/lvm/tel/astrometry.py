@@ -2,22 +2,27 @@
 #
 # @Author: Florian Briegel (briegel@mpia.de)
 # @Date: 2021-08-18
-# @Filename: lvm_focus.py
+# @Filename: lvm/tel/astrometry.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvmrop.lvm_actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+from lvmrop.lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 
 from math import nan
 
 class Astrometry:
     @staticmethod
-    async def calc(telsubsys):
+    async def calc(telsubsys, ra, dec):
         try:
             rc = await telsubsys.agc.expose(1)
             file_east = rc["east"]["filename"]
             file_west = rc["west"]["filename"]
-
-            # do some astrometry
+            
+            # do some astrometry :-]
+            ra_offset, dec_offset = 0.2, 0.3
+            refocus_offset = -42
+            km_offset = 0.0
+            
+            return ra_offset, dec_offset, refocus_offset, km_offset
 
         except Exception as ex:
            logger.error(ex)
@@ -33,22 +38,16 @@ def main():
     parser.add_argument("-t", '--telsubsys', type=str, default="sci",
                         help="Telescope subsystem: sci, skye, skyw or spec")
 
-    parser.add_argument("-n", '--nominal', type=float, default=nan,
-                        help="Nominal focus based on temp")
+    parser.add_argument("-r", '--ra', help="RA J2000 in hours")
 
-    parser.add_argument("-f", '--fine', action='store_true',
-                        help="Fine focus")
-
+    parser.add_argument("-d", '--dec', help="DEC J2000 in degrees")
 
     args = parser.parse_args()
     
-    telsubsys = lvm.from_string(args.telsubsys)
+    telsubsys = lvm.execute(lvm.from_string(args.telsubsys))
 
-    if args.nominal is not nan:
-        lvm.execute(Focus.nominal, telsubsys, args.nominal, verbose=args.verbose)
+    lvm.execute(Astrometry.calc(telsubsys, args.ra, args.dec), verbose=args.verbose)
 
-    if args.fine:
-        lvm.execute(Focus.fine, telsubsys, verbose=args.verbose)
 
 if __name__ == '__main__':
 

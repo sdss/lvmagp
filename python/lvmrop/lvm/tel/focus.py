@@ -2,35 +2,48 @@
 #
 # @Author: Florian Briegel (briegel@mpia.de)
 # @Date: 2021-08-18
-# @Filename: lvm_focus.py
+# @Filename: lvm/tel/focus.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvmrop.lvm_actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+from lvmrop.lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 
 from math import nan
 
 class Focus:
-    @staticmethod
-    async def nominal(telsubsys, temp):
+    def __init__(self, telsubsys):
+        self.telsubsys = telsubsys
+
+    async def offset(self, offset):
         try:
-           temp2focuspos = temp # put here a function gathering focus based on temperature.
-           await telsubsys.foc.moveAbsolute(temp)
+           await self.telsubsys.foc.moveRelative(offset)
         
         except Exception as ex:
            logger.error(ex)
            raise ex
 
-    @staticmethod
-    async def fine(telsubsys):
+
+    async def nominal(self, temp):
+        try:
+           temp2focuspos = temp # put here a function gathering focus based on temperature.
+           await self.telsubsys.foc.moveAbsolute(temp)
+        
+        except Exception as ex:
+           logger.error(ex)
+           raise ex
+
+
+    async def fine(self):
         try:
             east="east"
             west="west"
             files={east:[], west:[]}
             for p in [400, 200, 100, 0]: # implement something making sense.
+                
                 logger.debug(f"foc move to {p}")
-                await telsubsys.foc.moveAbsolute(p)
+                await self.telsubsys.foc.moveAbsolute(p)
+                
                 logger.debug(f"expose 1")
-                rc = await telsubsys.agc.expose(1)
+                rc = await self.telsubsys.agc.expose(1)
                 files[east].append(rc[east]["filename"])
                 files[west].append(rc[west]["filename"])
                 
@@ -51,6 +64,9 @@ def main():
     parser.add_argument("-t", '--telsubsys', type=str, default="sci",
                         help="Telescope subsystem: sci, skye, skyw or spec")
 
+    parser.add_argument("-o", '--offset', type=float, default=nan,
+                        help="Offset focus")
+
     parser.add_argument("-n", '--nominal', type=float, default=nan,
                         help="Nominal focus based on temp")
 
@@ -60,13 +76,18 @@ def main():
 
     args = parser.parse_args()
     
-    telsubsys = lvm.from_string(args.telsubsys)
+    telsubsys = lvm.execute(lvm.from_string(args.telsubsys))
+    
+    focus = Focus(telsubsys)
+
+    if args.offset is not nan:
+        lvm.execute(focus.offset(args.offset), verbose=args.verbose)
 
     if args.nominal is not nan:
-        lvm.execute(Focus.nominal, telsubsys, args.nominal, verbose=args.verbose)
+        lvm.execute(focus.nominal(args.nominal), verbose=args.verbose)
 
     if args.fine:
-        lvm.execute(Focus.fine, telsubsys, verbose=args.verbose)
+        lvm.execute(focus.fine(), verbose=args.verbose)
 
 if __name__ == '__main__':
 

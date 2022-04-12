@@ -23,14 +23,14 @@ lvm_amqpc = AMQPClient(name=f"{sys.argv[0]}.proxy-{uuid.uuid4().hex[:8]}")
 logger = lvm_amqpc.log
 
 class lvm:
-    def execute(foo, *args, verbose=None, **kwargs):
+    def execute(coro, verbose=None):
         async def start(coro):
             await coro.start()
+
         if verbose:
            logger.sh.setLevel(DEBUG)
            #logger.sh.formatter = StreamFormatter(fmt='%(asctime)s %(name)s %(levelname)s %(filename)s:%(lineno)d: \033[1m%(message)s\033[21m') 
-        lvm_amqpc.loop.run_until_complete(start(args[0]))
-        return lvm_amqpc.loop.run_until_complete(foo(*args, **kwargs))
+        return lvm_amqpc.loop.run_until_complete(coro)
 
     class sci:
         foc = Proxy(lvm_amqpc, "lvm.sci.foc")
@@ -89,10 +89,14 @@ class lvm:
 
 
     def from_string(subsys: str):
-        if subsys == 'sci': return lvm.sci
-        elif subsys == 'skye': return lvm.skye
-        elif subsys == 'skyw': return lvm.skyw
-        elif subsys == 'spec': return lvm.spec
+        if subsys == 'sci': 
+            return lvm.sci.start()
+        elif subsys == 'skye': 
+            return lvm.skye.sci.start()
+        elif subsys == 'skyw': 
+            return lvm.skyw.sci.start()
+        elif subsys == 'spec': 
+            return lvm.spec.sci.start()
         else: return None
 
 
