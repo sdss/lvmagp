@@ -26,7 +26,7 @@ class Focus:
             east="east"
             west="west"
             files={east:[], west:[]}
-            for p in [400,200, 100, 0]: # implement something making sense.
+            for p in [400, 200, 100, 0]: # implement something making sense.
                 logger.debug(f"foc move to {p}")
                 await telsubsys.foc.moveAbsolute(p)
                 logger.debug(f"expose 1")

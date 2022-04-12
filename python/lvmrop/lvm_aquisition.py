@@ -9,6 +9,7 @@ from lvmrop.lvm_actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 from lvmrop.lvm_focus import Focus
 from lvmrop.lvm_astrometry import Astrometry
 
+
 async def aquisition(telsubsys, ra, dec, exptime, fine_focus=False):
     try:
         logger.debug(f"moving to {ra}:{dec}")

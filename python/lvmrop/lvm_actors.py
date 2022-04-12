@@ -45,7 +45,54 @@ class lvm:
             await lvm.sci.agc.start()
             return lvm.sci
 
+
+    class skye:
+        foc = Proxy(lvm_amqpc, "lvm.skye.foc")
+        km = Proxy(lvm_amqpc, "lvm.skye.km")
+        pwi = Proxy(lvm_amqpc, "lvm.skye.pwi")
+        agc = Proxy(lvm_amqpc, "lvm.skye.agcam")
+        async def start():
+            await lvm_amqpc.start()
+            await lvm.skye.foc.start()
+            await lvm.skye.km.start()
+            await lvm.skye.pwi.start()
+            await lvm.skye.agc.start()
+            return lvm.skye
+
+
+    class skyw:
+        foc = Proxy(lvm_amqpc, "lvm.skyw.foc")
+        km = Proxy(lvm_amqpc, "lvm.skyw.km")
+        pwi = Proxy(lvm_amqpc, "lvm.skyw.pwi")
+        agc = Proxy(lvm_amqpc, "lvm.skyw.agcam")
+        async def start():
+            await lvm_amqpc.start()
+            await lvm.skyw.foc.start()
+            await lvm.skyw.km.start()
+            await lvm.skyw.pwi.start()
+            await lvm.skyw.agc.start()
+            return lvm.skyw
+
+
+    class spec:
+        foc = Proxy(lvm_amqpc, "lvm.spec.foc")
+        fibsel = Proxy(lvm_amqpc, "lvm.spec.fibsel")
+        pwi = Proxy(lvm_amqpc, "lvm.spec.pwi")
+        agc = Proxy(lvm_amqpc, "lvm.spec.agcam")
+        async def start():
+            await lvm_amqpc.start()
+            await lvm.spec.foc.start()
+            await lvm.spec.fibsel.start()
+            await lvm.spec.pwi.start()
+            await lvm.spec.agc.start()
+            return lvm.spec
+
+
     def from_string(subsys: str):
         if subsys == 'sci': return lvm.sci
+        elif subsys == 'skye': return lvm.skye
+        elif subsys == 'skyw': return lvm.skyw
+        elif subsys == 'spec': return lvm.spec
+        else: return None
 
 
