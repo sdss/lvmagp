@@ -113,8 +113,10 @@ class lvm:
             logger.debug(str(rc))
             return lvm.spec
 
-
-    def from_string(subsys: str):
+    def from_string(subsys: str, amqpc = None):
+        if amqpc:
+            lvm_amqpc = amqpc
+            logger = lvm_amqpc.log
         if subsys == 'sci': 
             return lvm.sci.start()
         elif subsys == 'skye': 

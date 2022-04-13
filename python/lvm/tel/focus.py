@@ -9,6 +9,8 @@ from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 
 from math import nan
 
+import json
+
 class Focus:
     def __init__(self, telsubsys):
         self.telsubsys = telsubsys
@@ -20,7 +22,6 @@ class Focus:
         except Exception as ex:
            logger.error(ex)
            raise ex
-
 
     async def nominal(self, temp):
         try:
@@ -47,7 +48,7 @@ class Focus:
                 files[east].append(rc[east]["filename"])
                 files[west].append(rc[west]["filename"])
                 
-            logger.debug(str(files))
+            logger.debug(f"Files used: {json.dumps(files, sort_keys=True, indent=2)}")
 
         except Exception as ex:
            logger.error(ex)

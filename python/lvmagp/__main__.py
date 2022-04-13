@@ -48,10 +48,8 @@ async def actor(ctx):
     default_config_file = os.path.join(os.path.dirname(__file__), "etc/lvmagp.yml")
     config_file = ctx.obj["config_file"] or default_config_file
 
-    lvmagp_obj = LvmagpActor.from_config(config_file)
-    if ctx.obj["verbose"]:
-        lvmagp_obj.log.fh.setLevel(0)
-        lvmagp_obj.log.sh.setLevel(0)
+    lvmagp_obj = LvmagpActor.from_config(config_file, verbose=ctx.obj["verbose"])
+
     await lvmagp_obj.start()
     await lvmagp_obj.run_forever()
 
