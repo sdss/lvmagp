@@ -45,6 +45,5 @@ for file_ in files:
     mod = importlib.import_module(
         "lvmagp.actor.commands." + modname
     )  # changged by CK 2021/03/30
-    print(modname)
 
 os.chdir(cwd)

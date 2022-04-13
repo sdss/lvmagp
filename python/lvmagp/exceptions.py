@@ -56,7 +56,7 @@ class LvmagpFocuserError(LvmagpError):
     """Focuser failed. Check the focuser hardware."""
 
 
-class LvmagpNoFocusingWhileGuiding(LvmagpError):
+class LvmagpIsNotIdle(LvmagpError):
     """Focusing not allowed while guiding."""
 
 

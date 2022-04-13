@@ -5,50 +5,49 @@
 # @Filename: lvm/tel/focus.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+
+from lvm.actors import lvm, invoke, unpack, asyncio, logger, LoggerCommand
 
 from math import nan
 
-import json
-
-class Focus:
+class Focus():
     def __init__(self, telsubsys):
         self.telsubsys = telsubsys
 
-    async def offset(self, offset):
+    async def offset(self, offset, command = LoggerCommand(logger)):
         try:
+           command.debug(text=f"foc move to {offset}")
            await self.telsubsys.foc.moveRelative(offset)
         
         except Exception as ex:
            logger.error(ex)
            raise ex
 
-    async def nominal(self, temp):
+    async def nominal(self, temp, command = LoggerCommand(logger)):
         try:
-           temp2focuspos = temp # put here a function gathering focus based on temperature.
-           await self.telsubsys.foc.moveAbsolute(temp)
+           temp2focus_pos = temp # put here a function gathering focus based on temperature.
+           await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
         
         except Exception as ex:
            logger.error(ex)
            raise ex
 
-
-    async def fine(self, exptime=1):
+    async def fine(self, exptime=1, command = LoggerCommand(logger)):
         try:
-            east="east"
-            west="west"
-            files={east:[], west:[]}
-            for p in [400, 200, 100, 0]: # implement something making sense.
+            files={}
+            for p in [400, 200, 100, 0, -100]: #TODO implement some focusing that makes sense.
                 
-                logger.debug(f"foc move to {p}")
+                command.debug(text=f"foc move to {p}")
                 await self.telsubsys.foc.moveAbsolute(p)
                 
-                logger.debug(f"expose 1")
+                command.debug(text=f"expose 1")
                 rc = await self.telsubsys.agc.expose(exptime)
-                files[east].append(rc[east]["filename"])
-                files[west].append(rc[west]["filename"])
-                
-            logger.debug(f"Files used: {json.dumps(files, sort_keys=True, indent=2)}")
+                for camera in rc:
+                    if files.get(camera, None):
+                       files[camera].append(rc[camera]["filename"])
+                    else:
+                       files[camera] = [rc[camera]["filename"]]
+            command.info(agcam = files)
 
         except Exception as ex:
            logger.error(ex)

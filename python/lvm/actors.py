@@ -22,6 +22,8 @@ from cluplus.proxy import Proxy, invoke, unpack
 lvm_amqpc = AMQPClient(name=f"{sys.argv[0]}.proxy-{uuid.uuid4().hex[:8]}")
 logger = lvm_amqpc.log
 
+from .command import LoggerCommand
+
 class lvm:
     def execute(coro, verbose=None):
         async def start(coro):

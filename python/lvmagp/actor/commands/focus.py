@@ -5,7 +5,8 @@ import numpy as np
 from clu.command import Command
 
 from . import parser
-from lvmagp.guide import GuideState
+
+from lvmagp.actor.state import ActorState
 from lvm.tel.focus import Focus
 
 
@@ -17,44 +18,45 @@ async def focusOffset(
     offset: float,
 ):
     """Focus offest"""
-
     try:
         logger = command.actor.log
-        guide_state = command.actor.guide_state
+        actor_state = command.actor.state
         focus = command.actor.focus
 
-        if not guide_state.isIdle():
-            return command.fail(error = LvmagpNoFocusingWhileGuiding())
-        
-        await focus.offset(offset)
+        await focus.offset(offset, command=command)
          
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = guide_state.state)
-            
+    return command.finish(state = actor_state.state)
+
 
 @parser.command("focusFine")
+@click.argument("EXPOTIME", type=float, default=1.0)
 async def focusFine(
     command: Command,
     telsubsystems,
+    expotime: float,
 ):
     """Focus fine"""
     try:
-        logger = command.actor.log
-        guide_state = command.actor.guide_state
+        actor_state = command.actor.state
         focus = command.actor.focus
 
-        if not guide_state.isIdle():
-            return command.fail(error = LvmagpNoFocusingWhileGuiding())
+        if not actor_state.isIdle():
+            return command.fail(error = LvmagpIsNotIdle(), state = actor_state.state)
 
-        await focus.fine()
+        actor_state.state == "FOCUSING"
+        
+        await focus.fine(expotime, command=command)
     
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = guide_state.state)
-        
+    actor_state.state == "IDLE"
+
+    return command.finish(state = actor_state.state)
+
 
 @parser.command("focusNominal")
 async def focusNominal(
@@ -62,21 +64,15 @@ async def focusNominal(
     telsubsystems,
 ):
     """Focus nominal"""
-    logger = command.actor.log
-    guide_state = command.actor.guide_state
-    
     try:
-        logger = command.actor.log
-        guide_state = command.actor.guide_state
+        actor_state = command.actor.state
+        focus = command.actor.focus
 
-        if not guide_state.isIdle():
-            return command.fail(error = LvmagpNoFocusingWhileGuiding())
-    
-        await focus.nominal()
+        await focus.nominal(command=command)
 
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = guide_state.state)
+    return command.finish(state = actor_state.state)
         
 

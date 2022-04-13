@@ -8,13 +8,13 @@ from sdsstools.logger import SDSSLogger
 
 from clu.actor import AMQPActor
 
-from .commands  import parser
-
 from lvmagp import __version__
+
+from .commands  import parser
+from .state import ActorState
 
 from lvm.actors import lvm
 
-from lvmagp.guide import GuideState
 from lvm.tel.focus import Focus
 
 __all__ = ["LvmagpActor"]
@@ -37,14 +37,14 @@ class LvmagpActor(AMQPActor):
     ):
         super().__init__(*args, version=__version__, **kwargs)
 
-        self.guide_state = GuideState()
+        self.state = ActorState()
         self.focus = None
         
-        self.schema = {
-                    "type": "object",
-                    "properties": {
-                     },
-                     "additionalProperties": True,
+        self.schema = { #TODO add schema
+                        "type": "object",
+                        "properties": {
+                         },
+                         "additionalProperties": True,
         }
 
         self.load_schema(self.schema, is_file=False)
@@ -72,7 +72,6 @@ class LvmagpActor(AMQPActor):
         telsubsystems = await lvm.from_string(self.config["ag"]["system"], self)
         self.parser_args[SUBSYSTEMS] = telsubsystems
         self.focus = Focus(telsubsystems)
-
 
         self.log.debug("Start done")
 
