@@ -8,6 +8,7 @@ from . import parser
 
 from lvmagp.actor.state import ActorState
 from lvm.tel.focus import Focus
+from lvmagp import exceptions
 
 
 @parser.command("focusOffset")
@@ -19,7 +20,6 @@ async def focusOffset(
 ):
     """Focus offest"""
     try:
-        logger = command.actor.log
         actor_state = command.actor.state
         focus = command.actor.focus
 
@@ -40,20 +40,23 @@ async def focusFine(
 ):
     """Focus fine"""
     try:
+        logger = command.actor.log
         actor_state = command.actor.state
         focus = command.actor.focus
 
         if not actor_state.isIdle():
             return command.fail(error = LvmagpIsNotIdle(), state = actor_state.state)
 
-        actor_state.state == "FOCUSING"
+        actor_state.state = "FOCUSING"
+        command.info(state = actor_state.state)
         
+        logger.debug(f"start focusing {actor_state.state} {await telsubsystems.foc.status()}")
         await focus.fine(expotime, command=command)
     
     except Exception as e:
         return command.fail(error=e)
 
-    actor_state.state == "IDLE"
+    actor_state.state = "IDLE"
 
     return command.finish(state = actor_state.state)
 

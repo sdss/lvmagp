@@ -39,7 +39,7 @@ async def guideStart(
         
         await actor_state.start(guideTick(telsubsystems, actor_state, delta_time, logger))
 
-        logger.debug(f"start guiding {actor_state.state} {telsubsystems.foc.status()}")
+        logger.debug(f"start guiding {actor_state.state} {await telsubsystems.foc.status()}")
 
     except Exception as e:
         return command.fail(error=e)
