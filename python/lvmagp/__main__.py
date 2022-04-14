@@ -18,13 +18,14 @@ from sdsstools.daemonizer import DaemonGroup
 from lvmagp.actor.actor import LvmagpActor
 
 
-@click.group(cls=DefaultGroup, default="actor", default_if_no_args=True)
+@click.group(cls=DefaultGroup, default="actor")
 @click.option(
     "-c",
     "--config",
     "config_file",
     type=click.Path(exists=True, dir_okay=False),
     help="Path to the user configuration file.",
+    required=True
 )
 @click.option(
     "-v",
@@ -45,8 +46,7 @@ def lvmagp(ctx, config_file, verbose):
 async def actor(ctx):
     """Runs the actor."""
 
-    default_config_file = os.path.join(os.path.dirname(__file__), "etc/lvmagp.yml")
-    config_file = ctx.obj["config_file"] or default_config_file
+    config_file = ctx.obj["config_file"]
 
     lvmagp_obj = LvmagpActor.from_config(config_file, verbose=ctx.obj["verbose"])
 
