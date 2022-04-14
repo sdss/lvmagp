@@ -1,0 +1,10 @@
+# A dictionary of controller name to ??
+ag:
+  system: sci
+
+
+# Actor configuration for the AMQPActor class
+actor:
+  name: lvm.sci.ag
+  host: localhost
+  port: 5672
