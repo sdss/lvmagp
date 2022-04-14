@@ -10,6 +10,9 @@ from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 from math import nan
 from astropy.io import fits
 
+
+# TODO: put some real astronomy in here.
+
 class Astrometry:
     @staticmethod
     async def calc(telsubsys, ra, dec):

@@ -4,6 +4,8 @@ import click
 import numpy as np
 from clu.command import Command
 
+from cluplus.proxy import unpack
+
 from . import parser
 
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
@@ -50,7 +52,7 @@ async def focusFine(
         actor_statemachine.state = ActorState.FOCUSING
         command.info(state = actor_statemachine.state.value)
         
-        logger.debug(f"start focusing {actor_statemachine.state} {await telsubsystems.foc.status()}")
+        logger.debug(f"start focusing {actor_statemachine.state.value} {await telsubsystems.foc.status()}")
         await focus.fine(expotime, command=command)
     
     except Exception as e:
