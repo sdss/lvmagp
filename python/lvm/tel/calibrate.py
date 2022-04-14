@@ -83,7 +83,7 @@ def main():
     parser.add_argument("-e", '--exptime', type=float, default=5.0,
                         help="Expose for for exptime seconds")
 
-    parser.add_argument("-o", '--offset', type=float, default=10.0,
+    parser.add_argument("-o", '--offset', type=float, default=50.0,
                         help="telescope offset in arcsec float")
 
     args = parser.parse_args()
