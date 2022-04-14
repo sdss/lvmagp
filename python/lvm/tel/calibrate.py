@@ -25,17 +25,17 @@ async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger))
         files={}
         
         for ra_off, dec_off in [(0, offset), (offset, 0)]:
-            
-            command.debug(text=f"expose cameras {exptime}")
+
+            #command.debug(text=f"expose cameras {exptime}")
             rc = await telsubsys.agc.expose(exptime)
             for camera in rc:
                 files[camera] = [rc[camera]["filename"]]
     
-            command.debug(text=f"telescope offset {ra_off}, {dec_off}")
+            logger.debug(f"telescope offset {ra_off}, {dec_off}")
             await telsubsys.pwi.offset(ra_add_arcsec = ra_off, dec_add_arcsec = dec_off)
 
             rc = await telsubsys.pwi.status()
-            logger.debug(f"tel dist to target arcsec {rc['axis0']['dist_to_target_arcsec']}{rc['axis1']['dist_to_target_arcsec']}")
+            #logger.debug(f"tel dist to target arcsec {rc['axis0']['dist_to_target_arcsec']}{rc['axis1']['dist_to_target_arcsec']}")
 
             rc = await telsubsys.agc.expose(exptime)
             for camera in rc:
@@ -73,7 +73,7 @@ def main():
     parser.add_argument("-e", '--exptime', type=float, default=5.0,
                         help="Expose for for exptime seconds")
 
-    parser.add_argument("-o", '--offset', type=float, default=5.0,
+    parser.add_argument("-o", '--offset', type=float, default=10.0,
                         help="telescope offset in arcsec float")
 
     args = parser.parse_args()
