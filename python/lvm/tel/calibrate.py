@@ -24,33 +24,34 @@ async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger))
 
         files={}
         
-        command.debug(text=f"expose cameras {exptime}")
-        rc = await telsubsys.agc.expose(exptime)
-        for camera in rc:
-            files[camera] = [rc[camera]["filename"]]
- 
-        command.debug(text=f"telescope offset {offset}")
-        await telsubsys.pwi.offset(dec_add_arcsec = offset)
-
-        rc = await telsubsys.pwi.status()
-        logger.debug(f"tel dist to target arcsec {rc['axis0']['dist_to_target_arcsec']}{rc['axis1']['dist_to_target_arcsec']}")
-
-        command.debug(text=f"expose cameras {exptime}")
-        rc = await telsubsys.agc.expose(exptime)
-        for camera in rc:
-            files[camera].append(rc[camera]["filename"])
-
-        command.info(agcam = files)
-
-        for camera in files:
-            o0, o0_peak_idx = sep_objects(fits.open(files[camera][0])[0].data.astype(float))
-            o1, o1_peak_idx = sep_objects(fits.open(files[camera][1])[0].data.astype(float))
-            # pick the briqhtest - hoping that its the same star. TODO: Maybe centroiding on the first position is better.
-            s0=o0[o0_peak_idx[0]]
-            s1=o1[o1_peak_idx[0]]
+        for ra_off, dec_off in [(0, offset), (offset, 0)]:
             
-            delta = [s0['x']-s1['x'],s0['y']-s1['y']]
-            logger.debug(f"delta {camera} {delta}")
+            command.debug(text=f"expose cameras {exptime}")
+            rc = await telsubsys.agc.expose(exptime)
+            for camera in rc:
+                files[camera] = [rc[camera]["filename"]]
+    
+            command.debug(text=f"telescope offset {ra_off}, {dec_off}")
+            await telsubsys.pwi.offset(ra_add_arcsec = ra_off, dec_add_arcsec = dec_off)
+
+            rc = await telsubsys.pwi.status()
+            logger.debug(f"tel dist to target arcsec {rc['axis0']['dist_to_target_arcsec']}{rc['axis1']['dist_to_target_arcsec']}")
+
+            rc = await telsubsys.agc.expose(exptime)
+            for camera in rc:
+                files[camera].append(rc[camera]["filename"])
+
+            for camera in files:
+                o0, o0_peak_idx = sep_objects(fits.open(files[camera][0])[0].data.astype(float))
+                o1, o1_peak_idx = sep_objects(fits.open(files[camera][1])[0].data.astype(float))
+                
+                # pick the briqhtest - hoping that its the same star. TODO: Maybe centroiding on the first position is better.
+                s0 = o0[o0_peak_idx[0]]
+                s1 = o1[o1_peak_idx[0]]
+                
+                delta = [s0['x']-s1['x'],s0['y']-s1['y']]
+                logger.debug(f"delta {camera} {delta} pos {s0['x']:2f}:{s0['y']} -> {s1['x']}:{s1['y']}")
+
    
         logger.debug(f"done ")
         
