@@ -9,6 +9,9 @@ from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger, LoggerCo
 
 import sep
 from astropy.io import fits
+from photutils.centroids import centroid_com, centroid_quadratic
+from photutils.centroids import centroid_1dg, centroid_2dg
+
 
 def sep_objects(data):
         bkg = sep.Background(data)
@@ -17,12 +20,13 @@ def sep_objects(data):
         object_index_sorted_by_peak = list({k: v for k, v in sorted({idx: objects['peak'][idx] for idx in range(len(objects))}.items(), key=lambda item: item[1], reverse=True)}.keys())
         return objects, object_index_sorted_by_peak
 
-
 async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger)):
     try:
         logger.debug(f"calibrate {telsubsys.agc.client.name}")
 
         files={}
+        crect = 20
+        dist = crect/2 + 30
         
         for ra_off, dec_off in [(0, offset), (offset, 0)]:
 
@@ -30,7 +34,7 @@ async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger))
             rc = await telsubsys.agc.expose(exptime)
             for camera in rc:
                 files[camera] = [rc[camera]["filename"]]
-    
+
             logger.debug(f"telescope offset {ra_off}, {dec_off}")
             await telsubsys.pwi.offset(ra_add_arcsec = ra_off, dec_add_arcsec = dec_off)
 
@@ -42,15 +46,21 @@ async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger))
                 files[camera].append(rc[camera]["filename"])
 
             for camera in files:
-                o0, o0_peak_idx = sep_objects(fits.open(files[camera][0])[0].data.astype(float))
-                o1, o1_peak_idx = sep_objects(fits.open(files[camera][1])[0].data.astype(float))
-                
-                # pick the briqhtest - hoping that its the same star. TODO: Maybe centroiding on the first position is better.
-                s0 = o0[o0_peak_idx[0]]
-                s1 = o1[o1_peak_idx[0]]
-                
-                delta = [s0['x']-s1['x'],s0['y']-s1['y']]
-                logger.debug(f"delta {camera} {delta} pos {s0['x']:2f}:{s0['y']} -> {s1['x']}:{s1['y']}")
+                d0 = fits.open(files[camera][0])[0].data.astype(float)
+                d1 = fits.open(files[camera][1])[0].data.astype(float)
+                o0, o0_peak_idx = sep_objects(d0)
+
+                for opi in o0_peak_idx:
+                   s0 = o0[opi]
+                   x0, y0 = int(s0['x']), int(s0['y'])
+                   if x0 > dist and x0 < d0.shape[0] - dist and y0 > dist and y0 < d0.shape[1] - dist:
+                      break
+
+                c0 = centroid_quadratic(d0[y0-crect:y0+crect, x0-crect:x0+crect])
+                c1 = centroid_quadratic(d1[y0-crect:y0+crect, x0-crect:x0+crect])
+
+                delta = [c0[0]-c1[0],c0[1]-c1[1]]
+                logger.debug(f"delta {camera} s:{x0}:{y0} delta:{delta}")
 
    
         logger.debug(f"done ")
