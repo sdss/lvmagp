@@ -8,6 +8,7 @@
 from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 
 from math import nan
+from astropy.io import fits
 
 class Astrometry:
     @staticmethod

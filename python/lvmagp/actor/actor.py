@@ -11,7 +11,7 @@ from clu.actor import AMQPActor
 from lvmagp import __version__
 
 from .commands  import parser
-from .state import ActorState
+from .statemachine import ActorStateMachine, ActorState
 
 from lvm.actors import lvm
 
@@ -37,7 +37,7 @@ class LvmagpActor(AMQPActor):
     ):
         super().__init__(*args, version=__version__, **kwargs)
 
-        self.state = ActorState()
+        self.statemachine = ActorStateMachine()
         self.focus = None
         
         self.schema = { #TODO add schema

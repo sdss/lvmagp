@@ -2,25 +2,37 @@
 #
 # @Author: Florian Briegel (briegel@mpia.de)
 # @Date: 2021-08-18
-# @Filename: lvm/tel/focus.py
+# @Filename: statemachine.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
+import enum
 import asyncio
-
 
 #TODO: Using something like pytransition whould be way more clean
 #  https://github.com/pytransitions/transitions/blob/master/README.md
 #  https://github.com/pytransitions/transitions#async
 
-#TODO: Maybe enums and a dict with enum to string whould be better.
 
-class ActorState:
+class ActorState(enum.Enum):
+    """Enumeration of states."""
+
+    IDLE = "IDLE"
+    STARTED = "STARTED"
+    STOP = "STOP"
+    PAUSE = "PAUSE"
+    GUIDING = "GUIDING"
+    FOCUSING = "FOCUSING"
+
+class WrongStateTypeException(Exception):
+    """The state should be of type ActorState"""
+
+class ActorStateMachine:
     def __init__(self):
         self.task = None
-        self.state = "IDLE"
+        self.state = ActorState.IDLE
 
     def isIdle(self):
-        return self.state == "IDLE"
+        return self.state == ActorState.IDLE
 
     @property
     def state(self):
@@ -28,19 +40,21 @@ class ActorState:
     
     @state.setter
     def state(self, s):
-        self.__state = s #TODO: add some checks.
-
+        if isinstance(s, ActorState):
+            self.__state = s
+            return
+        raise WrongStateTypeException()
+            
     async def start(self, coro):
         await self.stop()
         self.task = asyncio.create_task(coro)
-        self.state = "STARTED"
-
+        self.state = ActorState.STARTED
 
     async def stop(self):
         if not self.task:
             return
 
-        self.state = "STOP"
+        self.state = ActorState.STOP
 
         try:
             await asyncio.wait_for(self.task, timeout=5)
@@ -48,7 +62,7 @@ class ActorState:
         except asyncio.TimeoutError:
             self.task.cancel()
 
-        self.state = "IDLE"
+        self.state = ActorState.IDLE
         self.task = None
 
         

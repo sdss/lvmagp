@@ -6,9 +6,9 @@ from clu.command import Command
 
 from . import parser
 
-from lvmagp.actor.state import ActorState
+from lvmagp.actor.statemachine import ActorState, ActorStateMachine
 from lvm.tel.focus import Focus
-from lvmagp import exceptions
+from lvmagp.exceptions import LvmagpIsNotIdle
 
 
 @parser.command("focusOffset")
@@ -20,7 +20,7 @@ async def focusOffset(
 ):
     """Focus offest"""
     try:
-        actor_state = command.actor.state
+        actor_statemachine = command.actor.statemachine
         focus = command.actor.focus
 
         await focus.offset(offset, command=command)
@@ -28,7 +28,7 @@ async def focusOffset(
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = actor_state.state)
+    return command.finish(state = actor_statemachine.state.value)
 
 
 @parser.command("focusFine")
@@ -41,24 +41,24 @@ async def focusFine(
     """Focus fine"""
     try:
         logger = command.actor.log
-        actor_state = command.actor.state
+        actor_statemachine = command.actor.statemachine
         focus = command.actor.focus
 
-        if not actor_state.isIdle():
-            return command.fail(error = LvmagpIsNotIdle(), state = actor_state.state)
+        if not actor_statemachine.isIdle():
+            return command.fail(error = LvmagpIsNotIdle(), state = actor_statemachine.state.value)
 
-        actor_state.state = "FOCUSING"
-        command.info(state = actor_state.state)
+        actor_statemachine.state = ActorState.FOCUSING
+        command.info(state = actor_statemachine.state.value)
         
-        logger.debug(f"start focusing {actor_state.state} {await telsubsystems.foc.status()}")
+        logger.debug(f"start focusing {actor_statemachine.state} {await telsubsystems.foc.status()}")
         await focus.fine(expotime, command=command)
     
     except Exception as e:
         return command.fail(error=e)
 
-    actor_state.state = "IDLE"
+    actor_statemachine.state = ActorState.IDLE
 
-    return command.finish(state = actor_state.state)
+    return command.finish(state = actor_statemachine.state.value)
 
 
 @parser.command("focusNominal")
@@ -68,7 +68,7 @@ async def focusNominal(
 ):
     """Focus nominal"""
     try:
-        actor_state = command.actor.state
+        actor_statemachine = command.actor.statemachine
         focus = command.actor.focus
 
         await focus.nominal(command=command)
@@ -76,6 +76,6 @@ async def focusNominal(
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = actor_state.state)
+    return command.finish(state = actor_statemachine.state.value)
         
 

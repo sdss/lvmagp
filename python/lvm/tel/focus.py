@@ -9,6 +9,7 @@
 from lvm.actors import lvm, invoke, unpack, asyncio, logger, LoggerCommand
 
 from math import nan
+from astropy.io import fits
 
 class Focus():
     def __init__(self, telsubsys):
