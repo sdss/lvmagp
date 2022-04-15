@@ -9,6 +9,7 @@ from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 from lvm.tel.focus import Focus
 from lvm.tel.astrometry import Astrometry
 
+import click
 
 async def aquisition(telsubsys, ra, dec, exptime, fine_focus=False):
     try:
@@ -41,28 +42,17 @@ async def aquisition(telsubsys, ra, dec, exptime, fine_focus=False):
         raise ex
 
 
-def main():
-    import argparse
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-v", '--verbose', action='store_true',
-                        help="print some notes to stdout")
+@click.command()
+@click.option('-v', '--verbose', count=True, help='Debug mode. Use additional v for more details.')
+@click.option('-t', '--telsubsys', default='sci', help='Telescope subsystem: sci, skye, skyw or spec.')
+@click.option('-e', '--exptime', default=5.0, help='Expose for for exptime seconds.')
+@click.option('-r', '--ra', type=float, help='RA J2000 in hours.')
+@click.option('-d', '--dec', type=float, help='DEC J2000 in degrees.')
+def main(verbose, telsubsys, exptime, ra, dec):
 
-    parser.add_argument("-t", '--telsubsys', type=str, default="sci",
-                        help="Telescope subsystem: sci, skye, skyw or spec")
+    telsubsys = lvm.execute(lvm.from_string(telsubsys))
 
-    parser.add_argument("-e", '--exptime', type=float, default=5.0,
-                        help="Expose for for exptime seconds")
-
-    parser.add_argument("-r", '--ra', help="RA J2000 in hours")
-
-    parser.add_argument("-d", '--dec', help="DEC J2000 in degrees")
-
-    args = parser.parse_args()
-    
-    telsubsys = lvm.execute(lvm.from_string(args.telsubsys))
-
-    lvm.execute(aquisition(telsubsys, args.ra, args.dec, args.exptime), verbose=args.verbose)
+    lvm.execute(aquisition(telsubsys, ra, dec, exptime), verbose=verbose)
 
             
 if __name__ == '__main__':

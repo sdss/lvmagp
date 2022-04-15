@@ -26,7 +26,7 @@ class Focus():
 
     async def nominal(self, temp, command = LoggerCommand(logger)):
         try:
-           temp2focus_pos = temp # put here a function gathering focus based on temperature.
+           temp2focus_pos = temp #TODO: put here a function gathering focus based on temperature.
            await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
         
         except Exception as ex:
@@ -36,7 +36,7 @@ class Focus():
     async def fine(self, exptime=1, command = LoggerCommand(logger)):
         try:
             files={}
-            for p in [400, 200, 100, 0, -100]: #TODO implement some focusing that makes sense.
+            for p in [400, 200, 100, 0, -100]: #TODO: implement some focusing that makes sense.
                 
                 command.debug(text=f"foc move to {p}")
                 await self.telsubsys.foc.moveAbsolute(p)
