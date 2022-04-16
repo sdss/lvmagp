@@ -194,7 +194,7 @@ class GuideImage:
         if ra_h == -999:
             proc = subprocess.Popen(
                 [
-                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+                    "echo %s | sudo -S solve-field %s --cpulimit %f --overwrite \
             --downsample 2 --no-plots > %s"
                     % (ospassword, self.filepath, timeout, resultpath)
                 ],
@@ -206,7 +206,7 @@ class GuideImage:
         else:
             proc = subprocess.Popen(
                 [
-                    "echo %s | sudo -S /usr/local/astrometry/bin/solve-field %s --cpulimit %f --overwrite \
+                    "echo %s | sudo -S solve-field %s --cpulimit %f --overwrite \
             --downsample 2 --scale-units arcsecperpix --scale-low %f --scale-high \
             %f --ra %f --dec %f --radius %f --no-plots > %s"
                     % (  # noqa: E501
