@@ -24,7 +24,7 @@ async def aquisition(telsubsys, ra, dec, exptime, fine_focus=False):
             focus.nominal(focus_temperature)
         )
 
-        logger.debug(f"astrometry at radec {ra}:{dec}")
+        logger.debug(f"fake astrometry at radec {ra}:{dec}")
 
         ra_offset, dec_offset, focus_offset, km_offset = await Astrometry.calc(telsubsys, ra, dec, exptime)
 
