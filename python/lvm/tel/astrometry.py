@@ -10,14 +10,13 @@ from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
 from math import nan
 from astropy.io import fits
 
-
 # TODO: put some real astronomy in here.
 
 class Astrometry:
     @staticmethod
-    async def calc(telsubsys, ra, dec):
+    async def calc(telsubsys, ra, dec, exptime=5):
         try:
-            rc = await telsubsys.agc.expose(1)
+            rc = await telsubsys.agc.expose(exptime)
             file_east = rc["east"]["filename"]
             file_west = rc["west"]["filename"]
             
@@ -43,6 +42,9 @@ def main():
     parser.add_argument("-t", '--telsubsys', type=str, default="sci",
                         help="Telescope subsystem: sci, skye, skyw or spec")
 
+    parser.add_argument("-e", '--exptime', type=float, default=5.0,
+                        help="Expose for for exptime seconds")
+
     parser.add_argument("-r", '--ra', help="RA J2000 in hours")
 
     parser.add_argument("-d", '--dec', help="DEC J2000 in degrees")
@@ -51,7 +53,7 @@ def main():
     
     telsubsys = lvm.execute(lvm.from_string(args.telsubsys))
 
-    lvm.execute(Astrometry.calc(telsubsys, args.ra, args.dec), verbose=args.verbose)
+    lvm.execute(Astrometry.calc(telsubsys, args.ra, args.dec, args.exptime), verbose=args.verbose)
 
 
 if __name__ == '__main__':

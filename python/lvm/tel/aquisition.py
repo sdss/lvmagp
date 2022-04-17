@@ -17,22 +17,22 @@ async def aquisition(telsubsys, ra, dec, exptime, fine_focus=False):
         
         focus = Focus(telsubsys)
 
-        logger.debug(f"move tel/km {ra}{dec} & temp2foc {focus_temperature}")
+        logger.debug(f"move tel/km {ra}:{dec} & temp2foc {focus_temperature}")
         await invoke(
             telsubsys.km.slewStart(ra, dec), 
             telsubsys.pwi.gotoRaDecJ2000(ra, dec),
             focus.nominal(focus_temperature)
         )
 
-        logger.debug(f"astrometry at radec {ra}{dec}")
+        logger.debug(f"astrometry at radec {ra}:{dec}")
 
-        ra_offset, dec_offset, refocus_offset, km_offset = await Astrometry.calc(telsubsys, ra, dec)
+        ra_offset, dec_offset, focus_offset, km_offset = await Astrometry.calc(telsubsys, ra, dec, exptime)
 
-        logger.debug(f"correct tel/km {ra_offset, dec_offset}{km_offset} & temp2foc {focus_temperature}")
+        logger.debug(f"correct tel/km {ra_offset}:{dec_offset}/{km_offset} & focus offset {focus_offset}")
 
         await invoke( # there is no offsetting km
             telsubsys.pwi.offset(ra_add_arcsec = ra_offset, dec_add_arcsec = dec_offset),
-            focus.offset(refocus_offset)
+            focus.offset(focus_offset)
         )
 
         logger.debug(f"done ")
