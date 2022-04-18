@@ -44,7 +44,7 @@ scipy = ">=1.7"
 black = "^21.7-beta.0"
 sdss-cluplus = "^0.0.16"
 sdss-lvmtipo = ">=0.0.10"
-regions = ">=0.6"
+#regions = ">=0.6"
 
 [tool.poetry.dev-dependencies]
 ipython = ">=7.31.1"
