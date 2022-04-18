@@ -8,6 +8,7 @@
 from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger, LoggerCommand
 
 import numpy as np
+from math import cos
 
 import sep
 from astropy.io import fits
@@ -26,23 +27,25 @@ def sep_objects(data):
         return objects, object_index_sorted_by_peak
 
 
-# ... just pick the brightest inside dist rect
-def pick_one_object(data, dist, objects, objects_peak_idx):
+# ... just picking the brightest inside border rect
+def pick_one_object(data, border, objects, objects_peak_idx):
         for i, opi in enumerate(objects_peak_idx):
             o0 = objects[opi]
-            x0, y0 = int(o0['x']), int(o0['y'])
+            x0, y0 = o0['x'], o0['y']
             
-            if dist[0] > x0  or x0 > data.shape[0] - dist[0] or dist[1] > y0 or y0 < data.shape[1] - dist[1]:
-                logger.debug(f"pick #{i} xy:{x0}:{y0}")
-                return np.array([x0, y0])
+            if border > x0  or x0 > data.shape[0] - border or border > y0 or y0 > data.shape[1] - border:
+                continue
+            
+#            logger.debug(f"pick #{i} xy:{x0}:{y0}")
+            return np.array([x0, y0])
 
 
-async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger)):
+async def calibrate(telsubsys, exptime, offset, axis_error, command = LoggerCommand(logger)):
     try:
         logger.debug(f"calibrate {telsubsys.agc.client.name}")
 
         files={}
-        crect = 15
+        center_rect = 12
 
         # we do expect same binning in x and y
         rc = await telsubsys.agc.binning()
@@ -50,21 +53,16 @@ async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger))
         for camera in rc:
             binned_img_scale[camera] = pix_scale * rc[camera]["binning"][0]
             
-        #logger.debug(f"binning {binned_img_scale}")
-
-        
         for ra_off, dec_off in [[offset, 0], [0, offset]]:
 
-            #command.debug(text=f"expose cameras {exptime}")
             rc = await telsubsys.agc.expose(exptime)
             for camera in rc:
                 files[camera] = [rc[camera]["filename"]]
 
             pix_offset = np.array([round(ra_off/binned_img_scale[camera]), round(dec_off/binned_img_scale[camera])])
-            dist_border = [crect/2, -crect/2] - pix_offset
-
-            logger.debug(f"telescope offset ra:dec {ra_off}:{dec_off}")
-            await telsubsys.pwi.offset(ra_add_arcsec = ra_off, dec_add_arcsec = dec_off)
+            border = center_rect/2 + max(map(abs,pix_offset))
+            logger.info(f"telescope offset ra:dec {ra_off}:{dec_off} pixoff/border {pix_offset}/{border}")
+            await telsubsys.pwi.offset(ra_add_arcsec = ra_off, dec_add_arcsec = dec_off, axis_error=axis_error)
 
             rc = await telsubsys.pwi.status()
 
@@ -75,21 +73,15 @@ async def calibrate(telsubsys, exptime, offset, command = LoggerCommand(logger))
             for camera in files:
                 d0 = fits.open(files[camera][0])[0].data.astype(float)
                 d1 = fits.open(files[camera][1])[0].data.astype(float)
-                objects, objects_peak_idx = sep_objects(d0)
-                o0 = pick_one_object(d0, dist_border, objects, objects_peak_idx)
-                r0 = np.array([o0-crect, o0+crect])
-                r1 = r0 + pix_offset
-                #logger.debug(f"object {o0}")
-                #logger.debug(f"pixel offset {pix_offset}")
-                #logger.debug(f"o0 rect {r0.tolist()}")
-                #logger.debug(f"o1 rect {r1.tolist()}")
-                #logger.debug(f"o0 {d0[r0[0][1]:r0[1][1], r0[0][0]:r0[1][0]]}")
-                #logger.debug(f"o0 {d1[r0[0][1]:r0[1][1], r0[0][0]:r0[1][0]]}")
+#                logger.debug(f"o0/1 file {files[camera][0]} {files[camera][1]}")
                 
-                c0 = centroid_quadratic(d0[r0[0][1]:r0[1][1], r0[0][0]:r0[1][0]])
-                c1 = centroid_quadratic(d1[r1[0][1]:r1[1][1], r1[0][0]:r1[1][0]])
+                objects, objects_peak_idx = sep_objects(d0)
+                o0 = pick_one_object(d0, border, objects, objects_peak_idx)
+ 
+                c0 = centroid_quadratic(d0, xpeak=o0[0], ypeak=o0[1], search_boxsize=center_rect)
+                c1 = centroid_quadratic(d1, xpeak=o0[0] - pix_offset[0], ypeak=o0[1] - pix_offset[1], search_boxsize=center_rect)
 
-                logger.debug(f"{camera} o:{o0} delta:{c0-c1}")
+                logger.debug(f"{camera} o:{c0} delta:{c0-c1}")
    
         logger.debug(f"done ")
         
@@ -114,11 +106,14 @@ def main():
     parser.add_argument("-o", '--offset', type=float, default=50.0,
                         help="telescope offset in arcsec float")
 
+    parser.add_argument("-a", '--axis_error', type=float, default=0.4,
+                        help="telescope axis_error for offset commands")
+
     args = parser.parse_args()
     
     telsubsys = lvm.execute(lvm.from_string(args.telsubsys))
 
-    lvm.execute(calibrate(telsubsys, args.exptime, args.offset), verbose=args.verbose)
+    lvm.execute(calibrate(telsubsys, args.exptime, args.offset, args.axis_error), verbose=args.verbose)
 
             
 if __name__ == '__main__':
