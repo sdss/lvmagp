@@ -34,7 +34,7 @@ async def focusOffset(
 
 
 @parser.command("focusFine")
-@click.argument("EXPOTIME", type=float, default=1.0)
+@click.argument("EXPOTIME", type=float, default=10.0)
 async def focusFine(
     command: Command,
     telsubsystems,

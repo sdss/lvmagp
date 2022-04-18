@@ -8,19 +8,7 @@ from . import parser
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
 from lvmagp.exceptions import LvmagpIsNotIdle
 
-
-async def guideTick(telsubsystems, actor_statemachine, delay, logger):
-    
-    actor_statemachine.state = ActorState.GUIDING
-
-    while actor_statemachine.state == ActorState.GUIDING:
-        try:
-            logger.debug(f"active guiding {actor_statemachine.state}")
-            
-        except Exception as e:
-            logger.errror(e)
-
-        await asyncio.sleep(delay)
+from lvmagp.guide.worker import GuiderWorker
 
 
 @parser.command("guideStart")
@@ -34,11 +22,13 @@ async def guideStart(
     logger = command.actor.log
     actor_statemachine = command.actor.statemachine
 
+    guider = command.actor.guider
+
     try:
         if not actor_statemachine.isIdle():
             return command.fail(error = LvmagpIsNotIdle(), state = actor_statemachine.state)
         
-        await actor_statemachine.start(guideTick(telsubsystems, actor_statemachine, delay, logger))
+        await actor_statemachine.start(guider.work(telsubsystems, actor_statemachine, delay, logger))
 
         logger.debug(f"start guiding {actor_statemachine.state} {await telsubsystems.foc.status()}")
 

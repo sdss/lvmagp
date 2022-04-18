@@ -17,6 +17,9 @@ from lvm.actors import lvm
 
 from lvm.tel.focus import Focus
 
+from lvmagp.guide.worker import GuiderWorker
+
+
 __all__ = ["LvmagpActor"]
 
 
@@ -37,8 +40,10 @@ class LvmagpActor(AMQPActor):
     ):
         super().__init__(*args, version=__version__, **kwargs)
 
+        self.guider = GuiderWorker()
         self.statemachine = ActorStateMachine()
         self.focus = None
+
         
         self.schema = { #TODO add schema
                         "type": "object",

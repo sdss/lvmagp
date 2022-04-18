@@ -45,7 +45,7 @@ async def calibrate(telsubsys, exptime, offset, axis_error, command = LoggerComm
         logger.debug(f"calibrate {telsubsys.agc.client.name}")
 
         files={}
-        center_rect = 12
+        center_rect = 8
 
         # we do expect same binning in x and y
         rc = await telsubsys.agc.binning()
@@ -53,16 +53,16 @@ async def calibrate(telsubsys, exptime, offset, axis_error, command = LoggerComm
         for camera in rc:
             binned_img_scale[camera] = pix_scale * rc[camera]["binning"][0]
             
-        for ra_off, dec_off in [[offset, 0], [0, offset]]:
+        for ra_off_h, dec_off_d in [[offset, 0], [0, offset]]:
 
             rc = await telsubsys.agc.expose(exptime)
             for camera in rc:
                 files[camera] = [rc[camera]["filename"]]
 
-            pix_offset = np.array([round(ra_off/binned_img_scale[camera]), round(dec_off/binned_img_scale[camera])])
+            pix_offset = np.array([round(ra_off_h / binned_img_scale[camera]), round(dec_off_d / binned_img_scale[camera])])
             border = center_rect/2 + max(map(abs,pix_offset))
-            logger.info(f"telescope offset ra:dec {ra_off}:{dec_off} pixoff/border {pix_offset}/{border}")
-            await telsubsys.pwi.offset(ra_add_arcsec = ra_off, dec_add_arcsec = dec_off, axis_error=axis_error)
+            logger.info(f"telescope offset ra:dec {ra_off_h}:{dec_off_d} pixoff/border {pix_offset}/{border}")
+            await telsubsys.pwi.offset(ra_add_arcsec = ra_off_h, dec_add_arcsec = dec_off_d, axis_error=axis_error)
 
             rc = await telsubsys.pwi.status()
 
@@ -77,11 +77,13 @@ async def calibrate(telsubsys, exptime, offset, axis_error, command = LoggerComm
                 
                 objects, objects_peak_idx = sep_objects(d0)
                 o0 = pick_one_object(d0, border, objects, objects_peak_idx)
- 
+                o1 = [o0[0] - pix_offset[0], o0[1] - pix_offset[1]]
+                
                 c0 = centroid_quadratic(d0, xpeak=o0[0], ypeak=o0[1], search_boxsize=center_rect)
-                c1 = centroid_quadratic(d1, xpeak=o0[0] - pix_offset[0], ypeak=o0[1] - pix_offset[1], search_boxsize=center_rect)
+                c1 = centroid_quadratic(d1, xpeak=o1[0], ypeak=o1[1], search_boxsize=center_rect)
 
-                logger.debug(f"{camera} o:{c0} delta:{c0-c1}")
+                logger.debug(f"{camera} o:{o0} delta:{c0-c1}")
+#                logger.debug(f"{camera} o:{c1} {o1}")
    
         logger.debug(f"done ")
         
