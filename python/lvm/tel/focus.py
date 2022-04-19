@@ -33,7 +33,7 @@ class Focus():
            logger.error(ex)
            raise ex
 
-    async def fine(self, exptime=1, command = LoggerCommand(logger)):
+    async def fine(self, exptime, command = LoggerCommand(logger)):
         try:
             files={}
             for p in [400, 200, 100, 0, -100]: #TODO: implement some focusing that makes sense.
@@ -41,7 +41,7 @@ class Focus():
                 command.debug(text=f"foc move to {p}")
                 await self.telsubsys.foc.moveAbsolute(p)
                 
-                command.debug(text=f"expose 1")
+                command.debug(text=f"expose {exptime}")
                 rc = await self.telsubsys.agc.expose(exptime)
                 for camera in rc:
                     if files.get(camera, None):
@@ -72,7 +72,7 @@ def main():
                         help="Nominal focus based on temp")
 
     parser.add_argument("-f", '--fine', action='store_true',
-                        help="Fine focus with expotime - default 1.0 sec")
+                        help="Fine focus with expotime - default 10.0 sec")
 
     parser.add_argument("-e", '--expotime', type=float, default=10.0,
                         help="Exposure time")
