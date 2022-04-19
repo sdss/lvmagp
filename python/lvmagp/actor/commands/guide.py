@@ -9,14 +9,14 @@ from lvmagp.actor.statemachine import ActorState, ActorStateMachine
 from lvmagp.exceptions import LvmagpIsNotIdle
 
 from lvmagp.guide.worker import GuiderWorker
-
+from math import nan
 
 @parser.command("guideStart")
-@click.argument("DELAY", type=float, default=1.0) #
+@click.argument("EXPTIME", type=float, default=nan) #
 async def guideStart(
     command: Command,
     telsubsystems,
-    delay: float,
+    exptime: float,
 ):
     """Start guiding"""
     logger = command.actor.log
@@ -28,7 +28,7 @@ async def guideStart(
         if not actor_statemachine.isIdle():
             return command.fail(error = LvmagpIsNotIdle(), state = actor_statemachine.state)
         
-        await actor_statemachine.start(guider.work(telsubsystems, actor_statemachine, delay, logger))
+        await actor_statemachine.start(guider.work(telsubsystems, actor_statemachine, exptime))
 
         logger.debug(f"start guiding {actor_statemachine.state} {await telsubsystems.foc.status()}")
 

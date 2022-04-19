@@ -40,7 +40,7 @@ class LvmagpActor(AMQPActor):
     ):
         super().__init__(*args, version=__version__, **kwargs)
 
-        self.guider = GuiderWorker()
+        self.guider = GuiderWorker(logger=self.log)
         self.statemachine = ActorStateMachine()
         self.focus = None
 
@@ -77,7 +77,7 @@ class LvmagpActor(AMQPActor):
         telsubsystems = await lvm.from_string(self.config["ag"]["system"], self)
         self.parser_args[SUBSYSTEMS] = telsubsystems
         self.focus = Focus(telsubsystems)
-
+ 
         self.log.debug("Start done")
 
 
