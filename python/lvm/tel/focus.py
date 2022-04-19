@@ -74,7 +74,7 @@ def main():
     parser.add_argument("-f", '--fine', action='store_true',
                         help="Fine focus with expotime - default 1.0 sec")
 
-    parser.add_argument("-e", '--expotime', type=float, default=5.0,
+    parser.add_argument("-e", '--expotime', type=float, default=10.0,
                         help="Exposure time")
 
 
