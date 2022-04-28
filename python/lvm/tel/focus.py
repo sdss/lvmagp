@@ -6,10 +6,12 @@
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
 
-from lvm.actors import lvm, invoke, unpack, asyncio, logger, LoggerCommand
+from lvm.actors import lvm, invoke, unpack, asyncio, logger
+from lvm.command import LoggerCommand
 
 from math import nan
 from astropy.io import fits
+
 
 class Focus():
     def __init__(self, telsubsys):
