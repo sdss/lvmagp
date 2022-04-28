@@ -5,7 +5,9 @@
 # @Filename: lvm/tel/calibration.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger, LoggerCommand
+from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+from lvm.command import LoggerCommand
+
 
 import numpy as np
 from math import cos
