@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       USER: wasndas
-      APP: lvmcam
+      APP: lvmagp
     steps:
       - name: Set docker tags
         id: set-tags
