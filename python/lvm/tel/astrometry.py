@@ -5,7 +5,8 @@
 # @Filename: lvm/tel/astrometry.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
-from lvm.actors import lvm, lvm_amqpc, invoke, unpack, asyncio, logger
+import asyncio
+from lvmtipo.actors import lvm
 
 from math import nan
 from astropy.io import fits
@@ -51,9 +52,9 @@ def main():
 
     args = parser.parse_args()
     
-    telsubsys = lvm.execute(lvm.from_string(args.telsubsys))
+    telsubsys = asyncio.run(lvm.from_string(args.telsubsys))
 
-    lvm.execute(Astrometry.calc(telsubsys, args.ra, args.dec, args.exptime), verbose=args.verbose)
+    asyncio.run(Astrometry.calc(telsubsys, args.ra, args.dec, args.exptime), verbose=args.verbose)
 
 
 if __name__ == '__main__':
