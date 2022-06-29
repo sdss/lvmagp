@@ -13,7 +13,7 @@ from lvmagp import __version__
 from .commands  import parser
 from .statemachine import ActorStateMachine, ActorState
 
-from lvm.actors import lvm
+from lvmtipo.actors import lvm
 
 from lvm.tel.focus import Focus
 
