@@ -9,7 +9,7 @@ from cluplus.proxy import unpack
 from . import parser
 
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
-from lvmtipo.tel.focus import Focus
+from lvmagp.focus import Focus
 from lvmagp.exceptions import LvmagpIsNotIdle
 
 

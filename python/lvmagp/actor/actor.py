@@ -15,8 +15,7 @@ from .statemachine import ActorStateMachine, ActorState
 
 from lvmtipo.actors import lvm
 
-from lvm.tel.focus import Focus
-
+from lvmagp.focus import Focus
 from lvmagp.guide.worker import GuiderWorker
 
 

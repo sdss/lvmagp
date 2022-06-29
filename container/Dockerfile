@@ -25,7 +25,7 @@ WORKDIR /root
 
 #COPY run-agp.sh /root
 
-CMD ["/root/lvmagp/container/run-agp.sh"]
+CMD ["/root/lvmagp/container/run-actor.sh"]
 
 
 
