@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sdss-lvmagp"
-version = "0.2.5"
+version = "0.2.6"
 description = "Aquisition and guiding package for SDSS-V LVM"
 authors = ["Hojae Ahn <hojaeahn@khu.ac.kr>"]
 license = "BSD-3-Clause"
@@ -16,6 +16,7 @@ classifiers = [
 	"Programming Language :: Python :: 3.7",
 	"Programming Language :: Python :: 3.8",
 	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
     "Topic :: Documentation :: Sphinx",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
@@ -32,7 +33,7 @@ generate-setup-file = false
 lvmagp = "lvmagp.__main__:lvmagp"
 
 [tool.poetry.dependencies]
-python = ">=3.7, <3.10"
+python = ">=3.7, <=3.10"
 sdss-tree = ">=2.15.2"
 sdss-access = ">=0.2.3"
 #sdsstools = ">=0.4.0"
