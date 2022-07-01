@@ -73,7 +73,7 @@ class LvmagpActor(AMQPActor):
         """Start actor."""
         await super().start()
         
-        telsubsystems = await lvm.from_string(self.config["ag"]["system"], self)
+        telsubsystems = await lvm.from_string(self.config["ag"]["system"])
         self.parser_args[SUBSYSTEMS] = telsubsystems
         self.focus = Focus(telsubsystems)
  
