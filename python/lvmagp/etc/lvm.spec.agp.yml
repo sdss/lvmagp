@@ -1,0 +1,10 @@
+# Autoguider configuration
+ag:
+  system: skyw
+
+
+# Actor configuration for the AMQPActor class
+actor:
+  name: lvm.skyw.ag
+  host: localhost
+  port: 5672

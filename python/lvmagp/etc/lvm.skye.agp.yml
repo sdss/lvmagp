@@ -1,0 +1,10 @@
+# Autoguider configuration
+ag:
+  system: skye
+
+
+# Actor configuration for the AMQPActor class
+actor:
+  name: lvm.skye.ag
+  host: localhost
+  port: 5672
