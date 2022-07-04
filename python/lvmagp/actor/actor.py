@@ -8,12 +8,14 @@ from sdsstools.logger import SDSSLogger
 
 from clu.actor import AMQPActor
 
+from lvmtipo.actors import lvm
+
 from lvmagp import __version__
 
 from .commands  import parser
 from .statemachine import ActorStateMachine, ActorState
 
-from lvmtipo.actors import lvm
+from cluplus.proxy import Proxy
 
 from lvmagp.focus import Focus
 from lvmagp.guide.worker import GuiderWorker
@@ -72,10 +74,13 @@ class LvmagpActor(AMQPActor):
     async def start(self):
         """Start actor."""
         await super().start()
+
+        Proxy.setDefaultAmqpc(self)
         
         telsubsystems = await lvm.from_string(self.config["ag"]["system"])
+        
         self.parser_args[SUBSYSTEMS] = telsubsystems
-        self.focus = Focus(telsubsystems)
+        self.focus = Focus(telsubsystems, level=DEBUG)
  
         self.log.debug("Start done")
 

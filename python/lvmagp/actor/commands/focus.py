@@ -2,6 +2,8 @@ import asyncio
 
 import click
 import numpy as np
+
+from logging import DEBUG, INFO
 from clu.command import Command
 
 from cluplus.proxy import unpack

@@ -20,7 +20,7 @@ class Focus():
         #TODO: should go somewhere in a subclass
         self.logger=logger
         self.logger.sh.setLevel(level)
-
+        
     async def offset(self, offset):
         try:
            self.logger.debug(f"foc move to {offset} um")
@@ -54,7 +54,7 @@ class Focus():
 
     async def nominal(self):
         try:
-           temp2focus_pos = temp #TODO: put here a function gathering focus based on temperature.
+           temp2focus_pos = 42 #TODO: put here a function gathering focus based on temperature.
 
            await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
         
