@@ -30,15 +30,6 @@ class Focus():
            self.logger.error(ex)
            raise ex
 
-    async def nominal(self, temp):
-        try:
-           temp2focus_pos = temp #TODO: put here a function gathering focus based on temperature.
-           await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
-        
-        except Exception as ex:
-           self.logger.error(ex)
-           raise ex
-
     async def fine(self, exptime):
         try:
             files = {}
@@ -60,6 +51,17 @@ class Focus():
         except Exception as ex:
            self.logger.error(ex)
            raise ex
+
+    async def nominal(self):
+        try:
+           temp2focus_pos = temp #TODO: put here a function gathering focus based on temperature.
+
+           await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
+        
+        except Exception as ex:
+           self.logger.error(ex)
+           raise ex
+
 
 async def main():
     import argparse

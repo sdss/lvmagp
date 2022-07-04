@@ -25,7 +25,7 @@ async def focusOffset(
         actor_statemachine = command.actor.statemachine
         focus = command.actor.focus
 
-        await focus.offset(offset, command=command)
+        await focus.offset(offset)
          
     except Exception as e:
         return command.fail(error=e)
@@ -53,7 +53,7 @@ async def focusFine(
         command.info(state = actor_statemachine.state.value)
         
         logger.debug(f"start focusing {actor_statemachine.state.value} {await telsubsystems.foc.status()}")
-        await focus.fine(expotime, command=command)
+        await focus.fine(expotime)
     
     except Exception as e:
         return command.fail(error=e)
@@ -73,7 +73,7 @@ async def focusNominal(
         actor_statemachine = command.actor.statemachine
         focus = command.actor.focus
 
-        await focus.nominal(command=command)
+        await focus.nominal()
 
     except Exception as e:
         return command.fail(error=e)
