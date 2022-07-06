@@ -28,6 +28,14 @@ from lvmagp.actor.actor import LvmagpActor
     required=True
 )
 @click.option(
+    "-r",
+    "--rmq_url",
+    "rmq_url",
+    default=None,
+    type=str,
+    help="rabbitmq url, eg: amqp://guest:guest@localhost:5672/",
+)
+@click.option(
     "-v",
     "--verbose",
     count=True,
@@ -37,7 +45,7 @@ from lvmagp.actor.actor import LvmagpActor
 def lvmagp(ctx, config_file, verbose):
     """lvm controller"""
 
-    ctx.obj = {"verbose": verbose, "config_file": config_file}
+    ctx.obj = {"verbose": verbose, "config_file": config_file, "rmq_url": rmq_url}
 
 
 @lvmagp.group(cls=DaemonGroup, prog="lvmagp_actor", workdir=os.getcwd())
@@ -48,7 +56,7 @@ async def actor(ctx):
 
     config_file = ctx.obj["config_file"]
 
-    lvmagp_obj = LvmagpActor.from_config(config_file, verbose=ctx.obj["verbose"])
+    lvmagp_obj = LvmagpActor.from_config(config_file, url=ctx.obj["rmq_url"], verbose=ctx.obj["verbose"])
 
     await lvmagp_obj.start()
     await lvmagp_obj.run_forever()
