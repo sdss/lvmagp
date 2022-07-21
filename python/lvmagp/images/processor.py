@@ -2,13 +2,11 @@ from abc import ABCMeta, abstractmethod
 from typing import Any
 
 from lvmagp.images import Image
-#from pyobs.object import Object
 
 
 class ImageProcessor(object, metaclass=ABCMeta):
     def __init__(self, **kwargs: Any):
         """Init new image processor."""
-        Object.__init__(self, **kwargs)
 
     @abstractmethod
     async def __call__(self, image: Image) -> Image:

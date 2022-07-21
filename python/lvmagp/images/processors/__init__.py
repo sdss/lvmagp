@@ -1,4 +1,4 @@
 """
-Image Processors (pyobs.images.processors)
+Image Processors (lvmagp.images.processors)
 ------------------------------------------
 """

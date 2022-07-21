@@ -5,8 +5,8 @@ from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 import astropy.units as u
 
-from pyobs.images import Image
-import pyobs.utils.exceptions as exc
+from lvmagp.images import Image
+import lvmagp.images.exceptions as exc
 from .astrometry import Astrometry
 
 
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class AstrometryDotNet(Astrometry):
     """Perform astrometry using astrometry.net"""
 
-    __module__ = "pyobs.images.processors.astrometry"
+    __module__ = "lvmagp.images.processors.astrometry"
 
     def __init__(
         self,
