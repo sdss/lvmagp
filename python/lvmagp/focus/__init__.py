@@ -4,5 +4,5 @@ TODO: write doc
 """
 __title__ = "Focus"
 
-from .focusmodel import FocusModel
-from .focusseries import AutoFocusSeries
+#from .focusmodel import FocusModel
+#from .focusseries import AutoFocusSeries

@@ -48,6 +48,7 @@ sdss-lvmtipo = ">=0.0.10"
 #regions = ">=0.6"
 pandas = ">=1.1"
 aiohttp = ">=3.7"
+sep = ">=i1.2"
 
 [tool.poetry.dev-dependencies]
 ipython = ">=7.31.1"

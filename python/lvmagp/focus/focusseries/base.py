@@ -1,12 +1,12 @@
 from typing import Tuple
 
-from pyobs.images import Image
+from lvmagp.images import Image
 
 
 class FocusSeries:
     """Base class for focus series helper classes."""
 
-    __module__ = "pyobs.utils.focusseries"
+    __module__ = "lvmagp.utils.focusseries"
 
     def reset(self) -> None:
         """Reset focus series."""

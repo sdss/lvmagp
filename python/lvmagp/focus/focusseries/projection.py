@@ -4,9 +4,9 @@ import numpy as np
 import logging
 from scipy import ndimage
 
-from pyobs.utils.focusseries.base import FocusSeries
-from pyobs.utils.curvefit import fit_hyperbola
-from pyobs.images import Image
+from lvmagp.focus.focusseries.base import FocusSeries
+from lvmagp.focus.curvefit import fit_hyperbola
+from lvmagp.images import Image
 
 
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class ProjectionFocusSeries(FocusSeries):
     """Focus series from projected x/y."""
 
-    __module__ = "pyobs.utils.focusseries"
+    __module__ = "lvmagp.focus.focusseries"
 
     def __init__(self, backsub: bool = True, xbad: Optional[List[int]] = None, ybad: Optional[List[int]] = None):
         """Initialize a new projection focus series.

@@ -3,8 +3,8 @@ import numpy as np
 import logging
 
 from lvmagp.images.processors.detection import SourceDetection
-from lvmagp.utils.focusseries.base import FocusSeries
-from lvmagp.utils.curvefit import fit_hyperbola
+from lvmagp.focus.focusseries.base import FocusSeries
+from lvmagp.focus.curvefit import fit_hyperbola
 from lvmagp.images import Image
 
 
@@ -24,7 +24,7 @@ class PhotometryFocusSeries(FocusSeries):
         """
 
         # stuff
-        self._source_detection: SourceDetection = get_object(source_detection, SourceDetection)
+        self._source_detection: SourceDetection = source_detection()
         self._radius_col = radius_column
         self._data: List[Dict[str, float]] = []
 
