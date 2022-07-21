@@ -7,7 +7,7 @@ import numpy as np
 from photutils import CircularAnnulus, CircularAperture, aperture_photometry
 
 from .photometry import Photometry
-from pyobs.images import Image
+from lvmagp.images import Image
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class PhotUtilsPhotometry(Photometry):
     """Perform photometry using PhotUtils."""
 
-    __module__ = "pyobs.images.processors.photometry"
+    __module__ = "lvmagp.images.processors.photometry"
 
     def __init__(
         self,

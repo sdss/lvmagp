@@ -87,7 +87,7 @@ class SepPhotometry(Photometry):
         x, y = sources["x"] - 1, sources["y"] - 1
 
         # get gain
-        gain = image.header["DET-GAIN"] if "DET-GAIN" in image.header else None
+        gain = image.header["GAIN"] if "GAIN" in image.header else None
 
         # perform aperture photometry for diameters of 1" to 8"
         for diameter in [1, 2, 3, 4, 5, 6, 7, 8]:
