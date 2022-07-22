@@ -9,6 +9,7 @@ from lvmagp.images import Image
 
 
 log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 class PhotometryFocusSeries(FocusSeries):
@@ -32,7 +33,7 @@ class PhotometryFocusSeries(FocusSeries):
         """Reset focus series."""
         self._data = []
 
-    def analyse_image(self, image: Image, focus_value: float) -> None:
+    async def analyse_image(self, image: Image, focus_value: float) -> None:
         """Analyse given image.
 
         Args:
@@ -41,7 +42,7 @@ class PhotometryFocusSeries(FocusSeries):
         """
 
         # do photometry
-        self._source_detection(image)
+        await self._source_detection(image)
 
         # filter
         sources = image.catalog
@@ -49,11 +50,11 @@ class PhotometryFocusSeries(FocusSeries):
             return
         sources = sources[sources["ellipticity"] < 0.1]
         sources = sources[sources["peak"] > 1000]
-        sources = sources[sources["radius"] > 0]
+        sources = sources[sources[self._radius_col] > 0]
 
         # calculate median radius
-        radius = np.median(sources["radius"])
-        radius_err = np.std(sources["radius"])
+        radius = np.median(sources[self._radius_col])
+        radius_err = np.std(sources[self._radius_col])
 
         # log it
         log.info("Found median radius of %.1f+-%.1f.", radius, radius_err)

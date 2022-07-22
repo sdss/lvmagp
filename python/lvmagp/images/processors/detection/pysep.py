@@ -118,7 +118,7 @@ class SepSourceDetection(SourceDetection):
         sources["kronrad"] = kronrad
 
         # equivalent of FLUX_AUTO
-        gain = image.header["DET-GAIN"] if "DET-GAIN" in image.header else None
+        gain = image.header["GAIN"] if "GAIN" in image.header else None
         flux, fluxerr, flag = await loop.run_in_executor(
             None,
             partial(

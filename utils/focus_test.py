@@ -9,23 +9,36 @@ from lvmagp.images.processors.detection import DaophotSourceDetection, SepSource
 from lvmagp.images.processors.astrometry import AstrometryDotNet
 from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSeries
 
+import logging
+
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 await lvm.sci.start()
 
 await invoke(lvm.sci.foc.status(), lvm.sci.km.status(), lvm.sci.pwi.status())
 
-ef, wf = (await lvm.sci.agc.expose(1)).flatten().unpack("east.filename", "west.filename")
+dsd = DaophotSourceDetection()
+ssd = SepSourceDetection()
 
-sd = DaophotSourceDetection()
-sd = SepSourceDetection()
+pssd = PhotometryFocusSeries(SepSourceDetection, radius_column="kronrad")
 
-ei = await sd(Image.from_file(ef))
-wi = await sd(Image.from_file(wf))
+pssd.reset()
 
+for foc in [100, 50, 0, -50, -100]:
+    await lvm.sci.foc.moveAbsolute(foc)
+    ef, wf = (await lvm.sci.agc.expose(1)).flatten().unpack("east.filename", "west.filename")
+    print (ef)
+    print(wf)
+    ei = Image.from_file(ef)
+    wi = Image.from_file(wf)
+    sei = await ssd(ei)
+    dwi = await dsd(wi)
+    await pssd.analyse_image(sei, foc+1000)
 
-pfs=PhotometryFocusSeries(SepSourceDetection)
+rc = pssd.fit_focus()
 
-pfs.analyse_image(ei,-400)
+print(rc)
+
 
 
 
