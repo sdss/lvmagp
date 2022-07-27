@@ -5,22 +5,42 @@
 # @Filename: lvm/tel/focus.py
 # @License: BSD 3-clause (http://www.opensource.org/licenses/BSD-3-Clause)
 
+
+import asyncio
+import numpy as np
+from math import nan
+
 from lvmtipo.actors import lvm
 from logging import DEBUG, INFO
 from sdsstools import get_logger
 
-from math import nan
-from astropy.io import fits
+#from cluplus.proxy import invoke
+
+from lvmagp.images import Image
+from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
+from lvmagp.images.processors.astrometry import AstrometryDotNet
+from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSeries
 
 
 class Focus():
-    def __init__(self, telsubsys, logger = get_logger("lvm_tel_focus"), level = INFO):
+    def __init__(self, telsubsys, offset: bool = False, guess:float = 50, logger = get_logger("lvm_tel_focus"), level = INFO):
+        """Initialize a focus system.
+
+        Args:
+            telsubsys: Name of subsystem.
+            offset: If True, offsets are used instead of absolute focus values.
+        """
         self.telsubsys = telsubsys
-        
+        self.offset = offset
+        self.guess = 40
+
         #TODO: should go somewhere in a subclass
         self.logger=logger
         self.logger.sh.setLevel(level)
-        
+
+        self._source_detection = SepSourceDetection()
+        self._focus_series = PhotometryFocusSeries(SepSourceDetection, radius_column="kronrad")
+
     async def offset(self, offset):
         try:
            self.logger.debug(f"foc move to {offset} um")
@@ -30,23 +50,32 @@ class Focus():
            self.logger.error(ex)
            raise ex
 
-    async def fine(self, exptime):
+    async def fine(self, guess=44, count: int = 3, step: float = 5.0, exposure_time: float = 5.0):
         try:
-            files = {}
-            for p in [400, 200, 100, 0, -100]: #TODO: implement some focusing that makes sense.
-                
-                self.logger.debug(f"foc move to {p}")
-                await self.telsubsys.foc.moveAbsolute(p)
-                
-                self.logger.debug(f"expose {exptime}")
-                rc = await self.telsubsys.agc.expose(exptime)
-                for camera in rc:
-                    if files.get(camera, None):
-                       files[camera].append(rc[camera]["filename"])
-                    else:
-                       files[camera] = [rc[camera]["filename"]]
+            self._focus_series.reset()
 
-            self.logger.info(f"{files}")
+            # define array of focus values to iterate
+            if self.offset:
+                current = self.telsubsys.foc.getPosition()
+                await self.telsubsys.foc.moveRelative(count * step)
+                focus_values = np.linspace(0, 2 * count * step, 2 * count + 1)
+            else:
+                focus_values = np.linspace(self.guess - count * step, self.guess + count * step, 2 * count + 1)
+
+            for foc in focus_values:
+                if self.offset:
+                    await self.telsubsys.foc.moveRelative(foc)
+                else:
+                    await self.telsubsys.foc.moveAbsolute(foc)
+                ef, wf = (await self.telsubsys.agc.expose(exposure_time)).flatten().unpack("east.filename", "west.filename")
+                ei = await self._source_detection(Image.from_file(ef))
+                self.logger.info(f"{foc} {ef} {len(ei.catalog)}")
+#                print(ei.catalog)
+
+                if len(ei.catalog):
+                    await self._focus_series.analyse_image(ei, foc)
+
+            return self._focus_series.fit_focus()
 
         except Exception as ex:
            self.logger.error(ex)
