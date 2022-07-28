@@ -7,6 +7,8 @@
 
 
 import asyncio
+from typing import Optional, Callable
+
 import numpy as np
 from math import nan
 
@@ -50,7 +52,14 @@ class Focus():
            self.logger.error(ex)
            raise ex
 
-    async def fine(self, guess=44, count: int = 3, step: float = 5.0, exposure_time: float = 5.0):
+    async def fine(
+        self,
+        guess: float=44,
+        count: int = 3,
+        step: float = 5.0,
+        exposure_time: float = 5.0,
+        callback: Optional[Callable[..., None]] = None
+    ):
         try:
             self._focus_series.reset()
 
@@ -69,6 +78,9 @@ class Focus():
                     await self.telsubsys.foc.moveAbsolute(foc)
                 ef, wf = (await self.telsubsys.agc.expose(exposure_time)).flatten().unpack("east.filename", "west.filename")
                 ei = await self._source_detection(Image.from_file(ef))
+                wi = await self._source_detection(Image.from_file(wf))
+                if callback:
+                    callback(ei, wi)
                 self.logger.info(f"{foc} {ef} {len(ei.catalog)}")
 #                print(ei.catalog)
 
