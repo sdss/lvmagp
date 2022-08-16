@@ -46,15 +46,18 @@ class PhotometryFocusSeries(FocusSeries):
 
         # filter
         sources = image.catalog
+        sources.sort(self._radius_col)
+        sources.reverse()
+
         if sources is None:
             return
-        sources = sources[sources["ellipticity"] < 0.1]
-        sources = sources[sources["peak"] > 1000]
+#        sources = sources[sources["ellipticity"] < 0.1]
+#        sources = sources[sources["peak"] > 1000]
         sources = sources[sources[self._radius_col] > 0]
 
         # calculate median radius
-        radius = np.median(sources[self._radius_col])
-        radius_err = np.std(sources[self._radius_col])
+        radius = np.median(sources[self._radius_col[:20]])
+        radius_err = np.std(sources[self._radius_col[:20]])
 
         # log it
         log.info("Found median radius of %.1f+-%.1f.", radius, radius_err)
