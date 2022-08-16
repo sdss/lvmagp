@@ -25,7 +25,7 @@ from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSerie
 
 
 class Focus():
-    def __init__(self, telsubsys, offset: bool = False, guess:float = 50, logger = get_logger("lvm_tel_focus"), level = INFO):
+    def __init__(self, telsubsys, offset: bool = False, guess:float = 42, logger = get_logger("lvm_tel_focus"), level = INFO):
         """Initialize a focus system.
 
         Args:
@@ -33,8 +33,8 @@ class Focus():
             offset: If True, offsets are used instead of absolute focus values.
         """
         self.telsubsys = telsubsys
-        self.offset = offset
-        self.guess = 40
+        self.fine_offset = offset
+        self.fine_guess = 42
 
         #TODO: should go somewhere in a subclass
         self.logger=logger
@@ -64,15 +64,15 @@ class Focus():
             self._focus_series.reset()
 
             # define array of focus values to iterate
-            if self.offset:
+            if self.fine_offset:
                 current = self.telsubsys.foc.getPosition()
                 await self.telsubsys.foc.moveRelative(count * step)
                 focus_values = np.linspace(0, 2 * count * step, 2 * count + 1)
             else:
-                focus_values = np.linspace(self.guess - count * step, self.guess + count * step, 2 * count + 1)
+                focus_values = np.linspace(self.fine_guess - count * step, self.fine_guess + count * step, 2 * count + 1)
 
             for foc in focus_values:
-                if self.offset:
+                if self.fine_offset:
                     await self.telsubsys.foc.moveRelative(foc)
                 else:
                     await self.telsubsys.foc.moveAbsolute(foc)
