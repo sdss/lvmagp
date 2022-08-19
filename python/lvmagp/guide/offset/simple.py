@@ -6,6 +6,9 @@ from lvmagp.images import Image
 from lvmagp.images.processors.detection import SourceDetection
 from lvmagp.guide.offset.base import GuideOffset
 
+from photutils.centroids import centroid_quadratic
+
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -17,17 +20,13 @@ class GuideOffsetSimple(GuideOffset):
         """Initialize"""
 
         self.source_detection: SourceDetection = source_detection()
-        self.reset()
+        self.reference_centroids = None
 
-    def reset(self) -> None:
-        """Reset reference image."""
-        self.reference_stars = None
-        self.lastest_stars = None
 
-    async def analyse_image(self, images: List[Image]) -> None:
+    async def reference_images(self, images: List[Image]) -> None:
         """Analyse given images."""
 
-        self.lastest_stars = []
+        self.reference_centroids = []
 
         # do photometry
         for img in images:
@@ -36,21 +35,33 @@ class GuideOffsetSimple(GuideOffset):
             sources = image.catalog
             sources.sort("peak")
             sources.reverse()
-            self.lastest_stars.append(sources[:7])
+            sources = sources[:3]
+            ref = np.array([sources['x'], sources['y']]).transpose()
+            self.reference_centroids.append(np.array([centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=9) for x,y in ref]))
 
-        if not self.reference_stars:
-            print("update ref")
-            self.reference_stars = self.lastest_stars
 
-    async def find_offset(self) -> Tuple[float, float]:
+
+    async def find_offset(self, images: List[Image]) -> Tuple[float, float]:
         """ Find guide offset """
 
-        print(self.lastest_stars[0])
-        print(self.reference_stars[0])
+        diff_centroids = []
 
-        rs = np.array([self.reference_stars[0]['x'], self.reference_stars[0]['y']])
-        ls = np.array([self.lastest_stars[0]['x'], self.lastest_stars[0]['y']])
-        print(rs-ls)
+        try:
+            for idx, img in enumerate(images):
+                current_centroids = np.array([centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=9) for x,y in self.reference_centroids[idx]])
+                diff_centroids.append(self.reference_centroids[idx]-current_centroids)
+
+            print(f"{diff_centroids}")
+
+        except Eception as ex:
+            print("error {ex}")
+
+        #print(self.lastest_stars[0])
+        #print(self.reference_stars[0])
+
+        #rs = np.array([self.reference_stars[0]['x'], self.reference_stars[0]['y']])
+        #ls = np.array([self.lastest_stars[0]['x'], self.lastest_stars[0]['y']])
+        #print(rs-ls)
 
 
 

@@ -51,16 +51,14 @@ class GuiderWorker():
 
             if exptime is nan: exptime = self.exptime
 
-            self.offsetcalc.reset()
             reference_images = await self.expose(exptime)
-            await self.offsetcalc.analyse_image(reference_images)
+            await self.offsetcalc.reference_images(reference_images)
 
             self.logger.debug(f"activate guiding {self.statemachine.state}")
             while self.statemachine.state in (ActorState.GUIDE, ActorState.PAUSE):
 
                 images = await self.expose(exptime)
-                await self.offsetcalc.analyse_image(images)
-                await self.offsetcalc.find_offset()
+                await self.offsetcalc.find_offset(images)
                 #self.logger.debug(f"reading image {images}")
                 # for debugging
                 await asyncio.sleep(1.0)
