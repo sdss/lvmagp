@@ -27,7 +27,7 @@ class GuideOffsetSimple(GuideOffset):
     async def analyse_image(self, images: List[Image]) -> None:
         """Analyse given images."""
 
-        self.sel_stars=[]
+        self.lastest_stars = []
 
         # do photometry
         for img in images:
@@ -39,10 +39,20 @@ class GuideOffsetSimple(GuideOffset):
             self.lastest_stars.append(sources[:7])
 
         if not self.reference_stars:
+            print("update ref")
             self.reference_stars = self.lastest_stars
 
     async def find_offset(self) -> Tuple[float, float]:
         """ Find guide offset """
+
+        print(self.lastest_stars[0])
+        print(self.reference_stars[0])
+
+        rs = np.array([self.reference_stars[0]['x'], self.reference_stars[0]['y']])
+        ls = np.array([self.lastest_stars[0]['x'], self.lastest_stars[0]['y']])
+        print(rs-ls)
+
+
 
     #def fit_focus(self) -> Tuple[float, float]:
         #"""Fit focus from analysed images
