@@ -24,8 +24,6 @@ from lvmagp.guide.worker import GuiderWorker
 __all__ = ["LvmagpActor"]
 
 
-SUBSYSTEMS=0
-
 class LvmagpActor(AMQPActor):
     """AGP actor.
     In addition to the normal arguments and keyword parameters for
@@ -41,8 +39,9 @@ class LvmagpActor(AMQPActor):
     ):
         super().__init__(*args, version=__version__, **kwargs)
 
-        self.guider = GuiderWorker(logger=self.log)
         self.statemachine = ActorStateMachine()
+        self.telsubsystems = None
+        self.guider = None
         self.focus = None
 
         
@@ -54,8 +53,6 @@ class LvmagpActor(AMQPActor):
         }
 
         self.load_schema(self.schema, is_file=False)
-
-        self.parser_args = [ None ]
 
         if kwargs['verbose']:
             self.log.sh.setLevel(DEBUG)
@@ -77,11 +74,10 @@ class LvmagpActor(AMQPActor):
 
         Proxy.setDefaultAmqpc(self)
         
-        telsubsystems = await lvm.from_string(self.config["ag"]["system"])
-        
-        self.parser_args[SUBSYSTEMS] = telsubsystems
-        self.focus = Focus(telsubsystems, level=DEBUG)
- 
+        self.telsubsystems = await lvm.from_string(self.config["ag"]["system"]).start()
+        self.guider = GuiderWorker(self.telsubsystems, self.statemachine, logger=self.log)
+        self.focus = Focus(self.telsubsystems, level=DEBUG)
+
         self.log.debug("Start done")
 
 

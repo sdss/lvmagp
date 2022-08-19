@@ -17,11 +17,11 @@ class ActorState(enum.Enum):
     """Enumeration of states."""
 
     IDLE = "IDLE"
-    STARTED = "STARTED"
+    START = "START"
     STOP = "STOP"
     PAUSE = "PAUSE"
-    GUIDING = "GUIDING"
-    FOCUSING = "FOCUSING"
+    GUIDE = "GUIDE"
+    FOCUS = "FOCUS"
 
 class WrongStateTypeException(Exception):
     """The state should be of type ActorState"""
@@ -48,7 +48,16 @@ class ActorStateMachine:
     async def start(self, coro):
         await self.stop()
         self.task = asyncio.create_task(coro)
-        self.state = ActorState.STARTED
+        self.state = ActorState.START
+
+    async def pause(self, pause:bool):
+        if not self.task:
+            raise WrongStateTypeException()
+
+        if pause:
+            self.state = ActorState.PAUSE
+        else:
+            self.state = ActorState.GUIDE
 
     async def stop(self):
         if not self.task:

@@ -16,10 +16,9 @@ from lvmagp.exceptions import LvmagpIsNotIdle
 
 
 @parser.command("focusOffset")
-@click.argument("offset", type=float)
+@click.argument("OFFSET", type=float)
 async def focusOffset(
     command: Command,
-    telsubsystems,
     offset: float,
 ):
     """Focus offest"""
@@ -39,19 +38,20 @@ async def focusOffset(
 @click.argument("EXPOTIME", type=float, default=10.0)
 async def focusFine(
     command: Command,
-    telsubsystems,
     expotime: float,
 ):
     """Focus fine"""
     try:
         logger = command.actor.log
         actor_statemachine = command.actor.statemachine
+        telsubsystems = command.actor.telsubsystems
+
         focus = command.actor.focus
 
         if not actor_statemachine.isIdle():
             return command.fail(error = LvmagpIsNotIdle(), state = actor_statemachine.state.value)
 
-        actor_statemachine.state = ActorState.FOCUSING
+        actor_statemachine.state = ActorState.FOCUS
         command.info(state = actor_statemachine.state.value)
         
         logger.debug(f"start focusing {actor_statemachine.state.value} {await telsubsystems.foc.status()}")
@@ -68,7 +68,6 @@ async def focusFine(
 @parser.command("focusNominal")
 async def focusNominal(
     command: Command,
-    telsubsystems,
 ):
     """Focus nominal"""
     try:

@@ -2,6 +2,9 @@ import asyncio
 
 import click
 import numpy as np
+
+from logging import DEBUG
+
 from clu.command import Command
 
 from . import parser
@@ -11,52 +14,97 @@ from lvmagp.exceptions import LvmagpIsNotIdle
 from lvmagp.guide.worker import GuiderWorker
 from math import nan
 
+
+#@parser.command("guide", context_settings=dict(
+    #ignore_unknown_options=True,)
+#)
+#@click.argument("cmd", type=click.Choice(['start', 'stop', 'pause', 'cont']), required=True) #
+#@click.argument('extra_opts', nargs=-1, type=click.UNPROCESSED)
+#def guide(
+    #command: Command,
+    #cmd,
+    #extra_opts
+#):
+    #"""A wrapper around Python's extra_opts."""
+    #logger = command.actor.log
+
+    #d = dict([item.strip('--').split('=') for item in extra_opts])
+    #logger.debug(f"{cmd} {d}")
+
+
+
 @parser.command("guideStart")
-@click.argument("EXPTIME", type=float, default=nan) #
+@click.argument("exptime", type=float, default=nan)
+@click.option("--pause", type=bool, default=False)
 async def guideStart(
     command: Command,
-    telsubsystems,
     exptime: float,
+    pause: bool,
 ):
     """Start guiding"""
     logger = command.actor.log
-    actor_statemachine = command.actor.statemachine
+    statemachine = command.actor.statemachine
+    telsubsystems = command.actor.telsubsystems
 
     guider = command.actor.guider
 
     try:
-        if not actor_statemachine.isIdle():
-            return command.fail(error = LvmagpIsNotIdle(), state = actor_statemachine.state)
+        if not statemachine.isIdle():
+            return command.fail(error = LvmagpIsNotIdle(), state = statemachine.state)
         
-        await actor_statemachine.start(guider.work(telsubsystems, actor_statemachine, exptime))
+        await statemachine.start(guider.work(exptime, pause))
 
-        logger.debug(f"start guiding {actor_statemachine.state} {await telsubsystems.foc.status()}")
+        logger.debug(f"start guiding {statemachine.state} {await telsubsystems.foc.status()}")
 
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = actor_statemachine.state.value)
+    return command.finish(state = statemachine.state.value)
             
+@parser.command("guidePause")
+@click.argument("pause", type=bool, default=True)
+async def guidePause(
+    command: Command,
+    pause: bool,
+):
+    """Pause guiding"""
+    logger = command.actor.log
+    statemachine = command.actor.statemachine
+    telsubsystems = command.actor.telsubsystems
+
+    try:
+        logger = command.actor.log
+        statemachine = command.actor.statemachine
+
+        await statemachine.pause(pause)
+
+        logger.debug(f"state guiding {statemachine.state}")
+
+    except Exception as e:
+        return command.fail(error=e)
+
+    return command.finish(state = statemachine.state.value)
+
 
 @parser.command("guideStop")
 async def guideStop(
     command: Command,
-    telsubsystems,
 ):
     """Stop guiding"""
+    logger = command.actor.log
+    statemachine = command.actor.statemachine
+    telsubsystems = command.actor.telsubsystems
+
     try:
-        logger = command.actor.log
-        actor_statemachine = command.actor.statemachine
+        logger.debug(f"stop guiding {statemachine.state}")
 
-        logger.debug(f"stop guiding {actor_statemachine.state}")
-
-        await actor_statemachine.stop()
+        await statemachine.stop()
 
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = actor_statemachine.state.value)
+    return command.finish(state = statemachine.state.value)
         
 
-        
+
 

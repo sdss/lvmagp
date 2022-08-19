@@ -12,7 +12,6 @@ from lvmagp import exceptions
 @parser.command("status")
 async def status(
     command: Command,
-    telsubsystems,
 ):
     """Status information"""
     actor_statemachine = command.actor.statemachine

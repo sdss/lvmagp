@@ -2,43 +2,70 @@ import asyncio
 
 import click
 import numpy as np
+
+from sdsstools import get_logger
+from sdsstools.logger import SDSSLogger
 from clu.command import Command
 
+from lvmtipo.actors import lvm
+
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
+from lvmagp.images import Image
+from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
+from lvmagp.images.processors.astrometry import AstrometryDotNet
+
+from lvmagp.guide.offset import GuideOffsetSimple
 
 from math import nan
 
 # TODO: this whould be good to have in clu
 from basecam.notifier import EventNotifier
 
-# add some config parameters and more.
 
-
-# TODO: improve it.
 class GuiderWorker():
-    def __init__(self, logger):
+    def __init__(self, telsubsystems: lvm.TelSubSystem, statemachine: ActorStateMachine, logger:SDSSLogger=get_logger("guiding")):
+        self.telsubsystems = telsubsystems
+        self.statemachine = statemachine
         self.logger = logger
         self.notifier = EventNotifier()
         self.exptime = 10.0
-    
-    async def work(self, telsubsystems, actor_statemachine, exptime=nan):
-        
-        actor_statemachine.state = ActorState.GUIDING
-        if exptime is nan: exptime = self.exptime
+        self.logger.info("init")
+        self.offsetcalc = GuideOffsetSimple(SepSourceDetection)
 
-        self.logger.debug(f"active fake guiding {actor_statemachine.state}")
-        while actor_statemachine.state == ActorState.GUIDING:
+    async def expose(self, exptime=nan):
             try:
-                rc = await telsubsystems.agc.expose(exptime)
-                files = {}
-                for camera in rc:
-                    files[camera] = rc[camera]["filename"]
-                    self.logger.debug(f"{camera}: {files[camera]}")
-                
-                
+                rc = await self.telsubsystems.agc.expose(exptime)
+                return [ Image.from_file(v["filename"]) for k,v in rc.items() ]
+
             except Exception as e:
                 self.logger.error(e)
+                raise e
 
-            await asyncio.sleep(1.0)
+            return images
 
+
+    async def work(self, exptime=nan, pause=False):
+
+        try:
+            self.statemachine.state = ActorState.GUIDE if not pause else ActorState.PAUSE
+
+            if exptime is nan: exptime = self.exptime
+
+            self.offsetcalc.reset()
+            reference_images = await self.expose(exptime)
+            await self.offsetcalc.analyse_image(reference_images)
+
+            self.logger.debug(f"activate guiding {self.statemachine.state}")
+            while self.statemachine.state in (ActorState.GUIDE, ActorState.PAUSE):
+
+                images = await self.expose(exptime)
+                await self.offsetcalc.analyse_image(reference_images)
+                await self.offsetcalc.find_offset()
+                #self.logger.debug(f"reading image {images}")
+                # for debugging
+                await asyncio.sleep(1.0)
+
+        except Exception as e:
+            self.logger.error(f"error: {e}")
+            self.statemachine.state = ActorState.IDLE
 
