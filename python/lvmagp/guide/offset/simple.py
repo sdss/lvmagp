@@ -35,7 +35,7 @@ class GuideOffsetSimple(GuideOffset):
             sources = image.catalog
             sources.sort("peak")
             sources.reverse()
-            sources = sources[:3]
+            sources = sources[:42]
             ref = np.array([sources['x'], sources['y']]).transpose()
             self.reference_centroids.append(np.array([centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=9) for x,y in ref]))
 
@@ -48,13 +48,14 @@ class GuideOffsetSimple(GuideOffset):
 
         try:
             for idx, img in enumerate(images):
-                current_centroids = np.array([centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=9) for x,y in self.reference_centroids[idx]])
-                diff_centroids.append(self.reference_centroids[idx]-current_centroids)
+                current_centroids = [centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=7) for x,y in self.reference_centroids[idx]]
+                diff_centroids.append(self.reference_centroids[idx]-np.array(current_centroids))
 
-            print(f"{diff_centroids}")
+#            print(f"{diff_centroids}")
+            print(f"west: {np.median(diff_centroids[0], axis=0)} east: {np.median(diff_centroids[1], axis=0)}")
 
-        except Eception as ex:
-            print("error {ex}")
+        except Exception as ex:
+            print(f"error {ex}")
 
         #print(self.lastest_stars[0])
         #print(self.reference_stars[0])

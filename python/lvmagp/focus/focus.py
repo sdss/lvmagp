@@ -100,7 +100,7 @@ class Focus():
            await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
         
         except Exception as ex:
-           self.logger.error(ex)
+           self.logger.error(f"{ex}")
            raise ex
 
 
