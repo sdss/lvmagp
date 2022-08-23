@@ -59,8 +59,6 @@ class GuiderWorker():
 
                 images = await self.expose(exptime)
                 await self.offsetcalc.find_offset(images)
-                #self.logger.debug(f"reading image {images}")
-                # for debugging
                 await asyncio.sleep(1.0)
 
         except Exception as e:

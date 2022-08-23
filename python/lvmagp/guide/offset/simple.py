@@ -57,41 +57,5 @@ class GuideOffsetSimple(GuideOffset):
         except Exception as ex:
             print(f"error {ex}")
 
-        #print(self.lastest_stars[0])
-        #print(self.reference_stars[0])
-
-        #rs = np.array([self.reference_stars[0]['x'], self.reference_stars[0]['y']])
-        #ls = np.array([self.lastest_stars[0]['x'], self.lastest_stars[0]['y']])
-        #print(rs-ls)
-
-
-
-    #def fit_focus(self) -> Tuple[float, float]:
-        #"""Fit focus from analysed images
-
-        #Returns:
-            #Tuple of new focus and its error
-        #"""
-
-        ## get data
-        #focus = [d["focus"] for d in self._data]
-        #r = [d["r"] for d in self._data]
-        #rerr = [d["rerr"] for d in self._data]
-
-        ## fit focus
-        #try:
-            #foc, err = fit_hyperbola(focus, r, rerr)
-        #except (RuntimeError, RuntimeWarning):
-            #raise ValueError("Could not find best focus.")
-
-        ## get min and max foci
-        #min_focus = np.min(focus)
-        #max_focus = np.max(focus)
-        #if foc < min_focus or foc > max_focus:
-            #raise ValueError("New focus out of bounds: {0:.3f}+-{1:.3f}mm.".format(foc, err))
-
-        ## return it
-        #return float(foc), float(err)
-
 
 __all__ = ["GuideOffsetSimple"]
