@@ -25,7 +25,15 @@ from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSerie
 
 
 class Focus():
-    def __init__(self, telsubsys, offset: bool = False, guess:float = 42, logger = get_logger("lvm_tel_focus"), level = INFO):
+    def __init__(
+        self, 
+        telsubsys, offset: bool = False,
+        guess:float = 42,
+        source_detection = SepSourceDetection(),
+        radius_column = "fwhm",
+        logger = get_logger("lvm_tel_focus"),
+        level = INFO
+    ):
         """Initialize a focus system.
 
         Args:
@@ -40,8 +48,8 @@ class Focus():
         self.logger=logger
         self.logger.sh.setLevel(level)
 
-        self._source_detection = SepSourceDetection()
-        self._focus_series = PhotometryFocusSeries(SepSourceDetection, radius_column="kronrad")
+        self._source_detection = source_detection
+        self._focus_series = PhotometryFocusSeries(SepSourceDetection, radius_column=radius_column)
 
     async def offset(self, offset):
         try:
