@@ -14,24 +14,51 @@ from lvmagp.images import Image
 from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
 from lvmagp.images.processors.astrometry import AstrometryDotNet
 
-from lvmagp.guide.offset import GuideOffsetSimple
+from lvmagp.guide.offset import GuideOffset, GuideOffsetSimple
 
 from math import nan
 
 # TODO: this whould be good to have in clu
 from basecam.notifier import EventNotifier
 
+#async def statusTick(command, pwi: PWI4, delta_time):
+
+    #lock = command.actor.statusLock
+
+    #while True:
+        #try:
+            #if not lock.locked():
+                #status = await statusPWI(pwi, lock)
+
+                #command.actor.write(
+                        #"i",
+                        #{
+                            #"is_slewing": status.mount.is_slewing,
+                        #}
+                #)
+
+        #except Exception as e:
+
+            #command.actor.write("i", {"error": e})
+
+        #await asyncio.sleep(delta_time)
 
 class GuiderWorker():
-    def __init__(self, telsubsystems: lvm.TelSubSystem, statemachine: ActorStateMachine, logger:SDSSLogger=get_logger("guiding")):
+    def __init__(self, 
+                 telsubsystems: lvm.TelSubSystem, 
+                 statemachine: ActorStateMachine, 
+                 offsetcalc: GuideOffset = GuideOffsetSimple(SepSourceDetection),
+                 logger: SDSSLogger = get_logger("guiding")
+                ):
         self.telsubsystems = telsubsystems
         self.statemachine = statemachine
         self.logger = logger
         self.notifier = EventNotifier()
         self.exptime = 10.0
-        self.logger.info("init")
-        self.offsetcalc = GuideOffsetSimple(SepSourceDetection)
+        self.offsetcalc = offsetcalc
 
+        self.logger.info("init")
+       
     async def expose(self, exptime=nan):
             try:
                 rc = await self.telsubsystems.agc.expose(exptime)
@@ -58,7 +85,8 @@ class GuiderWorker():
             while self.statemachine.state in (ActorState.GUIDE, ActorState.PAUSE):
 
                 images = await self.expose(exptime)
-                await self.offsetcalc.find_offset(images)
+                offsets = await self.offsetcalc.find_offset(images)
+                self.logger.info(f"{offsets}")
                 await asyncio.sleep(1.0)
 
         except Exception as e:

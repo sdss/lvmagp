@@ -21,6 +21,8 @@ class GuideOffsetSimple(GuideOffset):
 
         self.source_detection: SourceDetection = source_detection()
         self.reference_centroids = None
+        self.max_sources = 42
+        self.search_boxsize = 9
 
 
     async def reference_images(self, images: List[Image]) -> None:
@@ -35,11 +37,11 @@ class GuideOffsetSimple(GuideOffset):
             sources = image.catalog
             sources.sort("peak")
             sources.reverse()
-            sources = sources[:42]
+            sources = sources[:self.max_sources]
             ref = np.array([sources['x'], sources['y']]).transpose()
-            self.reference_centroids.append(np.array([centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=9) for x,y in ref]))
-
-
+#            print(f"{ref}")
+            self.reference_centroids.append(np.array([centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=self.search_boxsize) for x, y in ref]))
+        print(f"{len(self.reference_centroids[0])} {len(self.reference_centroids[1])}")
 
     async def find_offset(self, images: List[Image]) -> Tuple[float, float]:
         """ Find guide offset """
@@ -48,11 +50,14 @@ class GuideOffsetSimple(GuideOffset):
 
         try:
             for idx, img in enumerate(images):
-                current_centroids = [centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=7) for x,y in self.reference_centroids[idx]]
-                diff_centroids.append(self.reference_centroids[idx]-np.array(current_centroids))
+                current_centroids = [centroid_quadratic(img.data, xpeak=x, ypeak=y, search_boxsize=self.search_boxsize) for x, y in self.reference_centroids[idx]]
+#                print(f"{len(self.reference_centroids[idx])} {len(np.array(current_centroids))}")
+                diff_centroids.append(self.reference_centroids[idx] - np.array(current_centroids))
+#                print(f"{len(current_centroids)}")
 
-#            print(f"{diff_centroids}")
+ #           print(f"{diff_centroids}")
             print(f"west: {np.median(diff_centroids[0], axis=0)} east: {np.median(diff_centroids[1], axis=0)}")
+            return (np.median(diff_centroids[0] + diff_centroids[1], axis=0))
 
         except Exception as ex:
             print(f"error {ex}")
