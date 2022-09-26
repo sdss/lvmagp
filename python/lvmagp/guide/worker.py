@@ -87,7 +87,7 @@ class GuiderWorker():
                 images = await self.expose(exptime)
                 offsets = await self.offsetcalc.find_offset(images)
                 self.logger.info(f"{offsets}")
-                if self.statemachine.state == ActorState.GUIDE and (abs(offsets) > [1.0, 1.0]).any():
+                if self.statemachine.state == ActorState.GUIDE and (abs(offsets) > [0.5, 0.5]).any():
                     offsets *= -0.95
                     self.logger.debug(f"correcting {offsets}")
                     await self.telsubsystems.pwi.offset(ra_add_arcsec = offsets[0], dec_add_arcsec = offsets[1])
