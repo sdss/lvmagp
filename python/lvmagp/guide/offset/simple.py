@@ -62,13 +62,11 @@ class GuideOffsetSimple(GuideOffset):
                    if not np.isnan(centroid).any():
                        diff_cen.append(ref_cen[c_idx] - centroid)
                 diff_centroids.append(np.array(diff_cen))
-            print(f"{images[0].header['RA']/15}h:{images[0].header['DEC']}d")
-#            print(f"{images[0].header['PIXELSC']}, {images[0].header['BINX']}")
             print(f"{images[0].header['CAMNAME']}: {np.median(diff_centroids[0], axis=0)} {images[1].header['CAMNAME']}: {np.median(diff_centroids[1], axis=0)}")
             diff =  np.median(np.concatenate((diff_centroids[0], diff_centroids[1])), axis=0)
             diff *= [images[0].header['BINX'], images[0].header['BINY']]
             diff *= [images[0].header['PIXELSC'], images[0].header['PIXELSC']]
-            diff /= [cos( np.deg2rad(images[0].header['DEC'])), 1.0]
+            diff /= [cos(np.deg2rad(images[0].header['DEC'])), 1.0]
             return diff
         
 
