@@ -36,10 +36,12 @@ from math import nan
 @parser.command("guideStart")
 @click.argument("exptime", type=float, default=nan)
 @click.option("--pause", type=bool, default=False)
+@click.option("--force", type=bool, default=False)
 async def guideStart(
     command: Command,
     exptime: float,
     pause: bool,
+    force: bool,
 ):
     """Start guiding"""
     logger = command.actor.log
@@ -49,8 +51,8 @@ async def guideStart(
     guider = command.actor.guider
 
     try:
-        if not statemachine.isIdle():
-            return command.fail(error = LvmagpIsNotIdle(), state = statemachine.state)
+        if not force and not statemachine.isIdle():
+            return command.fail(error = LvmagpIsNotIdle(), state = statemachine.state.name)
         
         await statemachine.start(guider.work(exptime, pause))
 
