@@ -43,13 +43,13 @@ class Focus():
         self.telsubsys = telsubsys
         self.fine_offset = offset
         self.fine_guess = 42
+        self.radius_column = radius_column
 
         #TODO: should go somewhere in a subclass
         self.logger=logger
         self.logger.sh.setLevel(level)
 
         self._source_detection = source_detection
-        self._focus_series = PhotometryFocusSeries(SepSourceDetection, radius_column=radius_column)
 
     async def offset(self, offset):
         try:
@@ -62,14 +62,16 @@ class Focus():
 
     async def fine(
         self,
-        guess: float=44,
+        guess: float = 44,
         count: int = 3,
         step: float = 5.0,
         exposure_time: float = 5.0,
         callback: Optional[Callable[..., None]] = None
     ):
         try:
-            self._focus_series.reset()
+            camnum = len((await self.telsubsys.agc.status()).keys())
+
+            focus_series = [PhotometryFocusSeries(self._source_detection, radius_column=self.radius_column) for c in range(camnum)]
 
             # define array of focus values to iterate
             if self.fine_offset:
@@ -84,18 +86,18 @@ class Focus():
                     await self.telsubsys.foc.moveRelative(foc)
                 else:
                     await self.telsubsys.foc.moveAbsolute(foc)
-                ef, wf = (await self.telsubsys.agc.expose(exposure_time)).flatten().unpack("east.filename", "west.filename")
-                ei = await self._source_detection(Image.from_file(ef))
-                wi = await self._source_detection(Image.from_file(wf))
+
+                file_names = (await self.telsubsys.agc.expose(exposure_time)).flatten().unpack("*.filename")
+                imgs = [Image.from_file(f) for f in file_names]
+
+                for idx, img in enumerate(imgs):
+                    imgs[idx] = await focus_series[idx].analyse_image(img, foc)
+                    self.logger.info(f"cam: {img.header['CAMNAME']} focus: {foc} srcs: {len(imgs[idx].catalog)}")
+
                 if callback:
-                    callback(ei, wi)
-                self.logger.info(f"{foc} {ef} {len(ei.catalog)}")
-#                print(ei.catalog)
+                    callback(imgs)
 
-                if len(ei.catalog):
-                    await self._focus_series.analyse_image(ei, foc)
-
-            return self._focus_series.fit_focus()
+            return [focus_series[idx].fit_focus() for idx in range(camnum)]
 
         except Exception as ex:
            self.logger.error(ex)

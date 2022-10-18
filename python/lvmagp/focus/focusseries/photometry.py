@@ -6,7 +6,7 @@ from lvmagp.images.processors.detection import SourceDetection
 from lvmagp.focus.focusseries.base import FocusSeries
 from lvmagp.focus.curvefit import fit_hyperbola
 from lvmagp.images import Image
-
+from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -17,7 +17,7 @@ class PhotometryFocusSeries(FocusSeries):
 
     __module__ = "lvmagp.utils.focusseries"
 
-    def __init__(self, source_detection: SourceDetection, radius_column: str = "radius", **kwargs: Any):
+    def __init__(self, source_detection, radius_column: str = "radius", **kwargs: Any):
         """Initialize a new projection focus series.
 
         Args:
@@ -25,7 +25,7 @@ class PhotometryFocusSeries(FocusSeries):
         """
 
         # stuff
-        self._source_detection: SourceDetection = source_detection()
+        self._source_detection: SourceDetection = source_detection
         self._radius_col = radius_column
         self._data: List[Dict[str, float]] = []
 
@@ -42,15 +42,15 @@ class PhotometryFocusSeries(FocusSeries):
         """
 
         # do photometry
-        await self._source_detection(image)
+        image = await self._source_detection(image)
+        sources = image.catalog
+        if sources is None:
+            return image
 
         # filter
-        sources = image.catalog
+
         sources.sort(self._radius_col)
         sources.reverse()
-
-        if sources is None:
-            return
 #        sources = sources[sources["ellipticity"] < 0.1]
 #        sources = sources[sources["peak"] > 1000]
         sources = sources[sources[self._radius_col] > 0]
@@ -64,6 +64,8 @@ class PhotometryFocusSeries(FocusSeries):
 
         # add to list
         self._data.append({"focus": focus_value, "r": radius, "rerr": radius_err})
+
+        return image
 
     def fit_focus(self) -> Tuple[float, float]:
         """Fit focus from analysed images

@@ -6,6 +6,7 @@ import numpy as np
 from sdsstools import get_logger
 from sdsstools.logger import SDSSLogger
 from clu.command import Command
+from clu.actor import AMQPActor
 
 from lvmtipo.actors import lvm
 
@@ -45,11 +46,13 @@ from basecam.notifier import EventNotifier
 
 class GuiderWorker():
     def __init__(self, 
-                 telsubsystems: lvm.TelSubSystem, 
+                 telsubsystems: lvm.TelSubSystem,
                  statemachine: ActorStateMachine, 
                  offsetcalc: GuideOffset = GuideOffsetSimple(SepSourceDetection),
+                 actor: AMQPActor = None,
                  logger: SDSSLogger = get_logger("guiding")
                 ):
+        self.actor=actor
         self.telsubsystems = telsubsystems
         self.statemachine = statemachine
         self.logger = logger
@@ -100,6 +103,19 @@ class GuiderWorker():
             """
             try:
                 self.logger.info(f"{offset}")
+                try:
+                    self.actor.write(
+                            "i",
+                            {
+                                "state": self.statemachine.state.name,
+                                "offset_ra": offset[0],
+                                "offset_dec": offset[1],
+                            }
+                    )
+
+                except Exception as e:
+                    self.actor.write("i", {"error": e})
+
                 if self.statemachine.state == ActorState.GUIDE and (abs(offset) > [0.5, 0.5]).any():
                     offset *= -0.95
                     self.logger.debug(f"correcting {offset}")
