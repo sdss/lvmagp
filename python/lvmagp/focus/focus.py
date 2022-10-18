@@ -73,13 +73,14 @@ class Focus():
 
             focus_series = [PhotometryFocusSeries(self._source_detection, radius_column=self.radius_column) for c in range(camnum)]
 
+
             # define array of focus values to iterate
             if self.fine_offset:
                 current = self.telsubsys.foc.getPosition()
                 await self.telsubsys.foc.moveRelative(count * step)
                 focus_values = np.linspace(0, 2 * count * step, 2 * count + 1)
             else:
-                focus_values = np.linspace(self.fine_guess - count * step, self.fine_guess + count * step, 2 * count + 1)
+                focus_values = np.linspace(guess - count * step, guess + count * step, 2 * count + 1)
 
             for foc in focus_values:
                 if self.fine_offset:
