@@ -1,3 +1,5 @@
+from math import cos
+
 import asyncio
 
 import click
@@ -56,7 +58,7 @@ class GuiderWorker():
         self.notifier = EventNotifier()
         self.exptime = 10.0
         self.offsetcalc = offsetcalc
-
+        
         self.logger.info("init")
        
     async def expose(self, exptime=nan):
@@ -70,8 +72,8 @@ class GuiderWorker():
 
             return images
 
-
-    async def offset_mount(self, offset):
+    # TODO should go in a extra class with base class
+    async def offset_mount(self, offset, images):
             """
             One or more of the following offsets can be specified as a keyword argument:
 
@@ -98,14 +100,34 @@ class GuiderWorker():
             mount_offset(axis0_add_arcsec=-30, axis0_set_rate_arcsec_per_sec=1, transverse_reset=0)
 
             """
+            
+            from astropy.coordinates import EarthLocation,SkyCoord
+            from astropy.time import Time
+            from astropy import units as u
+            from astropy.coordinates import AltAz
+
             try:
+
                 self.logger.info(f"{offset}")
                 if self.statemachine.state == ActorState.GUIDE and (abs(offset) > [0.5, 0.5]).any():
+                    offset *= [images[0].header['BINX'], images[0].header['BINY']]
+                    offset *= [images[0].header['PIXELSC'], images[0].header['PIXELSC']]
+                    offset /= [cos(np.deg2rad(images[0].header['DEC'])), 1.0]
                     offset *= -0.95
                     self.logger.debug(f"correcting {offset}")
-                    #
-#                    await self.telsubsystems.pwi.offset(axis0_add_arcsec = offset[0], axis1_add_arcsec = offset[1])
+
                     await self.telsubsystems.pwi.offset(ra_add_arcsec = offset[0], dec_add_arcsec = offset[1])
+
+                    from lvmtipo.site import Site
+                    site = Site(name = images[0].header['OBSERVAT'])
+                    observing_location = EarthLocation(lat=site.lat, lon=site.long, height=site.alt*u.m)  
+                    observing_time = Time(images[0].header['DATE-OBS'])
+                    aa = AltAz(location=observing_location, obstime=observing_time)
+
+                    coord = SkyCoord()
+                    coord.transform_to(aa)
+
+                    await self.telsubsystems.pwi.offset(axis0_add_arcsec = offset[0], axis1_add_arcsec = offset[1])
 
 
             except Exception as e:
@@ -126,8 +148,10 @@ class GuiderWorker():
             while self.statemachine.state in (ActorState.GUIDE, ActorState.PAUSE):
 
                 images = await self.expose(exptime)
+                print(images[0].header)
+
                 offset = await self.offsetcalc.find_offset(images)
-                await self.offset_mount(offset)
+                await self.offset_mount(offset, images)
                 await asyncio.sleep(1.0)
 
         except Exception as e:

@@ -62,13 +62,16 @@ class Focus():
 
     async def fine(
         self,
-        guess: float=44,
-        count: int = 3,
-        step: float = 5.0,
-        exposure_time: float = 5.0,
+        guess: float=None,
+        count: int = 2,
+        step: float = 1.0,
+        exposure_time: float = 1.0,
         callback: Optional[Callable[..., None]] = None
     ):
         try:
+            if not guess:
+               guess = self.fine_guess
+                        
             self._focus_series.reset()
 
             # define array of focus values to iterate
@@ -77,7 +80,7 @@ class Focus():
                 await self.telsubsys.foc.moveRelative(count * step)
                 focus_values = np.linspace(0, 2 * count * step, 2 * count + 1)
             else:
-                focus_values = np.linspace(self.fine_guess - count * step, self.fine_guess + count * step, 2 * count + 1)
+                focus_values = np.linspace(guess - count * step, guess + count * step, 2 * count + 1)
 
             for foc in focus_values:
                 if self.fine_offset:

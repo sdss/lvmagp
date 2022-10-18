@@ -2,7 +2,7 @@ from typing import Tuple, Dict, List, Any
 import logging
 
 import numpy as np
-from math import cos
+
 
 from lvmagp.images import Image
 from lvmagp.images.processors.detection import SourceDetection
@@ -25,7 +25,6 @@ class GuideOffsetSimple(GuideOffset):
         self.reference_centroids = None
         self.max_sources = 42
         self.search_boxsize = 9
-
 
     async def reference_images(self, images: List[Image]) -> None:
         """Analyse given images."""
@@ -62,11 +61,8 @@ class GuideOffsetSimple(GuideOffset):
                    if not np.isnan(centroid).any():
                        diff_cen.append(ref_cen[c_idx] - centroid)
                 diff_centroids.append(np.array(diff_cen))
-            print(f"{images[0].header['CAMNAME']}: {np.median(diff_centroids[0], axis=0)} {images[1].header['CAMNAME']}: {np.median(diff_centroids[1], axis=0)}")
+            print(f"{images[0].header['CAMNAME']}: {np.median(diff_centroids[0], axis=0)} {images[1].header['CAMNAME']}: {np.median(diff_centroids[1], axis=0)}px")
             diff =  np.median(np.concatenate((diff_centroids[0], diff_centroids[1])), axis=0)
-            diff *= [images[0].header['BINX'], images[0].header['BINY']]
-            diff *= [images[0].header['PIXELSC'], images[0].header['PIXELSC']]
-            diff /= [cos(np.deg2rad(images[0].header['DEC'])), 1.0]
             return diff
         
 
