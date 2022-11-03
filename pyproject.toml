@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sdss-lvmagp"
-version = "0.2.21"
+version = "0.2.22"
 description = "Aquisition and guiding package for SDSS-V LVM"
 authors = ["Hojae Ahn <hojaeahn@khu.ac.kr>"]
 license = "BSD-3-Clause"
