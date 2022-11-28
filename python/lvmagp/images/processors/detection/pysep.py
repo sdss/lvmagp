@@ -1,7 +1,8 @@
 import asyncio
 from functools import partial
 from typing import Tuple, TYPE_CHECKING, Any, Optional
-from astropy.table import Table
+from astropy.table import Table, Column
+
 import logging
 import numpy as np
 import numpy.typing as npt
@@ -164,6 +165,21 @@ class SepSourceDetection(SourceDetection):
         sources["x"] += 1
         sources["y"] += 1
 
+        x, y = x.to_numpy(), y.to_numpy()
+
+        # Create a distance table of point (row) vs point (column)
+        sources_dist = np.sqrt((x - x[:,None])**2 + (y - y[:,None])**2)
+        # The diagonals are 0, as the distance of a point to itself is 0,
+        # but we want that to have a large value so it comes last in sorting
+        np.fill_diagonal(sources_dist, np.inf)
+        # Get the sorted index for each row
+        dist_idx = sources_dist.argsort(axis=1)
+        # add only the nearest
+        dist_next = [sources_dist[idx, dist_idx[idx]][0] for idx in range(len(sources))]
+
+        sources['dist'] = dist_next
+
+
         # pick columns for catalog
         cat = sources[
             [
@@ -183,6 +199,7 @@ class SepSourceDetection(SourceDetection):
                 "fluxrad75",
                 "xwin",
                 "ywin",
+                "dist",
             ]
         ]
 
