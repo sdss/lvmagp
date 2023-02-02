@@ -15,7 +15,6 @@ from lvmtipo.actors import lvm
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
 from lvmagp.images import Image
 from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
-from lvmagp.images.processors.astrometry import AstrometryDotNet
 
 from lvmagp.guide.offset import GuideOffset, GuideOffsetSimple
 
