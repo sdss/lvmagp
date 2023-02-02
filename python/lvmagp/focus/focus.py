@@ -20,7 +20,6 @@ from sdsstools import get_logger
 
 from lvmagp.images import Image
 from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
-from lvmagp.images.processors.astrometry import AstrometryDotNet
 from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSeries
 
 
