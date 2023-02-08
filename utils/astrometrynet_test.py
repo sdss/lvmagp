@@ -66,7 +66,7 @@ images = [ Image.from_file(filename)]
 log.debug("Detect")
 source_count=17
 
-image = await source_detection(images[0])
+image = source_detection(images[0])
 arcsec_per_pixel=1/image.header['PIXELSC']*image.header['BINX']
 
 if image.catalog is None:

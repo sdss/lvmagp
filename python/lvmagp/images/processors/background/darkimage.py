@@ -25,7 +25,7 @@ class DarkImageBackground(Background):
             image: Image.
 
         Returns:
-            Image with subtracted background in float.
+            Background in float.
         """
         ...
 

@@ -55,7 +55,7 @@ class SepSourceDetection(SourceDetection):
         self.clean = clean
         self.clean_param = clean_param
 
-    async def __call__(self, image: Image) -> Image:
+    def __call__(self, image: Image) -> Image:
         """Find stars in given image and append catalog.
 
         Args:
@@ -208,36 +208,36 @@ class SepSourceDetection(SourceDetection):
         img.catalog = Table.from_pandas(cat)
         return img
 
-    @staticmethod
-    def remove_background(
-        data: npt.NDArray[float], mask: Optional[npt.NDArray[float]] = None
-    ) -> Tuple[npt.NDArray[float], "Background"]:
-        """Remove background from image in data.
+    #@staticmethod
+    #def remove_background(
+        #data: npt.NDArray[float], mask: Optional[npt.NDArray[float]] = None
+    #) -> Tuple[npt.NDArray[float], "Background"]:
+        #"""Remove background from image in data.
 
-        Args:
-            data: Data to remove background from.
-            mask: Mask to use for estimating background.
+        #Args:
+            #data: Data to remove background from.
+            #mask: Mask to use for estimating background.
 
-        Returns:
-            Image without background.
-        """
-        import sep
+        #Returns:
+            #Image without background.
+        #"""
+        #import sep
 
-        # get data and make it continuous
-        d = data.astype(float)
+        ## get data and make it continuous
+        #d = data.astype(float)
 
-        # estimate background, probably we need to byte swap
-        try:
-            bkg = sep.Background(d, mask=mask, bw=32, bh=32, fw=3, fh=3)
-        except ValueError as e:
-            d = d.byteswap(True).newbyteorder()
-            bkg = sep.Background(d, mask=mask, bw=32, bh=32, fw=3, fh=3)
+        ## estimate background, probably we need to byte swap
+        #try:
+            #bkg = sep.Background(d, mask=mask, bw=32, bh=32, fw=3, fh=3)
+        #except ValueError as e:
+            #d = d.byteswap(True).newbyteorder()
+            #bkg = sep.Background(d, mask=mask, bw=32, bh=32, fw=3, fh=3)
 
-        # subtract it
-        bkg.subfrom(d)
+        ## subtract it
+        #bkg.subfrom(d)
 
-        # return data without background and background
-        return d, bkg
+        ## return data without background and background
+        #return d, bkg
 
 
 __all__ = ["SepSourceDetection"]

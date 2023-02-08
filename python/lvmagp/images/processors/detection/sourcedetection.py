@@ -10,7 +10,7 @@ class SourceDetection(ImageProcessor, metaclass=ABCMeta):
     __module__ = "lvmagp.images.processors.detection"
 
     @abstractmethod
-    async def __call__(self, image: Image) -> Image:
+    def __call__(self, image: Image) -> Image:
         """Find stars in given image and append catalog.
 
         Args:

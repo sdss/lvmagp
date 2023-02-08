@@ -33,7 +33,7 @@ class GuideOffsetSimple(GuideOffset):
 
         # do photometry
         for img in images:
-            image = await self.source_detection(img)
+            image = self.source_detection(img)
             # filter
             sources = image.catalog
             sources.sort("peak")

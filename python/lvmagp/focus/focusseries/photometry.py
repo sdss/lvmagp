@@ -42,7 +42,7 @@ class PhotometryFocusSeries(FocusSeries):
         """
 
         # do photometry
-        image = await self._source_detection(image)
+        image = self._source_detection(image)
         sources = image.catalog
         if sources is None:
             return image

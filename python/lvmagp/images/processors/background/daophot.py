@@ -1,11 +1,11 @@
 import asyncio
-from functools import partial, reduce
 from typing import Tuple, TYPE_CHECKING, Any, Optional
 
 from photutils.background import Background2D, MedianBackground
 
 from lvmagp.images import Image
 from .background import Background
+
 
 class DaophotBackground(Background):
     """
@@ -90,16 +90,12 @@ Parameters:
             image: Image.
 
         Returns:
-            Image with subtracted background in float.
+            Background in float.
         """
 
-        im = image.copy()
-        bkg = Background2D(im.data,
+        return Background2D(image.data,
                            box_size if box_size else self.box_size,
-                           **{**self.kwargs, **kwargs})
-        im.data = im.data - bkg.background
-
-        return im
+                           **{**self.kwargs, **kwargs}).background
 
 
 

@@ -40,7 +40,7 @@ class DaophotSourceDetection(SourceDetection):
         self.bkg_box_size = bkg_box_size
         self.bkg_filter_size = bkg_filter_size
 
-    async def __call__(self, image: Image) -> Image:
+    def __call__(self, image: Image) -> Image:
         """Find stars in given image and append catalog.
 
         Args:

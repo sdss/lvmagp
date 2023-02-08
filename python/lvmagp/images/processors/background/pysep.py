@@ -1,4 +1,3 @@
-from functools import partial
 from typing import Tuple, TYPE_CHECKING, Any, Optional
 
 import sep
@@ -53,11 +52,7 @@ class SepBackground(Background):
             Image with subtracted background in float.
         """
 
-        im = image.copy()
-        bkg = sep.Background(im.data.astype(float), **{**self.kwargs, **kwargs})
-        im.data = im.data - bkg
-
-        return im
+        return sep.Background(image.data.astype(float), **{**self.kwargs, **kwargs})
 
 
 __all__ = ["SepBackground"]
