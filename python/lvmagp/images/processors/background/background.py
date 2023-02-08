@@ -10,7 +10,7 @@ class Background(ImageProcessor, metaclass=ABCMeta):
     __module__ = "lvmagp.images.processors.background"
 
     @abstractmethod
-    async def __call__(self, image: Image, **kwargs) -> Image:
+    def __call__(self, image: Image, **kwargs) -> Image:
         """Calculate background in given image and append bkg.
 
         Args:

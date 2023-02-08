@@ -18,7 +18,7 @@ class DarkImageBackground(Background):
         """Initializes a wrapper."""
 
 
-    async def __call__(self, image: Image, **kwargs) -> Image:
+    def __call__(self, image: Image, **kwargs) -> Image:
         """return given image substracted with fits dark image.
 
         Args:
