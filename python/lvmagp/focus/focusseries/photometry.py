@@ -17,7 +17,7 @@ class PhotometryFocusSeries(FocusSeries):
 
     __module__ = "lvmagp.utils.focusseries"
 
-    def __init__(self, source_detection, radius_column: str = "radius", **kwargs: Any):
+    def __init__(self, source_detection, radius_column: str = "flux", **kwargs: Any):
         """Initialize a new projection focus series.
 
         Args:
@@ -26,6 +26,7 @@ class PhotometryFocusSeries(FocusSeries):
 
         # stuff
         self._source_detection: SourceDetection = source_detection
+        self._source_filter = self.source_filter
         self._radius_col = radius_column
         self._data: List[Dict[str, float]] = []
 
@@ -33,7 +34,16 @@ class PhotometryFocusSeries(FocusSeries):
         """Reset focus series."""
         self._data = []
 
-    async def analyse_image(self, image: Image, focus_value: float) -> None:
+    def source_filter(self, sources):
+
+        sources.sort(self._radius_col)
+        sources.reverse()
+        sources = sources[sources["ellipticity"] < 0.5]
+#        sources = sources[sources["peak"] > 1000]
+        return sources[sources[self._radius_col] > 0]
+
+
+    def analyse_image(self, image: Image, focus_value: float) -> None:
         """Analyse given image.
 
         Args:
@@ -43,17 +53,15 @@ class PhotometryFocusSeries(FocusSeries):
 
         # do photometry
         image = self._source_detection(image)
+
         sources = image.catalog
         if sources is None:
             return image
 
         # filter
-
-        sources.sort(self._radius_col)
-        sources.reverse()
-#        sources = sources[sources["ellipticity"] < 0.1]
-#        sources = sources[sources["peak"] > 1000]
-        sources = sources[sources[self._radius_col] > 0]
+        sources = self._source_filter(sources)
+        if len(sources) <= 1:
+            return image
 
         # calculate median radius
         radius = np.median(sources[self._radius_col[:20]])

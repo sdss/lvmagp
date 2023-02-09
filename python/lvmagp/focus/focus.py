@@ -16,8 +16,6 @@ from lvmtipo.actors import lvm
 from logging import DEBUG, INFO
 from sdsstools import get_logger
 
-#from cluplus.proxy import invoke
-
 from lvmagp.images import Image
 from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
 from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSeries
@@ -26,9 +24,10 @@ from lvmtipo.focus import temp2focus
 class Focus():
     def __init__(
         self, 
-        telsubsys, offset: bool = False,
-        guess:float = 42,
-        source_detection = SepSourceDetection(),
+        telsubsys,
+        offset: bool = False,
+        guess: float = 42,
+        source_detection = SepSourceDetection(threshold = 12.0, minarea = 24.0, deblend_nthresh = 1.4),
         radius_column = "fwhm",
         logger = get_logger("lvm_tel_focus"),
         level = INFO
@@ -50,11 +49,28 @@ class Focus():
 
         self._source_detection = source_detection
 
+    async def nominal(self, temperature:float):
+        try:
+           return await self.telsubsys.foc.moveAbsolute(temp2focus(temperature), 'DT')
+
+        except Exception as ex:
+           self.logger.error(f"{ex}")
+           raise ex
+
+    async def position(self, position):
+        try:
+           self.logger.debug(f"foc move to position {position} dt")
+           return await self.telsubsys.foc.moveAbsolute(position, 'DT')
+        
+        except Exception as ex:
+           self.logger.error(ex)
+           raise ex
+
     async def offset(self, offset):
         try:
-           self.logger.debug(f"foc move to {offset} dt")
-           await self.telsubsys.foc.moveRelative(offset, 'DT')
-        
+           self.logger.debug(f"foc move relative {offset} dt")
+           return await self.telsubsys.foc.moveRelative(offset, 'DT')
+
         except Exception as ex:
            self.logger.error(ex)
            raise ex
@@ -63,15 +79,18 @@ class Focus():
     async def fine(
         self,
         guess: float = 42,
-        count: int = 3,
-        step: float = 5.0,
+        count: int = 2,
+        step: float = 1.0,
         exposure_time: float = 5.0,
+        source_detection = None,
         callback: Optional[Callable[..., None]] = None
     ):
         try:
             camnum = len((await self.telsubsys.agc.status()).keys())
 
-            focus_series = [PhotometryFocusSeries(self._source_detection, radius_column=self.radius_column) for c in range(camnum)]
+            if not source_detection: source_detection = self._source_detection
+
+            focus_series = [PhotometryFocusSeries(source_detection, radius_column=self.radius_column) for c in range(camnum)]
 
             # define array of focus values to iterate
             if self.fine_offset:
@@ -91,26 +110,29 @@ class Focus():
                 imgs = [Image.from_file(f) for f in file_names]
 
                 for idx, img in enumerate(imgs):
-                    imgs[idx] = await focus_series[idx].analyse_image(img, foc)
-                    self.logger.info(f"cam: {img.header['CAMNAME']} focus: {foc} srcs: {len(imgs[idx].catalog)}")
+                    imgs[idx] = focus_series[idx].analyse_image(img, foc)
+                    #self.logger.info(f"cam: {img.header['CAMNAME']} focus: {foc} srcs: {len(imgs[idx].catalog)}")
 
                 if callback:
                     callback(imgs)
 
-            return [focus_series[idx].fit_focus() for idx in range(camnum)]
+            if callback:
+                 callback([(imgs[idx].header["CAMNAME"], fs._data) for idx, fs in enumerate(focus_series)])
+
+            foc=[]
+            for idx in range(camnum):
+                try:
+                    foc.append(focus_series[idx].fit_focus())
+                except Exception as ex:
+                    foc.append((nan,nan))
+
+            return np.array(foc)
+#            return [focus_series[idx].fit_focus() for idx in range(camnum)]
 
         except Exception as ex:
            self.logger.error(ex)
            raise ex
 
-
-    async def nominal(self, temperature:float):
-        try:
-           await self.telsubsys.foc.moveAbsolute(temp2focus(), 'DT')
-        
-        except Exception as ex:
-           self.logger.error(f"{ex}")
-           raise ex
 
 
 async def main():
@@ -122,6 +144,9 @@ async def main():
 
     parser.add_argument("-t", '--telsubsys', type=str, default="sci",
                         help="Telescope subsystem: sci, skye, skyw or spec")
+
+    parser.add_argument("-p", '--position', type=float, default=nan,
+                        help="Position focus")
 
     parser.add_argument("-o", '--offset', type=float, default=nan,
                         help="Offset focus")
@@ -141,6 +166,9 @@ async def main():
     telsubsys = await lvm.from_string(args.telsubsys)
     
     focus = Focus(telsubsys, level = DEBUG if args.verbose else INFO)
+
+    if args.position is not nan:
+        await focus.position(args.position)
 
     if args.offset is not nan:
         await focus.offset(args.offset)

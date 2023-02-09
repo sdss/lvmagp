@@ -38,7 +38,7 @@ class ProjectionFocusSeries(FocusSeries):
         """Reset focus series."""
         self._data = []
 
-    async def analyse_image(self, image: Image, focus_value: float) -> None:
+    def analyse_image(self, image: Image, focus_value: float) -> None:
         """Analyse given image.
 
         Args:
