@@ -10,10 +10,7 @@ from astropy.table import Table
 from astropy.nddata import CCDData, StdDevUncertainty
 from numpy.typing import NDArray
 
-#from lvmagp.utils.fits import FilenameFormatter
-
 MetaClass = TypeVar("MetaClass")
-
 
 class Image:
     """Image class."""

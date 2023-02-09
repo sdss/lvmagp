@@ -21,7 +21,7 @@ from sdsstools import get_logger
 from lvmagp.images import Image
 from lvmagp.images.processors.detection import DaophotSourceDetection, SepSourceDetection
 from lvmagp.focus.focusseries import PhotometryFocusSeries, ProjectionFocusSeries
-
+from lvmtipo.focus import temp2focus
 
 class Focus():
     def __init__(
@@ -52,16 +52,17 @@ class Focus():
 
     async def offset(self, offset):
         try:
-           self.logger.debug(f"foc move to {offset} um")
-           await self.telsubsys.foc.moveRelative(offset, 'UM')
+           self.logger.debug(f"foc move to {offset} dt")
+           await self.telsubsys.foc.moveRelative(offset, 'DT')
         
         except Exception as ex:
            self.logger.error(ex)
            raise ex
 
+
     async def fine(
         self,
-        guess: float = 44,
+        guess: float = 42,
         count: int = 3,
         step: float = 5.0,
         exposure_time: float = 5.0,
@@ -72,20 +73,19 @@ class Focus():
 
             focus_series = [PhotometryFocusSeries(self._source_detection, radius_column=self.radius_column) for c in range(camnum)]
 
-
             # define array of focus values to iterate
             if self.fine_offset:
                 current = self.telsubsys.foc.getPosition()
-                await self.telsubsys.foc.moveRelative(count * step)
+                await self.telsubsys.foc.moveRelative(count * step, 'DT')
                 focus_values = np.linspace(0, 2 * count * step, 2 * count + 1)
             else:
                 focus_values = np.linspace(guess - count * step, guess + count * step, 2 * count + 1)
 
             for foc in focus_values:
                 if self.fine_offset:
-                    await self.telsubsys.foc.moveRelative(foc)
+                    await self.telsubsys.foc.moveRelative(foc, 'DT')
                 else:
-                    await self.telsubsys.foc.moveAbsolute(foc)
+                    await self.telsubsys.foc.moveAbsolute(foc, 'DT')
 
                 file_names = (await self.telsubsys.agc.expose(exposure_time)).flatten().unpack("*.filename")
                 imgs = [Image.from_file(f) for f in file_names]
@@ -103,11 +103,10 @@ class Focus():
            self.logger.error(ex)
            raise ex
 
-    async def nominal(self):
-        try:
-           temp2focus_pos = 42 #TODO: put here a function gathering focus based on temperature.
 
-           await self.telsubsys.foc.moveAbsolute(temp2focus_pos)
+    async def nominal(self, temperature:float):
+        try:
+           await self.telsubsys.foc.moveAbsolute(temp2focus(), 'DT')
         
         except Exception as ex:
            self.logger.error(f"{ex}")
