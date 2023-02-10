@@ -40,7 +40,7 @@ class Focus():
         """
         self.telsubsys = telsubsys
         self.fine_offset = offset
-        self.fine_guess = 42
+        self.fine_guess = guess
         self.radius_column = radius_column
 
         #TODO: should go somewhere in a subclass
