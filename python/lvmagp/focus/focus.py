@@ -107,6 +107,7 @@ class Focus():
                     await self.telsubsys.foc.moveAbsolute(foc, 'DT')
 
                 file_names = (await self.telsubsys.agc.expose(exposure_time)).flatten().unpack("*.filename")
+                if isinstance(file_names, str): file_names=[file_names]
                 imgs = [Image.from_file(f) for f in file_names]
 
                 for idx, img in enumerate(imgs):
