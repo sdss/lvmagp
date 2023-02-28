@@ -60,7 +60,7 @@ class PhotometryFocusSeries(FocusSeries):
 
         # filter
         sources = self._source_filter(sources)
-        if len(sources) <= 1:
+        if len(sources) <= 6:
             return image
 
         # calculate median radius

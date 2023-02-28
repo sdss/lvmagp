@@ -49,7 +49,7 @@ class Focus():
 
         self._source_detection = source_detection
 
-    async def nominal(self, temperature):
+    async def nominal(self, temperature:float):
         try:
            return await self.telsubsys.foc.moveAbsolute(temp2focus(temperature), 'DT')
 
