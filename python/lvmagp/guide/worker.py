@@ -42,7 +42,7 @@ class GuiderWorker():
                  telsubsystems: lvm.TelSubSystem,
                  statemachine: ActorStateMachine, 
                  offsetmount: GuideOffset = GuideOffsetPWI(),
-                 offsetcalc: GuideOffset = GuideCalcAstrometry(),
+                 offsetcalc: GuideCalc = GuideCalcAstrometry(),
                  actor: AMQPActor = None,
                  logger: SDSSLogger = get_logger("guiding")
                 ):
@@ -51,8 +51,9 @@ class GuiderWorker():
         self.statemachine = statemachine
         self.logger = logger
         self.exptime = 5.0
+        self.offsetmount = offsetcalc
         self.offsetcalc = offsetcalc
-        
+
         self.logger.info("init")
        
     async def expose(self, exptime=nan):
