@@ -15,8 +15,8 @@ from lvmtipo.actors import lvm
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
 from lvmagp.images import Image
 
-from lvmagp.guide.calc import GuideOffset, GuideOffsetPWI
-from lvmagp.guide.offset import GuideCalc, GuideCalcAstrometry
+from lvmagp.guide.offset import GuideOffset, GuideOffsetPWI
+from lvmagp.guide.calc import GuideCalc, GuideCalcAstrometry
 
 from math import nan
 
@@ -41,25 +41,24 @@ class GuiderWorker():
     def __init__(self, 
                  telsubsystems: lvm.TelSubSystem,
                  statemachine: ActorStateMachine, 
-                 offsetmount: GuideOffset = GuideOffsetPWI(),
-                 offsetcalc: GuideCalc = GuideCalcAstrometry(),
                  actor: AMQPActor = None,
+                 exptime:float = 5.0,
                  logger: SDSSLogger = get_logger("guiding")
                 ):
         self.actor=actor
         self.telsubsystems = telsubsystems
         self.statemachine = statemachine
         self.logger = logger
-        self.exptime = 5.0
-        self.offsetmount = offsetcalc
-        self.offsetcalc = offsetcalc
+        self.exptime = exptime
+        self.offsetmount = GuideOffsetPWI(telsubsystems)
+        self.offsetcalc = GuideCalcAstrometry()
 
         self.logger.info("init")
        
-    async def expose(self, exptime=nan):
+    async def expose(self, exptime):
             try:
-                rc = await self.telsubsystems.agc.expose(exptime)
-                return [ Image.from_file(v["filename"]) for k,v in rc.items() ]
+                filenames = (await self.telsubsystems.agc.expose(exptime)).flatten.unpack("*.filename")
+                return [ Image.from_file("filename") for f in filenames ]
 
             except Exception as e:
                 self.logger.error(e)

@@ -11,4 +11,4 @@ class GuideOffset:
         raise NotImplementedError
 
 
-__all__ = ["GuiderOffset"]
+__all__ = ["GuideOffset"]
