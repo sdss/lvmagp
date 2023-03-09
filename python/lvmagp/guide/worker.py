@@ -52,11 +52,10 @@ class GuiderWorker():
         self.statemachine = statemachine
         self.logger = logger
         self.exptime = exptime
-        self.offest_mount = GuideOffsetPWI(telsubsystems)
+        self.offest_mount = GuideOffsetPWI(telsubsystems.pwi)
         self.offest_calc = GuideCalcAstrometry(logger=logger)
 
-        self.logger.info("init")
-       
+
     async def expose(self, exptime):
         """ expose cameras """
         try:
@@ -80,17 +79,17 @@ class GuiderWorker():
             if exptime is nan: exptime = self.exptime
 
             reference_images = await self.expose(exptime)
-            await self.offest_calc.reference_images(reference_images)
+            reference_position = await self.offest_calc.reference_images(reference_images)
 
             while self.statemachine.state in (ActorState.GUIDE, ActorState.PAUSE):
 
-                images = await self.expose(exptime)
+                current_images = await self.expose(exptime)
 
-                offset = await self.offest_calc.find_offset(images)
-                self.logger.info(f"radec: {offset}")
+                current_position = await self.offest_calc.find_offset(current_images)
+                self.logger.info(f"current position: {current_position}")
 
                 if self.statemachine.state is ActorState.GUIDE:
-#                    await self.offset_mount(offset, images)
+                    await self.offest_mount.offset(reference_position, current_position)
                     await asyncio.sleep(2.0)
 
         except Exception as e:
