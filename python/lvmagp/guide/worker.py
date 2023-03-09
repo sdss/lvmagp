@@ -5,6 +5,8 @@ import asyncio
 import click
 import numpy as np
 
+from astropy.coordinates import SkyCoord, Angle
+
 from sdsstools import get_logger
 from sdsstools.logger import SDSSLogger
 from clu.command import Command
@@ -85,6 +87,8 @@ class GuiderWorker():
                 images = await self.expose(exptime)
 
                 offset = await self.offest_calc.find_offset(images)
+                self.logger.info(f"radec: {offset}")
+
                 if self.statemachine.state is ActorState.GUIDE:
 #                    await self.offset_mount(offset, images)
                     await asyncio.sleep(2.0)

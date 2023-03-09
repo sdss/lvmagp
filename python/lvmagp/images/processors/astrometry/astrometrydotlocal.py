@@ -70,7 +70,7 @@ class AstrometryDotLocal(Astrometry):
             return wcs
 
 
-    async def __call__(self, image: Image, sort_by="peak") -> Image:
+    def __call__(self, image: Image, sort_by="peak") -> Image:
         """Find astrometric solution on given image.
 
         Args:
