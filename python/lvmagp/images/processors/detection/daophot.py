@@ -76,8 +76,6 @@ class DaophotSourceDetection(SourceDetection):
 
         # find stars
         daofind = DAOStarFinder(fwhm=self.fwhm, threshold=self.threshold * std)
-#        loop = asyncio.get_running_loop()
-#        sources = await loop.run_in_executor(None, daofind, data - median)
         sources = daofind(data - median)
 
         # rename columns

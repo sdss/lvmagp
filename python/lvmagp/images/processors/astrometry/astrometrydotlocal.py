@@ -85,7 +85,6 @@ class AstrometryDotLocal(Astrometry):
             log.warning("No catalog found in image.")
             return img
 
-#        cat = img.catalog[["x", "y", "flux", "peak"]].to_pandas().dropna()
         cat = img.catalog["x", "y", "flux", "peak"]
 
         # nothing?
