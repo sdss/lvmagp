@@ -3,6 +3,6 @@ Astrometry
 ----------------
 """
 from .astrometry import Astrometry
-from .dotnet import AstrometryDotNet
+from .astrometrydotlocal import AstrometryDotLocal
 
-__all__ = ["Astrometry", "AstrometryDotNet"]
+__all__ = ["Astrometry", "AstrometryDotLocal"]

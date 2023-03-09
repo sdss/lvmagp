@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import Any
 
+from astropy.wcs import WCS
+
 from lvmagp.images import Image
 from lvmagp.images.processor import ImageProcessor
 
@@ -11,7 +13,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-class AstrometryDotNet(Astrometry):
+class AstrometryDotLocal(Astrometry):
     """Perform astrometry using python astrometry.net"""
 
     __module__ = "lvmagp.images.processors.astrometry"
@@ -33,14 +35,13 @@ class AstrometryDotNet(Astrometry):
             radius: Radius to search in.
             exceptions: Whether to raise Exceptions.
         """
-        Astrometry.__init__(self, **kwargs)
 
         self.source_count = source_count
         self.radius = radius
         self.exceptions = exceptions
 
-        if not AstrometryDotNet.solver:
-            AstrometryDotNet.solver = astrometry.Solver(
+        if not AstrometryDotLocal.solver:
+            AstrometryDotLocal.solver = astrometry.Solver(
                 astrometry.series_5200.index_files(
                     cache_directory=cache_directory,
                     scales=scales,
@@ -48,9 +49,8 @@ class AstrometryDotNet(Astrometry):
             )
 
     def source_solve_default(self, image):
-        solution = solver.solve(
-            stars_xs=image.catalog['x'],
-            stars_ys=image.catalog['y'],
+        solution = AstrometryDotLocal.solver.solve(
+            stars=image.catalog['x', 'y'],
             size_hint=astrometry.SizeHint(
                 lower_arcsec_per_pixel=0.9,
                 upper_arcsec_per_pixel=1.1,
@@ -58,7 +58,7 @@ class AstrometryDotNet(Astrometry):
             position_hint=astrometry.PositionHint(
                 ra_deg=image.header['RA'],
                 dec_deg=image.header['DEC'],
-                radius_deg=radius,
+                radius_deg=self.radius,
             ),
             solution_parameters=astrometry.SolutionParameters(
                 logodds_callback=lambda logodds_list: astrometry.Action.STOP,
@@ -70,7 +70,7 @@ class AstrometryDotNet(Astrometry):
             return wcs
 
 
-    def __call__(self, image: Image, sort_by="peak") -> Image:
+    async def __call__(self, image: Image, sort_by="peak") -> Image:
         """Find astrometric solution on given image.
 
         Args:
@@ -83,9 +83,10 @@ class AstrometryDotNet(Astrometry):
         # get catalog
         if img.catalog is None:
             log.warning("No catalog found in image.")
-            return image
+            return img
 
-        cat = img.catalog[["x", "y", "flux", "peak"]].to_pandas().dropna()
+#        cat = img.catalog[["x", "y", "flux", "peak"]].to_pandas().dropna()
+        cat = img.catalog["x", "y", "flux", "peak"]
 
         # nothing?
         if cat is None or len(cat) < 3:
@@ -94,14 +95,18 @@ class AstrometryDotNet(Astrometry):
             return img
 
         # sort it, remove saturated stars and take N brightest sources
-        cat = cat.sort_values(sort_by, ascending=False)
+        cat.sort(sort_by)
+        cat.reverse()
         cat = cat[cat["peak"] < 60000]
         cat = cat[:self.source_count]
 
-        img.astrometric_wcs = source_solve(img)
-        print(img.astrometric_wcs)
+        img.catalog = cat
+
+#        print(img.catalog["x", "y"])
+        img.astrometric_wcs = self.source_solve_default(img)
+        log.debug(img.astrometric_wcs)
 
         # finished
         return img
 
-__all__ = ["AstrometryDotNet"]
+__all__ = ["AstrometryDotLocal"]

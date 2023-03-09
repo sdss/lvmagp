@@ -50,40 +50,41 @@ class GuiderWorker():
         self.statemachine = statemachine
         self.logger = logger
         self.exptime = exptime
-        self.offsetmount = GuideOffsetPWI(telsubsystems)
-        self.offsetcalc = GuideCalcAstrometry()
+        self.offest_mount = GuideOffsetPWI(telsubsystems)
+        self.offest_calc = GuideCalcAstrometry(logger=logger)
 
         self.logger.info("init")
        
     async def expose(self, exptime):
-            try:
-                filenames = (await self.telsubsystems.agc.expose(exptime)).flatten.unpack("*.filename")
-                return [ Image.from_file("filename") for f in filenames ]
+        """ expose cameras """
+        try:
+            filenames = (await self.telsubsystems.agc.expose(exptime)).flatten().unpack("*.filename")
+#                self.logger.debug(f"filenames: {filenames}")
+            return [ Image.from_file(f) for f in filenames ]
 
-            except Exception as e:
-                self.logger.error(e)
-                raise e
+        except Exception as e:
+            self.logger.error(e)
+            raise e
 
-            return images
+        return images
 
 
     async def work(self, exptime=nan, pause=False):
-
+        """ guider worker """
         try:
+            self.logger.debug(f"start guiding {self.statemachine.state}")
             self.statemachine.state = ActorState.GUIDE if not pause else ActorState.PAUSE
 
             if exptime is nan: exptime = self.exptime
 
             reference_images = await self.expose(exptime)
-            await self.offsetcalc.reference_images(reference_images)
+            await self.offest_calc.reference_images(reference_images)
 
-            self.logger.debug(f"activate guiding {self.statemachine.state}")
             while self.statemachine.state in (ActorState.GUIDE, ActorState.PAUSE):
 
                 images = await self.expose(exptime)
-                print(images[0].header)
 
-                offset = await self.offsetcalc.find_offset(images)
+                offset = await self.offest_calc.find_offset(images)
                 if self.statemachine.state is ActorState.GUIDE:
 #                    await self.offset_mount(offset, images)
                     await asyncio.sleep(2.0)
