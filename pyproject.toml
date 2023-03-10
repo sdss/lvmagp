@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sdss-lvmagp"
-version = "0.3.5"
+version = "0.3.6"
 description = "Aquisition and guiding package for SDSS-V LVM"
 authors = ["Hojae Ahn <hojaeahn@khu.ac.kr>"]
 license = "BSD-3-Clause"
@@ -32,20 +32,12 @@ generate-setup-file = false
 lvmagp = "lvmagp.__main__:lvmagp"
 
 [tool.poetry.dependencies]
-python = ">=3.8, <3.11"
-sdss-tree = ">=2.15.2"
-sdss-access = ">=0.2.3"
-#sdsstools = ">=0.4.0"
-#click-default-group = "^1.2.2"
-#click = "^8.0.1"
-sdss-basecam = ">=0.5.0"
+python = ">=3.8, <4"
 photutils = ">=1.3.0"
-#numpy = "^1.21.1"
 scipy = ">=1.7"
 black = "^21.7-beta.0"
 sdss-cluplus = ">=0.0.16"
 sdss-lvmtipo = ">=0.0.10"
-#regions = ">=0.6"
 pandas = ">=1.1"
 aiohttp = ">=3.7"
 sep = ">=1.2"
