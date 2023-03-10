@@ -41,6 +41,17 @@ async def statusTick(actor, data):
 
         actor.write("i", {"error": e})
 
+
+def fname(camera):
+    idx = fname.start + fname.idx % fname.num
+    return f"/data/lvm/skyw/agcam/{camera}/20230225/lvm.skyw.agcam.{camera}_00000{idx}.fits"
+
+fname_cameras=["west", "east"]
+fname.start=254
+fname.num=130
+fname.idx=0
+
+
 class GuiderWorker():
     def __init__(self, 
                  telsubsystems: lvm.TelSubSystem,
@@ -57,8 +68,23 @@ class GuiderWorker():
         self.offest_mount = GuideOffsetPWI(telsubsystems.pwi)
         self.offest_calc = GuideCalcAstrometry(logger=logger)
 
-
     async def expose(self, exptime):
+        """ expose cameras """
+
+        try:
+            filenames=[]
+            for cam in fname_cameras:
+                filenames.append(fname(cam))
+            fname.idx+=1
+            self.logger.debug(f"filenames: {filenames}")
+            return filenames, [Image.from_file(f) for f in filenames]
+
+        except Exception as e:
+            self.logger.error(e)
+            raise e
+
+
+    async def expose2(self, exptime):
         """ expose cameras """
         try:
             filenames = (await self.telsubsystems.agc.expose(exptime)).flatten().unpack("*.filename")
