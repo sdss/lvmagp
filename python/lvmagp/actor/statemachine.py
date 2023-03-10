@@ -48,7 +48,7 @@ class ActorStateMachine:
     async def start(self, coro):
         await self.stop()
         self.task = asyncio.create_task(coro)
-        self.state = ActorState.START
+#        self.state = ActorState.START
 
     async def pause(self, pause:bool):
         if not self.task:

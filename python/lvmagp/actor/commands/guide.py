@@ -2,44 +2,57 @@ import asyncio
 
 import click
 import numpy as np
+import json
 
 from logging import DEBUG
+from math import nan
+from functools import partial
 
 from clu.command import Command
+from clu.actor import AMQPActor
 
 from . import parser
+
+from astropy.coordinates import SkyCoord, Angle
+
 from lvmagp.actor.statemachine import ActorState, ActorStateMachine
 from lvmagp.exceptions import LvmagpIsNotIdle
-
 from lvmagp.guide.worker import GuiderWorker
-from math import nan
+from lvmagp.json_serializers import serialize_skycoord
 
 
-#@parser.command("guide", context_settings=dict(
-    #ignore_unknown_options=True,)
-#)
-#@click.argument("cmd", type=click.Choice(['start', 'stop', 'pause', 'cont']), required=True) #
-#@click.argument('extra_opts', nargs=-1, type=click.UNPROCESSED)
-#def guide(
-    #command: Command,
-    #cmd,
-    #extra_opts
-#):
-    #"""A wrapper around Python's extra_opts."""
-    #logger = command.actor.log
+async def callback(actor:AMQPActor,
+                   is_reference:bool,
+                   state:ActorState,
+                   filenames:list,
+                   images:list,
+                   position:SkyCoord,
+                   correction:list=None):
 
-    #d = dict([item.strip('--').split('=') for item in extra_opts])
-    #logger.debug(f"{cmd} {d}")
+    status = {"isreference": is_reference,
+              "state": state.name,
+              "filenames": filenames,
+              "catalog": [json.loads(img.catalog.to_pandas().to_json()) for img in images],
+              "position": serialize_skycoord(position)
+             }
 
+    if not is_reference:
+        status.update({"correction": correction})
+
+    actor.write("i", **status, validate = False)
 
 
 @parser.command("guideStart")
 @click.argument("exptime", type=float, default=nan)
+@click.argument("ra_h", type=float, default=nan)
+@click.argument("deg_d", type=float, default=nan)
 @click.option("--pause", type=bool, default=False)
-@click.option("--force", type=bool, default=False)
+@click.option("--force", type=bool, default=True)
 async def guideStart(
     command: Command,
     exptime: float,
+    ra_h: float,
+    deg_d: float,
     pause: bool,
     force: bool,
 ):
@@ -48,15 +61,24 @@ async def guideStart(
     statemachine = command.actor.statemachine
     telsubsystems = command.actor.telsubsystems
 
+    logger.debug(f"start guiding")
+
     guider = command.actor.guider
 
     try:
-        if not force and not statemachine.isIdle():
-            return command.fail(error = LvmagpIsNotIdle(), state = statemachine.state.name)
-        
-        await statemachine.start(guider.work(exptime, pause))
+        if not statemachine.isIdle():
+            if force and statemachine.state == ActorState.GUIDE:
+                await statemachine.stop()
+            else:
+                return command.fail(error = LvmagpIsNotIdle(), state = statemachine.state.name)
 
-        logger.debug(f"start guiding {statemachine.state} {await telsubsystems.foc.status()}")
+        logger.debug(f"start guiding {statemachine.state}")
+
+        await guider.reference(exptime, pause, callback=partial(callback, command.actor))
+
+        await statemachine.start(guider.loop(callback=partial(callback, command.actor)))
+
+        logger.debug(f"started guiding {statemachine.state}")
 
     except Exception as e:
         return command.fail(error=e)

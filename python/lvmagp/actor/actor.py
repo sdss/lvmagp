@@ -72,9 +72,9 @@ class LvmagpActor(AMQPActor):
         """Start actor."""
         await super().start()
 
-        Proxy.setDefaultAmqpc(self)
-        
-        self.telsubsystems = await lvm.from_string(self.config["ag"]["system"]).start()
+        self.telsubsystems = await lvm.from_string(self.config["ag"]["system"]).start(self)
+#        self.log.debug(f"{await self.telsubsystems.foc.status()}")
+
         self.guider = GuiderWorker(self.telsubsystems, self.statemachine, actor=self, logger=self.log)
         self.focus = Focus(self.telsubsystems, level=DEBUG)
 
