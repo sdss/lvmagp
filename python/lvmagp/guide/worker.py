@@ -27,7 +27,7 @@ from lvmagp.guide.calc import GuideCalc, GuideCalcAstrometry
 
 from math import nan
 
-debug = True
+debug = False
 
 # debugging start
 def fname(camera):
@@ -114,6 +114,8 @@ class GuiderWorker():
                                filenames=reference_filenames,
                                images=reference_images,
                                position=self.reference_position)
+
+            return self.reference_position, reference_filenames
 
         except Exception as e:
             self.logger.error(f"error: {e}")

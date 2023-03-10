@@ -9,7 +9,7 @@ from math import nan
 from functools import partial
 
 from clu.command import Command
-from clu.actor import AMQPActor
+from clu.actor import BaseActor
 
 from . import parser
 
@@ -21,7 +21,7 @@ from lvmagp.guide.worker import GuiderWorker
 from lvmagp.json_serializers import serialize_skycoord
 
 
-async def callback(actor:AMQPActor,
+async def callback(actor:BaseActor,
                    is_reference:bool,
                    state:ActorState,
                    filenames:list,
@@ -74,17 +74,22 @@ async def guideStart(
 
         logger.debug(f"start guiding {statemachine.state}")
 
-        await guider.reference(exptime, pause, callback=partial(callback, command.actor))
+        pos, filenames = await guider.reference(exptime,
+                                                pause,
+                                                callback=partial(callback, command.actor))
 
         await statemachine.start(guider.loop(callback=partial(callback, command.actor)))
 
         logger.debug(f"started guiding {statemachine.state}")
 
+        return command.finish(state = statemachine.state.value,
+                              reference_position = serialize_skycoord(pos),
+                              reference_filenames = filenames)
+
     except Exception as e:
         return command.fail(error=e)
 
-    return command.finish(state = statemachine.state.value)
-            
+
 @parser.command("guidePause")
 @click.argument("pause", type=bool, default=True)
 async def guidePause(
