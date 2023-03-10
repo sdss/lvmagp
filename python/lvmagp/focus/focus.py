@@ -51,7 +51,10 @@ class Focus():
 
     async def nominal(self, temperature:float):
         try:
-           return await self.telsubsys.foc.moveAbsolute(temp2focus(temperature), 'DT')
+           return await self.telsubsys.foc.moveAbsolute(
+               temp2focus(self.telsubsys.foc.actor,
+                          temperature),
+               'DT')
 
         except Exception as ex:
            self.logger.error(f"{ex}")
