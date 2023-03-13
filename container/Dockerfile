@@ -10,9 +10,9 @@ MAINTAINER Florian Briegel, briegel@mpia.de
 
 # RUN pip3 install sdss-lvmtipo sdss-cluplus numpy scipy sep expandvars
 
+WORKDIR /root
+
 COPY . lvmagp
 RUN cd lvmagp && pip install .
-
-WORKDIR /root
 
 CMD ["/root/lvmagp/container/run-actor.sh"]
