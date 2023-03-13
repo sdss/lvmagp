@@ -67,7 +67,7 @@ async def actor(ctx):
 
 
 def main():
-    lvmagp(auto_envvar_prefix="LVMSCP")
+    lvmagp(auto_envvar_prefix="LVMAGP")
 
 
 if __name__ == "__main__":
