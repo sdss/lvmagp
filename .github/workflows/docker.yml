@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       USER: sdss
-      APP: lvmsagp
+      APP: lvmagp
     steps:
       - name: Set docker tags
         id: set-tags
