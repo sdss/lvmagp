@@ -24,10 +24,6 @@ packages = [
 ]
 include = ["python/lvmagp/etc/*"]
 
-[tool.poetry.build]
-script = "build.py"
-generate-setup-file = false
-
 [tool.poetry.scripts]
 lvmagp = "lvmagp.__main__:lvmagp"
 
