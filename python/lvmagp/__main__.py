@@ -11,8 +11,8 @@ import os
 
 import click
 from click_default_group import DefaultGroup
-from clu.tools import cli_coro as cli_coro_lvm
 
+from clu.tools import cli_coro as cli_coro_lvm
 from sdsstools.daemonizer import DaemonGroup
 
 from lvmagp.actor.actor import LvmagpActor
@@ -25,7 +25,7 @@ from lvmagp.actor.actor import LvmagpActor
     "config_file",
     type=click.Path(exists=True, dir_okay=False),
     help="Path to the user configuration file.",
-    required=True
+    required=True,
 )
 @click.option(
     "-r",
@@ -56,11 +56,19 @@ async def actor(ctx):
 
     config_file = ctx.obj["config_file"]
 
-    lvmagp_obj = LvmagpActor.from_config(config_file, url=ctx.obj["rmq_url"], verbose=ctx.obj["verbose"])
+    lvmagp_obj = LvmagpActor.from_config(
+        config_file,
+        url=ctx.obj["rmq_url"],
+        verbose=ctx.obj["verbose"],
+    )
 
     await lvmagp_obj.start()
     await lvmagp_obj.run_forever()
 
 
+def main():
+    lvmagp(auto_envvar_prefix="LVMSCP")
+
+
 if __name__ == "__main__":
-    lvmagp()
+    main()

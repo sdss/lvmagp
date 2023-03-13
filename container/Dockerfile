@@ -15,4 +15,4 @@ WORKDIR /root
 COPY . lvmagp
 RUN cd lvmagp && pip install .
 
-CMD ["/root/lvmagp/container/run-actor.sh"]
+ENTRYPOINT lvmagp actor start --debug

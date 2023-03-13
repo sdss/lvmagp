@@ -25,7 +25,7 @@ packages = [
 include = ["python/lvmagp/etc/*"]
 
 [tool.poetry.scripts]
-lvmagp = "lvmagp.__main__:lvmagp"
+lvmagp = "lvmagp.__main__:main"
 
 [tool.poetry.dependencies]
 python = ">=3.8, <4"
