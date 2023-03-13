@@ -55,6 +55,7 @@ async def actor(ctx):
     """Runs the actor."""
 
     config_file = ctx.obj["config_file"]
+    print("Using configuration file:", config_file)
 
     lvmagp_obj = LvmagpActor.from_config(
         config_file,
