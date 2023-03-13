@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM python:3.10-slim-bullseye
 
 ## Get some karma ##
 MAINTAINER Florian Briegel, briegel@mpia.de
@@ -20,12 +20,11 @@ RUN apt install -y sudo git lsof pkg-config
 RUN apt install -y python3-pip
 RUN pip3 install sdss-lvmtipo sdss-cluplus numpy scipy sep expandvars
 
+COPY . lvmagp
+RUN cd lvmagp && pip install .
 
 WORKDIR /root
 
 #COPY run-agp.sh /root
 
 CMD ["/root/lvmagp/container/run-actor.sh"]
-
-
-
