@@ -1,4 +1,4 @@
-FROM python:3.10-slim-bullseye
+FROM ubuntu:20.04
 
 ## Get some karma ##
 MAINTAINER Florian Briegel, briegel@mpia.de
