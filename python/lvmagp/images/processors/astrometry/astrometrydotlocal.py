@@ -1,17 +1,17 @@
-from abc import ABCMeta, abstractmethod
+import logging
+
 from typing import Any
 
+import astrometry
 from astropy.wcs import WCS
 
 from lvmagp.images import Image
-from lvmagp.images.processor import ImageProcessor
-
-import astrometry
 
 from .astrometry import Astrometry
-import logging
+
 
 log = logging.getLogger(__name__)
+
 
 class AstrometryDotLocal(Astrometry):
     """Perform astrometry using python astrometry.net"""
@@ -23,8 +23,8 @@ class AstrometryDotLocal(Astrometry):
         self,
         source_count: int = 42,
         radius: float = 3.0,
-        cache_directory: str = "astrometry_cache",
-        scales={5,6},
+        cache_directory: str = "/data/astrometrynet",
+        scales={5, 6},
         exceptions: bool = True,
         **kwargs: Any,
     ):
@@ -50,14 +50,14 @@ class AstrometryDotLocal(Astrometry):
 
     def source_solve_default(self, image):
         solution = AstrometryDotLocal.solver.solve(
-            stars=image.catalog['x', 'y'],
+            stars=image.catalog["x", "y"],
             size_hint=astrometry.SizeHint(
                 lower_arcsec_per_pixel=0.9,
                 upper_arcsec_per_pixel=1.1,
             ),
             position_hint=astrometry.PositionHint(
-                ra_deg=image.header['RA'],
-                dec_deg=image.header['DEC'],
+                ra_deg=image.header["RA"],
+                dec_deg=image.header["DEC"],
                 radius_deg=self.radius,
             ),
             solution_parameters=astrometry.SolutionParameters(
@@ -68,7 +68,6 @@ class AstrometryDotLocal(Astrometry):
         if solution.has_match():
             wcs = WCS(solution.best_match().wcs_fields)
             return wcs
-
 
     def __call__(self, image: Image, sort_by="peak") -> Image:
         """Find astrometric solution on given image.
@@ -97,15 +96,16 @@ class AstrometryDotLocal(Astrometry):
         cat.sort(sort_by)
         cat.reverse()
         cat = cat[cat["peak"] < 60000]
-        cat = cat[:self.source_count]
+        cat = cat[: self.source_count]
 
         img.catalog = cat
 
-#        print(img.catalog["x", "y"])
+        #        print(img.catalog["x", "y"])
         img.astrometric_wcs = self.source_solve_default(img)
         log.debug(img.astrometric_wcs)
 
         # finished
         return img
+
 
 __all__ = ["AstrometryDotLocal"]
