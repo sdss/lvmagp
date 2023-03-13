@@ -25,7 +25,6 @@ from lvmagp.actor.actor import LvmagpActor
     "config_file",
     type=click.Path(exists=True, dir_okay=False),
     help="Path to the user configuration file.",
-    required=True,
 )
 @click.option(
     "-r",
