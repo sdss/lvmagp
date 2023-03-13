@@ -15,6 +15,7 @@ MAINTAINER Florian Briegel, briegel@mpia.de
 #     echo "deb https://svn.mpia.de/repo/linux/ubuntu focal main" > /etc/apt/sources.list.d/mpia.list
 
 RUN apt update -y
+RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -y install tzdata
 
 RUN apt install -y sudo git lsof pkg-config
 RUN apt install -y python3-pip
