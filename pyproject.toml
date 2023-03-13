@@ -62,15 +62,17 @@ rstcheck = "^3.3.1"
 Sphinx = "^3.0.0"
 
 [tool.isort]
-line_length = 79
+profile = "black"
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "SDSS", "FIRSTPARTY", "LOCALFOLDER"]
 default_section = "THIRDPARTY"
 known_first_party = "lvmagp"
-known_sdss = ["sdsstools"]
-balanced_wrapping = true
-include_trailing_comma = false
+known_sdss = ["sdsstools", "clu", "cluplus", "lvmtipo"]
 lines_after_imports = 2
-use_parentheses = true
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+fast = true
 
 [tool.pytest.ini_options]
 addopts = "--cov lvmagp --cov-report xml --cov-report html --cov-report term"
@@ -87,5 +89,5 @@ exclude_lines = [
 ]
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "setuptools>=49.6.0"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
