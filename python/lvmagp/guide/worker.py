@@ -32,7 +32,8 @@ debug = False
 # debugging start
 def fname(camera):
     idx = fname.start + fname.idx % fname.num
-    return f"/data/lvm/skyw/agcam/{camera}/20230225/lvm.skyw.agcam.{camera}_00000{idx}.fits"
+#    return f"/data/lvm/skyw/agcam/{camera}/20230225/lvm.skyw.agcam.{camera}_00000{idx}.fits"
+    return f"/home/jovyan/work/work/agcam/skyw/{camera}/20230225/lvm.skyw.agcam.{camera}_00000{idx}.fits"
 
 fname.cameras=["west", "east"]
 fname.start=204
@@ -101,7 +102,10 @@ class GuiderWorker():
             self.exptime = exptime if exptime else self.default_exptime
             if exptime is nan: exptime = self.exptime
 
+            filenames = None
             self.reference_position = None
+            reference_images = None
+            positions = None
 
             reference_filenames, images = await self.expose(exptime)
             reference_images, self.reference_position = await self.offest_calc.reference_target(images)
@@ -125,9 +129,12 @@ class GuiderWorker():
                                state=self.statemachine.state,
                                filenames=reference_filenames,
                                images=reference_images,
-                               position=self.reference_position)
+                               position=self.reference_position,
+                               error=e)
+            raise e
 
 
+    # TODO: How should errors be handled ? Currently it goes idle on error
     async def loop(self, callback: Optional[Callable[..., None]] = None ):
         """ guider worker """
         try:

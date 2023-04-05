@@ -9,4 +9,8 @@ __title__ = "Exceptions"
 class ImageError(Exception):
     pass
 
+class GuiderError(Exception):
+    pass
+
+
 

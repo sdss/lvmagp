@@ -62,7 +62,6 @@ class GuideCalcAstrometry(GuideCalc):
 
         elif image_num == 1 and not cam.keys().isdisjoint(["east", "west"]):
             log.warning("single camera not implemented")
-
         else:
             raise Exception("unsupported camera image set: {cams}")
 
@@ -84,12 +83,13 @@ class GuideCalcAstrometry(GuideCalc):
 
 #                self.parent.logger.debug(f"astrometric source detect {self.image.header['CAMNAME']}")
                 self.image = self.parent.source_detection(self.image)
- #               self.parent.logger.debug(f"astrometric astronometry {self.image.header['CAMNAME']}")
+#                self.parent.logger.debug(f"astrometric astronometry {self.image.header['CAMNAME']}")
                 self.image = self.parent.source_astrometry(self.image)
-  #              self.parent.logger.debug(f"astrometric done {self.image.header['CAMNAME']}")
-                if self.image.astrometric_wcs:
+#                self.parent.logger.debug(f"astrometric done {self.image.header['CAMNAME']}")
+                if hasattr(self.image, "astrometric_wcs") and self.image.astrometric_wcs:
                     self.image.center = self.image.astrometric_wcs.pixel_to_world(self.image.header['NAXIS1']//2, self.image.header['NAXIS2']//2)
-
+                else:
+                    self.image.center = None
 
         worker = [AstrometryThread(self, img) for img in images]
         [w.start() for w in worker]
@@ -121,6 +121,5 @@ class GuideCalcAstrometry(GuideCalc):
 
         except Exception as ex:
             print(f"error: {type(ex)} {ex}")
-
 
 __all__ = ["GuideCalcAstrometry"]

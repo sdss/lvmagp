@@ -27,18 +27,23 @@ async def callback(actor:BaseActor,
                    filenames:list,
                    images:list,
                    position:SkyCoord,
-                   correction:list=None):
+                   correction:list=None,
+                   error:Exception=None):
 
     status = {"isreference": is_reference,
               "state": state.name,
               "filenames": filenames,
-              "catalog": [json.loads(img.catalog.to_pandas().to_json()) for img in images],
-              "position": serialize_skycoord(position)
+              "catalog": [json.loads(img.catalog.to_pandas().to_json()) for img in images] if images else None,
+              "position": serialize_skycoord(position) if position else None
              }
 
     if not is_reference:
         status.update({"correction": correction})
 
+#    if error:
+#        status.update({"failure": error})
+
+    print(status)
     actor.write("i", **status, validate = False)
 
 

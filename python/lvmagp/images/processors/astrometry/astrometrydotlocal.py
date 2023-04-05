@@ -102,6 +102,7 @@ class AstrometryDotLocal(Astrometry):
         img.catalog = cat
 
 #        print(img.catalog["x", "y"])
+        log.debug(f'{img.catalog["x", "y"]}')
         img.astrometric_wcs = self.source_solve_default(img)
         log.debug(img.astrometric_wcs)
 

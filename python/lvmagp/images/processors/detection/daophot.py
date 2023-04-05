@@ -78,20 +78,19 @@ class DaophotSourceDetection(SourceDetection):
         daofind = DAOStarFinder(fwhm=self.fwhm, threshold=self.threshold * std)
         sources = daofind(data - median)
 
-        # rename columns
-        sources.rename_column("xcentroid", "x")
-        sources.rename_column("ycentroid", "y")
+        if sources:
+            # rename columns
+            sources.rename_column("xcentroid", "x")
+            sources.rename_column("ycentroid", "y")
 
-        # match fits conventions
-        sources["x"] += 1
-        sources["y"] += 1
-
-        # pick columns for catalog
-        cat = sources["x", "y", "flux", "peak"]
+            # match fits conventions
+            sources["x"] += 1
+            sources["y"] += 1
 
         # copy image, set catalog and return it
         img = image.copy()
-        img.catalog = cat
+        # pick columns for catalog
+        img.catalog = sources["x", "y", "flux", "peak"] if sources else None
         return img
 
 
